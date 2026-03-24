@@ -227,8 +227,7 @@ summary(sim_tte)$tte
 \seealso{
 \code{\link{makeData}} for the main simulation routine.
 
-\code{\link[=print.summary.makeDataSim]{print.summary.makeDataSim}} for the
-print method.
+\code{print.summary.makeDataSim} for the print method.
 
 \code{\link{plot.makeDataSim}} for graphical diagnostics.
 

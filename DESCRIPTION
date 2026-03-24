@@ -1,6 +1,6 @@
 Package: endpoints
 Title: Simulate Correlated Multi-Endpoint Clinical Trial Data
-Version: 0.0.1.9000
+Version: 0.1.0
 Authors@R: 
     c(person(given = "Colin",
              family = "Longhurst",

@@ -6,3 +6,8 @@ inst/doc
 
 /doc/
 /Meta/
+
+.Rprofile
+renv*
+
+docs/
