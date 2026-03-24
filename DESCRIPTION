@@ -1,0 +1,47 @@
+Package: endpoints
+Title: Simulate Correlated Multi-Endpoint Clinical Trial Data
+Version: 0.0.1.9000
+Authors@R: 
+    c(person(given = "Colin",
+             family = "Longhurst",
+             role = c("aut", "cre"),
+             email = "colin.longhurst@boehringer-ingelheim.com"),
+      person(given = "Ming",
+             family = "Yang",
+             role = "aut",
+             email = "ming.yang@boehringer-ingelheim.com"),
+      person(given = "Mitchell",
+             family = "Thomann",
+             role = "aut",
+             email = "mitchell.thomann@boehringer-ingelheim.com"),
+      person(given = "Boehringer Ingelheim Pharma GmbH & Co. KG",
+             role = c("cph", "fnd")))
+Description: Simulate correlated multi-endpoint clinical trial data using a Gaussian
+    copula approach. This package provides tools to generate realistic patient-level
+    datasets with configurable treatment effects and covariance structures. It supports
+    multiple endpoint types (continuous, binary, count, and time-to-event) across
+    multiple treatment arms.
+License: Apache License (>= 2)
+URL: https://github.com/Boehringer-Ingelheim/endpoints
+BugReports: https://github.com/Boehringer-Ingelheim/endpoints/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports: 
+    ggplot2,
+    GGally,
+    Matrix,
+    MASS,
+    stats,
+    survival
+Suggests:
+    tidyr,
+    geeM,
+    lme4,
+    dplyr, 
+    tidyverse,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Config/testthat/edition: 3

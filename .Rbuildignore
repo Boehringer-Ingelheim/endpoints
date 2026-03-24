@@ -1,0 +1,11 @@
+^renv$
+^renv\.lock$
+.archive/
+docs/
+endpoints.Rproj
+^doc$
+^Meta$
+^README\.Rmd$
+^.*\.Rproj$
+^\.Rproj\.user$
+
