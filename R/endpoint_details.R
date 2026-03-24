@@ -1,0 +1,149 @@
+#' Specification format for \code{endpoint_details} used by \code{makeData()}
+#' 
+#' \code{endpoint_details} is the main endpoint-specification input to
+#' \code{\link{makeData}}. It is a non-empty list in which each element is
+#' itself a named list describing one endpoint.
+#' 
+#' Each endpoint specification must include \code{endpoint_type}, and then
+#' additional fields depending on the endpoint family. Supported endpoint types
+#' are: \itemize{ \item continuous, \item binary, \item count, \item
+#' time-to-event. } Aliases such as \code{"normal"}, \code{"gaussian"},
+#' \code{"bin"}, \code{"nb"}, \code{"zinb"}, and \code{"tte"} may also be
+#' accepted by the package's internal normalization routines.
+#' 
+#' 
+#' @section General structure: For \eqn{p} endpoints, \code{endpoint_details}
+#' should be a list of length \eqn{p}: \preformatted{ endpoint_details = list(
+#' ep1, ep2, ..., ep_p ) } Each \code{ep_j} is a named list containing the
+#' parameters for endpoint \eqn{j}.
+#' @section Continuous endpoints:
+#' 
+#' Continuous endpoints are generated using the Gaussian distribution.
+#' 
+#' Fields: \describe{ \item{list("endpoint_type")}{Set to \code{"continuous"}
+#' (or a recognized alias such as \code{"normal"}).}
+#' \item{list("baseline_mean")}{Numeric scalar giving the control-group mean.}
+#' \item{list("sd")}{Numeric scalar or numeric vector. If scalar, a common SD
+#' is used across all arms. If vector, it must have length equal to the total
+#' number of arms.} \item{list("trt_effect")}{Optional. Numeric scalar or
+#' numeric vector giving treatment-group mean shifts relative to control. A
+#' scalar is used for 2-arm trials; otherwise the length must be \code{K - 1},
+#' where \code{K} is the total number of arms. If \code{NULL}, only data for
+#' the control group is generated. If \code{NULL} and \code{arm_mode = "full"},
+#' trt_effect = 0 for all arms.}
+#' 
+#' }
+#' @section Binary endpoints:
+#' 
+#' For binary outcomes, the event probability is modeled on the logit scale.
+#' 
+#' Fields: \describe{ \item{list("endpoint_type")}{Set to \code{"binary"}.}
+#' \item{list("baseline_prob")}{Numeric scalar in \code{(0, 1)} giving the
+#' control-group event probability.} \item{list("trt_prob")}{Optional. Numeric
+#' scalar or vector giving treatment-group event probabilities directly.}
+#' \item{list("trt_effect")}{Optional. Numeric scalar or vector giving
+#' treatment-group effects on the log-odds scale.} }
+#' 
+#' Exactly one of \code{trt_prob} or \code{trt_effect} may be supplied. If
+#' neither is supplied, a control-only binary endpoint is generated (or a
+#' no-effect endpoint in a multi-arm setting, depending on \code{arm_mode}).
+#' @section Count endpoints:
+#' 
+#' Count endpoints are generated using the negative binomial or zero-inflated
+#' negative binomial distribution.
+#' 
+#' Required fields: \describe{ \item{list("endpoint_type")}{Set to
+#' \code{"count"}.} \item{list("baseline_mean")}{Numeric scalar (> 0) giving
+#' the control-group mean count.} \item{list("size")}{Numeric scalar (> 0)
+#' controlling the negative-binomial dispersion. Larger values reduce
+#' overdispersion. Set to a large value to approximate the Poisson
+#' distribution.} \item{list("trt_count")}{Optional. Numeric scalar or vector
+#' giving treatment-group mean counts directly.}
+#' \item{list("trt_effect")}{Optional. Numeric scalar or vector giving
+#' treatment-group effects on the log rate-ratio scale.}
+#' \item{list("p_zero")}{Optional. Numeric scalar in \eqn{[0,1]} giving the
+#' structural-zero probability. If omitted, defaults to 0.} }
+#' 
+#' Exactly one of \code{trt_count} or \code{trt_effect} may be supplied. In the
+#' parameterization used, the variance of the distribution is \eqn{\mu +
+#' \frac{\mu^2}{\phi}}, \code{size} controls \eqn{\phi}. The \code{p_zero}
+#' parameter is indpendent of the copula.
+#' @section Time-to-event endpoints:
+#' 
+#' Time-to-event endpoints are generated from exponential event-time
+#' distributions.
+#' 
+#' Required fields: \describe{ \item{list("endpoint_type")}{Set to
+#' \code{"time-to-event"} or a recognized alias such as \code{"tte"}.}
+#' \item{list("baseline_rate")}{Numeric scalar (>0) giving the control-group
+#' exponential event-rate parameter \eqn{\lambda}. The mean event time is
+#' therefore \eqn{1/\lambda}.} }
+#' 
+#' Optional fields: \describe{ \item{list("trt_effect")}{Numeric scalar or
+#' vector giving treatment-group effects on the log hazard-ratio scale.}
+#' \item{list("censoring_rate")}{Numeric scalar (>0) giving the independent
+#' exponential censoring-rate parameter. If \code{NULL}, no random censoring.}
+#' \item{list("fatal_event")}{Logical scalar. If \code{TRUE}, the endpoint is
+#' treated as fatal and censors later TTE endpoints according to the package's
+#' fatal/non-fatal rules.} }
+#' @section Arm-specific lengths:
+#' 
+#' For active-arm parameters: \itemize{ \item scalar values should be used for
+#' two-arm trials; \item vectors must generally have length \code{K - 1}, where
+#' \code{K} is the total number of arms; \item for continuous \code{sd},
+#' vectors must have length \code{K}, since the control-group SD is also
+#' included explicitly. } The number of arms is determined from the supplied
+#' endpoint specifications. Optionally, users may use \code{arm_mode} in
+#' \code{\link{makeData}, but this option should be used with care.}.
+#' @section Internal endpoint naming: In the returned dataset, endpoints are
+#' automatically renamed by type: \describe{ \item{Continuous}{\code{Cont_1},
+#' \code{Cont_2}, \dots} \item{Binary}{\code{Bin_1}, \code{Bin_2}, \dots}
+#' \item{Count}{\code{Int_1}, \code{Int_2}, \dots}
+#' \item{Time-to-event}{\code{TTE_1}, \code{TTE_2}, \dots} \item{TTE event
+#' indicators}{\code{Status_1}, \code{Status_2}, \dots (\code{1 = event},
+#' \code{0 = censored})} }
+#' @seealso \code{\link{makeData}} for the main simulation routine.
+#' 
+#' \code{\link{enrollment_details}} for follow-up and enrollment settings.
+#' 
+#' \code{\link{calibration_control}} for correlation-calibration controls.
+#' @name endpoint_details
+#' @keywords documentation
+#' @examples
+#' 
+#' ## Continuous endpoint
+#' ep_cont <- list(
+#'   endpoint_type = "continuous",
+#'   baseline_mean = 10,
+#'   sd            = c(2, 3),
+#'   trt_effect    = -1
+#' )
+#' 
+#' ## Binary endpoint
+#' ep_bin <- list(
+#'   endpoint_type = "binary",
+#'   baseline_prob = 0.30,
+#'   trt_prob      = 0.45
+#' )
+#' 
+#' ## Count endpoint
+#' ep_cnt <- list(
+#'   endpoint_type = "count",
+#'   baseline_mean = 8,
+#'   trt_count     = 10,
+#'   size          = 20,
+#'   p_zero        = 0.10
+#' )
+#' 
+#' ## Time-to-event endpoint
+#' ep_tte <- list(
+#'   endpoint_type  = "tte",
+#'   baseline_rate  = 1 / 24,
+#'   trt_effect     = log(0.80),
+#'   censoring_rate = 1 / 216,
+#'   fatal_event    = TRUE
+#' )
+#' 
+#' endpoint_details <- list(ep_cont, ep_bin, ep_cnt, ep_tte)
+#' 
+NULL
