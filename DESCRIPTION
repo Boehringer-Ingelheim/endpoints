@@ -1,6 +1,6 @@
 Package: endpoints
 Title: Simulate Correlated Multi-Endpoint Clinical Trial Data
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     c(person(given = "Colin",
              family = "Longhurst",
@@ -22,7 +22,7 @@ Description: Simulate correlated multi-endpoint clinical trial data using a Gaus
     multiple endpoint types (continuous, binary, count, and time-to-event) across
     multiple treatment arms.
 License: Apache License (>= 2)
-URL: https://github.com/Boehringer-Ingelheim/endpoints
+URL: https://github.com/Boehringer-Ingelheim/endpoints, https://boehringer-ingelheim.github.io/endpoints, https://boehringer-ingelheim.github.io/endpoints/
 BugReports: https://github.com/Boehringer-Ingelheim/endpoints/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

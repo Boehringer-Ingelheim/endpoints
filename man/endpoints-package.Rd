@@ -12,6 +12,8 @@ Simulate correlated multi-endpoint clinical trial data using a Gaussian copula a
 Useful links:
 \itemize{
   \item \url{https://github.com/Boehringer-Ingelheim/endpoints}
+  \item \url{https://boehringer-ingelheim.github.io/endpoints}
+  \item \url{https://boehringer-ingelheim.github.io/endpoints/}
   \item Report bugs at \url{https://github.com/Boehringer-Ingelheim/endpoints/issues}
 }
 
