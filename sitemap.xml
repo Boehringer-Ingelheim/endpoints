@@ -1,0 +1,20 @@
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/404.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/LICENSE.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/articles/index.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/articles/longitudinal_data.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/articles/user_guide.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/authors.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/index.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/calibration_control.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/corr_make.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/endpoint_details.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/endpoints-package.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/enrollment_details.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/index.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/makeData.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/plot.makeDataSim.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/rate_from_prob.html</loc></url>
+<url><loc>https://boehringer-ingelheim.github.io/endpoints/reference/summary.makeDataSim.html</loc></url>
+</urlset>
+
