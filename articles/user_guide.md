@@ -136,9 +136,9 @@ knitr::kable(summary(simple1)$continuous)
 ```
 
 | endpoint | arm | input_baseline_mean | input_sd | input_trt_effect | est_baseline_mean | est_trt_effect | est_resid_sd |
-|:---|---:|---:|---:|---:|---:|---:|---:|
-| Cont_1 | 0 | 10 | 3 | 0 | 10.02815 | 0.000000 | 2.999293 |
-| Cont_1 | 1 | 10 | 2 | -2 | 10.02815 | -2.102053 | 2.066130 |
+|:---------|----:|--------------------:|---------:|-----------------:|------------------:|---------------:|-------------:|
+| Cont_1   |   0 |                  10 |        3 |                0 |          10.02815 |       0.000000 |     2.999293 |
+| Cont_1   |   1 |                  10 |        2 |               -2 |          10.02815 |      -2.102053 |     2.066130 |
 
 From above, we see that the estimated baseline mean, treatment effect
 and standard deviation parameter are all close to the true values.
@@ -197,9 +197,9 @@ knitr::kable(summary(simple2)$binary)
 ```
 
 | endpoint | arm | input_baseline_prob | input_trt_logOR | input_trt_prob | est_baseline_prob | est_trt_logOR | est_prob |
-|:---|---:|---:|---:|---:|---:|---:|---:|
-| Bin_1 | 0 | 0.3 | 0.0000000 | 0.30 | 0.302 | 0.000000 | 0.302 |
-| Bin_1 | 1 | 0.3 | 0.6466272 | 0.45 | 0.302 | 0.641161 | 0.451 |
+|:---------|----:|--------------------:|----------------:|---------------:|------------------:|--------------:|---------:|
+| Bin_1    |   0 |                 0.3 |       0.0000000 |           0.30 |             0.302 |      0.000000 |    0.302 |
+| Bin_1    |   1 |                 0.3 |       0.6466272 |           0.45 |             0.302 |      0.641161 |    0.451 |
 
 #### Count
 
@@ -225,7 +225,7 @@ int_ep1 <- list(
 - `size`: Negative binomial dispersion parameter (larger values reduce
   overdispersion and approach the Poisson limit). In the
   parameterization used, the variance of the distribution is equal to
-  $`\mu + \frac{\mu^2}{\phi}`$. Here, `size` controls $`\phi`$.
+  $\mu + \frac{\mu^{2}}{\phi}$. Here, `size` controls $\phi$.
 - `p_zero`: Zero-inflation probability.
 
 An example use can be seen below:
@@ -240,9 +240,9 @@ knitr::kable(summary(simple3)$count)
 ```
 
 | endpoint | arm | input_baseline_mean | input_trt_logRR | input_trt_mean | input_size | input_p_zero | est_baseline_mean | est_trt_logRR | est_size | obs_mean | obs_p0 |
-|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Int_1 | 0 | 8 | 0.0000000 | 8 | 100 | 0 | 7.987 | 0.0000000 | 54.55504 | 7.987 | 0 |
-| Int_1 | 1 | 8 | 0.2231436 | 10 | 100 | 0 | 7.987 | 0.2321426 | 54.55504 | 10.074 | 0 |
+|:---------|----:|--------------------:|----------------:|---------------:|-----------:|-------------:|------------------:|--------------:|---------:|---------:|-------:|
+| Int_1    |   0 |                   8 |       0.0000000 |              8 |        100 |            0 |             7.987 |     0.0000000 | 54.55504 |    7.987 |      0 |
+| Int_1    |   1 |                   8 |       0.2231436 |             10 |        100 |            0 |             7.987 |     0.2321426 | 54.55504 |   10.074 |      0 |
 
 *Note:* When `size` is large, the negative binomial approaches a Poisson
 distribution. In those cases, the dispersion parameter may be difficult
@@ -261,9 +261,9 @@ the dedicated section below.
 
 To extend the above simulations to settings with several treatment
 groups, we can simply replace scalar inputs with vectors. In general, if
-there are $`G`$ total study arms (including control), then
+there are $G$ total study arms (including control), then
 treatment-specific vectors (e.g., `trt_prob`, `trt_effect`, `sd`) should
-typically have length $`G-1`$, corresponding to the non-control arms in
+typically have length $G - 1$, corresponding to the non-control arms in
 order.
 
 For example, imagine we have a 4-grp study with a binary endpoint:
@@ -310,27 +310,24 @@ knitr::kable(summary(sim_bin4grp)$binary)
 ```
 
 | endpoint | arm | input_baseline_prob | input_trt_logOR | input_trt_prob | est_baseline_prob | est_trt_logOR | est_prob |
-|:---|---:|---:|---:|---:|---:|---:|---:|
-| Bin_1 | 0 | 0.3 | 0.0000000 | 0.30 | 0.29 | 0.0000000 | 0.290 |
-| Bin_1 | 1 | 0.3 | 0.2282587 | 0.35 | 0.29 | 0.1871990 | 0.330 |
-| Bin_1 | 2 | 0.3 | 0.4418328 | 0.40 | 0.29 | 0.4690414 | 0.395 |
-| Bin_1 | 3 | 0.3 | 0.6466272 | 0.45 | 0.29 | 0.6744902 | 0.445 |
+|:---------|----:|--------------------:|----------------:|---------------:|------------------:|--------------:|---------:|
+| Bin_1    |   0 |                 0.3 |       0.0000000 |           0.30 |              0.29 |     0.0000000 |    0.290 |
+| Bin_1    |   1 |                 0.3 |       0.2282587 |           0.35 |              0.29 |     0.1871990 |    0.330 |
+| Bin_1    |   2 |                 0.3 |       0.4418328 |           0.40 |              0.29 |     0.4690414 |    0.395 |
+| Bin_1    |   3 |                 0.3 |       0.6466272 |           0.45 |              0.29 |     0.6744902 |    0.445 |
 
 ## Correlated Endpoints with Gaussian Copula
 
 Gaussian copulas provide a flexible way to generate multivariate
 outcomes with user-specified marginal distributions and dependence. Let
-$`\mathbf{Z} = (Z_1,\dots,Z_J)^\top \sim \mathrm{MVN}(\mathbf{0}, \Sigma_Z)`$.
+$\mathbf{Z} = \left( Z_{1},\ldots,Z_{J} \right)^{\top} \sim {MVN}\left( \mathbf{0},\Sigma_{Z} \right)$.
 Applying the probability integral transform componentwise gives
 
-``` math
+$$X_{j} = F_{j}^{- 1}\{\Phi\left( Z_{j} \right)\},\qquad j = 1,\ldots,J,$$
 
-X_j = F_j^{-1}\{\Phi(Z_j)\}, \qquad j=1,\dots,J,
-```
-
-where $`\Phi`$ is the standard normal CDF and $`F_j^{-1}`$ is the
-inverse CDF (quantile function) of the desired marginal distribution for
-endpoint $`j`$. This construction preserves the chosen marginals and
+where $\Phi$ is the standard normal CDF and $F_{j}^{- 1}$ is the inverse
+CDF (quantile function) of the desired marginal distribution for
+endpoint $j$. This construction preserves the chosen marginals and
 induces dependence across endpoints through the Gaussian copula.
 
 Because Pearson correlation is generally **not** preserved under
@@ -474,11 +471,11 @@ by applying the conventions discussed in the previous section.
 In
 [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md),
 all time-to-event (TTE) endpoints are distributed as exponential random
-variables $`f(x;\lambda) = \lambda e^{-\lambda x}`$. They are encoded as
+variables $f(x;\lambda) = \lambda e^{- \lambda x}$. They are encoded as
 elements in `endpoint_details` as follows:
 
-- `baseline_rate`: The exponential event-rate parameter $`\lambda`$ for
-  the control group (so the mean event time is $`1/\lambda`$).
+- `baseline_rate`: The exponential event-rate parameter $\lambda$ for
+  the control group (so the mean event time is $1/\lambda$).
 - `trt_effect`: Scalar or vector of treatment effects on the log
   hazard-ratio scale.
 - `censoring_rate = NULL`: Exponential censoring-rate parameter for
@@ -498,20 +495,19 @@ tte_ep1 <- list(
 
 **Censoring**
 
-For a time-to-event endpoint, for the $`i^{th}`$ patient we observe
-$`X_i = \min\{T_i, C_i\}`$ where $`T \sim Exp(\lambda_e)`$ is the event
-time and $`C_i \sim Exp(\lambda_c)`$ is the censoring time. For the
-primary terminal event (or a non-terminal event when there are no
+For a time-to-event endpoint, for the $i^{th}$ patient we observe
+$X_{i} = \min\{ T_{i},C_{i}\}$ where
+$T \sim Exp\left( \lambda_{e} \right)$ is the event time and
+$C_{i} \sim Exp\left( \lambda_{c} \right)$ is the censoring time. For
+the primary terminal event (or a non-terminal event when there are no
 terminal events), the probability of observing an event is
-``` math
-P({T}_i < {C}_i) = \int^\infty_0\lambda_ee^{-\lambda_ex}e^{-\lambda_cx} = \frac{\lambda_{e}}{\lambda_e+\lambda_c},
-```
+$$P\left( T_{i} < C_{i} \right) = \int_{0}^{\infty}\lambda_{e}e^{- \lambda_{e}x}e^{- \lambda_{c}x} = \frac{\lambda_{e}}{\lambda_{e} + \lambda_{c}},$$
 
 which can be used to select a censoring rate that produces the
 user-specified event rate. In the example from the code chunk above, if
 we want to select a censoring rate such that we observe an event rate of
 .9, some algebra yields
-$`\lambda_c = \frac{1/24}{0.90} -\frac{1}{24} = 1/216`$. This can be
+$\lambda_{c} = \frac{1/24}{0.90} - \frac{1}{24} = 1/216$. This can be
 calculated by using the helper function
 [`rate_from_prob()`](https://boehringer-ingelheim.github.io/endpoints/reference/rate_from_prob.md):
 
@@ -529,10 +525,10 @@ print(paste0("1","/",1/lambda_c))
 When there are semi-competing risks, and the TTE endpoints have low
 correlation, the event rate for the secondary, non-fatal TTE endpoint
 can be approximated as
-$`\frac{\lambda_{e2}}{\lambda_{e1}+\lambda_{c1}+\lambda_{e2}+\lambda_{c2}}`$
-where the subscripts $`1, 2`$ denote the first and secondary endpoints.
-The above formula is meant only as an approximation as the dependence
-(induced by the copula) between $`X_1`$ and $`X_2`$ is not accounted
+$\frac{\lambda_{e2}}{\lambda_{e1} + \lambda_{c1} + \lambda_{e2} + \lambda_{c2}}$
+where the subscripts $1,2$ denote the first and secondary endpoints. The
+above formula is meant only as an approximation as the dependence
+(induced by the copula) between $X_{1}$ and $X_{2}$ is not accounted
 for. This approximation can also be handled by the helper function. In
 this case, the output is the rate of the censoring mechanism for the
 secondary endpoint.
@@ -560,15 +556,16 @@ the data with censoring.
 
 **Fatal Events**
 
-Let $`X_1`$ be a fatal event and $`X_2`$ be a non-fatal event, then we
-write $`X_2 = \min\{T_1, C_1, T_2,C_2\}`$. That is, we cannot observe
-any event that occurs after a fatal event occurs **or** is censored.
+Let $X_{1}$ be a fatal event and $X_{2}$ be a non-fatal event, then we
+write $X_{2} = \min\{ T_{1},C_{1},T_{2},C_{2}\}$. That is, we cannot
+observe any event that occurs after a fatal event occurs **or** is
+censored.
 
 If a non-fatal event occurs before a fatal event
-($`T_2 < \{T_1, C_1,C_2\}`$), a fatal event can still be subsequently
-observed (or censored). If a non-fatal event is censored before a fatal
-event ($`C_2 < \{T_1, C_1,T_2\}`$), a fatal event can still be
-subsequently observed (or censored), unless
+($T_{2} < \{ T_{1},C_{1},C_{2}\}$), a fatal event can still be
+subsequently observed (or censored). If a non-fatal event is censored
+before a fatal event ($C_{2} < \{ T_{1},C_{1},T_{2}\}$), a fatal event
+can still be subsequently observed (or censored), unless
 `non_fatal_censors_fatal = TRUE` is toggled in the main
 [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
 function. This is a global option for all TTEs simulated.
@@ -581,16 +578,16 @@ group, and 60 in the treatment group. We want an observed event rate of
 .25 in the control group.
 
 To solve for the needed log hazard ratio, we solve
-$`\frac{1}{60} = \frac{1}{50} \cdot HR \to \text{HR} = .833`$. To solve
-for the censoring rate, we solve
-$`\frac{1/50}{0.25} - \frac{1}{50} = 1/ 16.667`$.
+$\left. \frac{1}{60} = \frac{1}{50} \cdot HR\rightarrow\text{HR} = .833 \right.$.
+To solve for the censoring rate, we solve
+$\frac{1/50}{0.25} - \frac{1}{50} = 1/16.667$.
 
 For the second endpoint, we want a mean time of 35 for control group and
 45 for treatment group, with an observed event rate of .45 for the
 control group. To solve for the needed log hazard ratio, we solve
-$`\frac{1}{45} = \frac{1}{35} \cdot HR \to \text{HR} = 0.778`$. To solve
-for the censoring rate, we solve
-$`\frac{1/35}{0.45} - \frac{1}{35} = 1/ 28.64`$.
+$\left. \frac{1}{45} = \frac{1}{35} \cdot HR\rightarrow\text{HR} = 0.778 \right.$.
+To solve for the censoring rate, we solve
+$\frac{1/35}{0.45} - \frac{1}{35} = 1/28.64$.
 
 We assume a correlation of .2 between the endpoints.
 
@@ -696,22 +693,19 @@ simulated TTE endpoints, the column `exp_rate` reports the
 event rate, computed from the observed times and event indicators after
 censoring/fatal-event logic has been applied. For a given arm, this is
 
-``` math
+$${\widehat{\lambda}}_{\text{exp}} = \frac{\sum\limits_{i}\delta_{i}}{\sum\limits_{i}X_{i}},$$
 
-\widehat{\lambda}_{\text{exp}} = \frac{\sum_i \delta_i}{\sum_i X_i},
-```
-
-where $`X_i`$ is the observed follow-up time for subject $`i`$ (possibly
-censored), and $`\delta_i\in\{0,1\}`$ is the event indicator (1 = event
-observed, 0 = censored).
+where $X_{i}$ is the observed follow-up time for subject $i$ (possibly
+censored), and $\delta_{i} \in \{ 0,1\}$ is the event indicator (1 =
+event observed, 0 = censored).
 
 This is the standard MLE for an exponential survival model with right
 censoring. In the summary output:
 
 - `obs_event_rate` is the observed proportion of subjects with an event
-  (i.e., $`\bar\delta`$),
+  (i.e., $\bar{\delta}$),
 - `exp_rate` is the exponential rate estimate
-  $`\sum \delta_i / \sum X_i`$,
+  $\sum\delta_{i}/\sum X_{i}$,
 - `est_trt_logHR` is the treatment log-hazard ratio estimated from a Cox
   model fit.
 
@@ -727,23 +721,23 @@ implied treatment-group rates), especially in small samples or when
 censoring is heavy.
 
 In this example, the arm-specific exp_rate values are close to the
-data-generating exponential event rates (approximately
-$`1 / 50,1 / 60,1 / 35`$, and $`1 / 45`$ ), which is expected here
-because the sample size is large and censoring is independent; even
-though censoring changes the observed event proportion, the exponential
-MLE $`\sum \delta_i / \sum X_i`$ remains a consistent estimator of the
-event hazard under the exponential model.
+data-generating exponential event rates (approximately $1/50,1/60,1/35$,
+and $1/45$ ), which is expected here because the sample size is large
+and censoring is independent; even though censoring changes the observed
+event proportion, the exponential MLE $\sum\delta_{i}/\sum X_{i}$
+remains a consistent estimator of the event hazard under the exponential
+model.
 
 ## Administrative Censoring & Stochastic Enrollment
 
 ### Administrative Censoring
 
-Administrative censoring (which we denote as $`\mathcal{A}`$) is
+Administrative censoring (which we denote as $\mathcal{A}$) is
 controlled via `enrollment_details` argument, which is a list of
 settings. Within `enrollment_details` administrative censoring is
 toggled using `administrative_censoring = NULL`. If it is set to a
 positive value, then any TTE event that occurs (or is censored) after
-$`\mathcal{A}`$, is set to $`\mathcal{A}`$ as that is the limit of
+$\mathcal{A}$, is set to $\mathcal{A}$ as that is the limit of
 follow-up.
 
 To illustrate, we can re-run the example above, but this time setting a
@@ -800,8 +794,8 @@ this feature.
 
 If there is no non-administrative censoring (e.g. no random drop-out),
 we can solve for expected event rates by evaluating
-$`\int_{0}^{\mathcal{A}} \lambda e^{-\lambda x} dx = 1 - e^{-\lambda x}`$.
-To solve for $`\lambda`$, we calculate $`\frac{\ln(1-r)}{-\mathcal{A}}`$
+$\int_{0}^{\mathcal{A}}\lambda e^{- \lambda x}dx = 1 - e^{- \lambda x}$.
+To solve for $\lambda$, we calculate $\frac{\ln(1 - r)}{- \mathcal{A}}$
 where r is the desired event rate. For example, if we want to simulate a
 4-year trial with a 20% fatal event rate, we need to set the baseline
 hazard to `log(1-.2)/(-4) = .0558.` Once again, we can use the helper
@@ -852,13 +846,14 @@ following arguments:
 
 - `enrollment_distribution = c("none","uniform","exponential","piecewise")`:
   This specifies the enrollment-time distribution (default is `"none"`).
-  If `"uniform"`, enrollment time is $`\mathbf{U}[0,\mathcal{A}]`$,
-  where $`\mathcal{A}`$ is the time of administrative censoring. If
-  `"exponential"`, enrollment time is based on an exponential
-  distribution (see `enrollment_exponential_rate`). If `"piecewise"`,
-  enrollment follows a piecewise exponential distribution. This option
-  requires specifying `piecewise_enrollment_cutpoints` and
-  `piecewise_enrollment_rates` (see examples below).
+  If `"uniform"`, enrollment time is
+  $\mathbf{U}\lbrack 0,\mathcal{A}\rbrack$, where $\mathcal{A}$ is the
+  time of administrative censoring. If `"exponential"`, enrollment time
+  is based on an exponential distribution (see
+  `enrollment_exponential_rate`). If `"piecewise"`, enrollment follows a
+  piecewise exponential distribution. This option requires specifying
+  `piecewise_enrollment_cutpoints` and `piecewise_enrollment_rates` (see
+  examples below).
 - `enrollment_exponential_rate = NULL`: The rate for the exponential
   distribution if `enrollment_distribution = "exponential"`.
 - `piecewise_enrollment_cutpoints = NULL`: The time points defining the
@@ -867,8 +862,8 @@ following arguments:
   distribution within each time bin.
 
 If a user specifies stochastic enrollment and administrative censoring,
-then maximum potential time-on-study is $`\mathcal{A} - T_E`$, where
-$`T_E`$ is time of enrollment. If we re-run the example from above,
+then maximum potential time-on-study is $\mathcal{A} - T_{E}$, where
+$T_{E}$ is time of enrollment. If we re-run the example from above,
 
 ``` r
  tte_admin_cens_exp_enroll <- makeData(
@@ -949,9 +944,9 @@ when administrative censoring is present.
 **Piecewise Enrollment**
 
 In some trials, we may expect varied enrollment throughout the study
-period (e.g. heavy $`\rightarrow`$ light $`\rightarrow`$ medium
-$`\rightarrow`$ heavy) due to seasonal trends or logistic constraints.
-For example,
+period (e.g. heavy $\rightarrow$ light $\rightarrow$ medium
+$\rightarrow$ heavy) due to seasonal trends or logistic constraints. For
+example,
 
 ``` r
 pw_example <- makeData(
@@ -1006,7 +1001,7 @@ For transparency, the sampler proceeds as follows:
 
 **Piecewise Enrollment with Proportions**
 
-Assume a 24-month trial with a target enrollment of $`N = 1{,}100`$
+Assume a 24-month trial with a target enrollment of $N = 1,100$
 patients. Suppose we want the enrollment pattern to be:
 
 - 10% enrolled during months 0–8,
@@ -1018,48 +1013,36 @@ the exponential rates in each interval using basic probability.
 
 First, set the cutpoints to define the three enrollment windows
 `piecewise_enrollment_cutpoints = c(0, 8, 16, 24)`. This creates three
-time bins: $`[0,8),[8,16)`$, and $`[16,24]`$. Next, solve for
-$`\lambda_1`$ so that $`10 \%`$ of patients enroll before month 8. For
-an exponential waiting time in the first interval,
+time bins: $\lbrack 0,8),\lbrack 8,16)$, and $\lbrack 16,24\rbrack$.
+Next, solve for $\lambda_{1}$ so that $10\%$ of patients enroll before
+month 8. For an exponential waiting time in the first interval,
 
-``` math
-
-P(T<8)=1-e^{-8 \lambda_1}=0.10 .
-```
+$$P(T < 8) = 1 - e^{- 8\lambda_{1}} = 0.10.$$
 
 Rearranging,
 
-``` math
-\begin{align*}
-1 - e^{-8\lambda_1} &= 0.10 \\
-e^{-8\lambda_1} &= 0.90 \\
--8\lambda_1 &= \log(0.90) \\
-\lambda_1 &= -\frac{\log(0.90)}{8}.
-\end{align*}
-```
+$$\begin{aligned}
+{1 - e^{- 8\lambda_{1}}} & {= 0.10} \\
+e^{- 8\lambda_{1}} & {= 0.90} \\
+{- 8\lambda_{1}} & {= \log(0.90)} \\
+\lambda_{1} & {= - \frac{\log(0.90)}{8}.}
+\end{aligned}$$
 
-Second, solve for $`\lambda_2`$ so that $`35 \%`$ of patients enroll in
-the second bin (months $`8-16`$ ). This probability is
+Second, solve for $\lambda_{2}$ so that $35\%$ of patients enroll in the
+second bin (months $8 - 16$ ). This probability is
 
-``` math
+$$P(8 \leq T < 16) = P(T \geq 8)P(T - 8 < 8 \mid T \geq 8) = e^{- 8\lambda_{1}}\left( 1 - e^{- 8\lambda_{2}} \right) = 0.35.$$
 
-P(8 \leq T<16)=P(T \geq 8) P(T-8<8 \mid T \geq 8)=e^{-8 \lambda_1}\left(1-e^{-8 \lambda_2}\right)=0.35 .
-```
-
-Using $`e^{-8 \lambda_1}=0.90`$, we get
-``` math
-\begin{align*}
-0.90\left(1 - e^{-8\lambda_2}\right) &= 0.35 \\
-1 - e^{-8\lambda_2} &= \frac{0.35}{0.90} \\
-e^{-8\lambda_2} &= 1 - \frac{0.35}{0.90} \\
-\lambda_2 &= -\frac{1}{8}\log\left(1 - \frac{0.35}{0.90}\right).
-\end{align*}
-```
-The third rate, $`\boldsymbol{\lambda}_3`$, does not affect the overall
-proportion enrolled in months 16-24 (that remaining $`55 \%`$ is already
-determined by $`\lambda_1`$ and $`\lambda_2`$ ). However, $`\lambda_3`$
-does affect the shape of the enrollment-time distribution within the
-final bin, here we set this value to 0.25.
+Using $e^{- 8\lambda_{1}} = 0.90$, we get $$\begin{aligned}
+{0.90\left( 1 - e^{- 8\lambda_{2}} \right)} & {= 0.35} \\
+{1 - e^{- 8\lambda_{2}}} & {= \frac{0.35}{0.90}} \\
+e^{- 8\lambda_{2}} & {= 1 - \frac{0.35}{0.90}} \\
+\lambda_{2} & {= - \frac{1}{8}\log\left( 1 - \frac{0.35}{0.90} \right).}
+\end{aligned}$$ The third rate, ${\mathbf{λ}}_{3}$, does not affect the
+overall proportion enrolled in months 16-24 (that remaining $55\%$ is
+already determined by $\lambda_{1}$ and $\lambda_{2}$ ). However,
+$\lambda_{3}$ does affect the shape of the enrollment-time distribution
+within the final bin, here we set this value to 0.25.
 
 Putting this together:
 

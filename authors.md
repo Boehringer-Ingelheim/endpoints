@@ -14,7 +14,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/Boehringer-Ingelheim/endpoints/blob/HEAD/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/Boehringer-Ingelheim/endpoints/blob/main/DESCRIPTION)
 
 Longhurst C, Yang M, Thomann M (2026). *endpoints: Simulate Correlated
 Multi-Endpoint Clinical Trial Data*. R package version 0.1.1,
