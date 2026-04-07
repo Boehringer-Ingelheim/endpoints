@@ -2,7 +2,9 @@
 title: "A User Guide for the `endpoints` Package"
 author: "Colin Longhurst"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    mathjax: true
 vignette: >
   %\VignetteIndexEntry{A User Guide for the `endpoints` Package}
   %\VignetteEngine{knitr::rmarkdown}

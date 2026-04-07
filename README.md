@@ -38,8 +38,8 @@ studies.
 Install from GitHub with:
 
 ``` r
-# install.packages("remotes")
-remotes::install_github("Boehringer-Ingelheim/endpoints")
+# install.packages("pak")
+pak::pak("Boehringer-Ingelheim/endpoints")
 ```
 
 ## Documentation

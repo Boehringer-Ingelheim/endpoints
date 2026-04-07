@@ -2,7 +2,9 @@
 title: "Simulating Longitudinal Data with `endpoints`"
 author: "Colin Longhurst"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    mathjax: true
 vignette: >
   %\VignetteIndexEntry{Simulating Longitudinal Data with `endpoints`}
   %\VignetteEngine{knitr::rmarkdown}
