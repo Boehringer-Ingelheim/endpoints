@@ -20,34 +20,33 @@ Suppose we want to simulate a longitudinal continuous outcome measured
 at a fixed set of visits, with trajectories that differ by treatment
 group. For illustration, consider the marginal mean model
 
-$$Y_{it} = \beta_{0} + \beta_{\text{time}\mspace{6mu}}t + \beta_{\text{trt}\mspace{6mu}}x_{i} + {\mathbf{β}}_{\text{time:trt}\mspace{6mu}}tx_{i} + \varepsilon_{it},\quad i = 1,\ldots,n,\quad t \in \{ 0,1,\ldots,T - 1\},$$
+\\ Y\_{i t}=\beta_0+\beta\_{\text {time }} t+\beta\_{\text {trt }}
+x_i+\boldsymbol\beta\_{\text {time:trt }} t x_i+\varepsilon\_{i t},
+\quad i=1, \ldots, n, \quad t \in\\0,1, \ldots, T-1\\, \\
 
-where $x_{i} \in \{ 0,1\}$ is the treatment indicator and the residual
-vector
-$\varepsilon_{i} = \left( \varepsilon_{i0},\ldots,\varepsilon_{i,T - 1} \right)^{\top}$
-follows
+where \\x_i \in\\0,1\\\\ is the treatment indicator and the residual
+vector \\\varepsilon_i=\left(\varepsilon\_{i 0}, \ldots,
+\varepsilon\_{i, T-1}\right)^{\top}\\ follows
 
-$$e_{i} \sim \mathcal{N}\left( \mathbf{0},\sigma^{2}\mathbf{V} \right),\quad\mathbf{V}_{tt^{\prime}} = \rho^{|t - t^{\prime}|}$$
+\\ e_i \sim \mathcal{N}\left(\mathbf{0}, \sigma^2 \mathbf{V}\right),
+\quad \mathbf{V}\_{t t^{\prime}}=\rho^{\left\|t-t^{\prime}\right\|} \\
 
-Here $\mathbf{V}$ is the standard AR(1) correlation structure:
+Here \\\mathbf{V}\\ is the standard AR(1) correlation structure:
 measurements closer in time are more strongly correlated. More
 explicitly, this can be written as
 
-$$\mathbf{V} = \begin{pmatrix}
-1 & \rho & \rho^{2} & \cdots & \rho^{n - 1} \\
-\rho & 1 & \rho & \cdots & \rho^{n - 2} \\
-\rho^{2} & \rho & 1 & \cdots & \rho^{n - 3} \\
-\vdots & \vdots & \vdots & \ddots & \vdots \\
-\rho^{n - 1} & \rho^{n - 2} & \rho^{n - 3} & \cdots & 1
-\end{pmatrix}$$
+\\\mathbf{V}=\left(\begin{array}{ccccc}1 & \rho & \rho^2 & \cdots &
+\rho^{n-1} \\ \rho & 1 & \rho & \cdots & \rho^{n-2} \\ \rho^2 & \rho & 1
+& \cdots & \rho^{n-3} \\ \vdots & \vdots & \vdots & \ddots & \vdots \\
+\rho^{n-1} & \rho^{n-2} & \rho^{n-3} & \cdots & 1\end{array}\right)\\
 
 In this example we use:
 
-- ${AR}(1)$ correlation $\rho = 0.5$,
-- $T = 5$ visits (baseline + 4 follow-up visits),
+- \\\mathrm{AR}(1)\\ correlation \\\rho=0.5\\,
+- \\T=5\\ visits (baseline + 4 follow-up visits),
 - a constant control-group mean over time,
 - a non-linear treatment effect across visits,
-- residual SD $\sigma = 0.95$.
+- residual SD \\\sigma=0.95\\.
 
 **Step 1: Specify the within-subject correlation**
 
@@ -126,7 +125,7 @@ appears as a separate column (`Cont_1`, …, `Cont_5`). The key
 observation is that a collection of correlated endpoints can be
 interpreted as repeated measures once we reshape the data.
 
-**Step 4: Convert wide $\rightarrow$ long**
+**Step 4: Convert wide \\\rightarrow\\ long**
 
 ``` r
 library(tidyverse)
@@ -216,20 +215,20 @@ knitr::kable(
 )
 ```
 
-| Parameter         |  True | Estimated |
-|:------------------|------:|----------:|
-| $\beta_{{trt},1}$ | -0.10 |    -0.123 |
-| $\beta_{{trt},2}$ | -0.15 |    -0.179 |
-| $\beta_{{trt},3}$ | -0.25 |    -0.260 |
-| $\beta_{{trt},4}$ | -0.40 |    -0.430 |
-| $\sigma$          |  0.95 |     0.910 |
-| $\rho$            |  0.50 |     0.510 |
+| Parameter                   |  True | Estimated |
+|:----------------------------|------:|----------:|
+| \\\beta\_{\mathrm{trt},1}\\ | -0.10 |    -0.123 |
+| \\\beta\_{\mathrm{trt},2}\\ | -0.15 |    -0.179 |
+| \\\beta\_{\mathrm{trt},3}\\ | -0.25 |    -0.260 |
+| \\\beta\_{\mathrm{trt},4}\\ | -0.40 |    -0.430 |
+| \\\sigma\\                  |  0.95 |     0.910 |
+| \\\rho\\                    |  0.50 |     0.510 |
 
 True vs. estimated longitudinal treatment effects and correlation
 parameters.
 
-(Note: $\sigma$ is the marginal residual SD in
-$\varepsilon_{it} \sim N\left( 0,\sigma^{2}\mathbf{V} \right)$)
+(Note: \\\sigma\\ is the marginal residual SD in \\\varepsilon\_{it}
+\sim N(0,\sigma^2\mathbf{V})\\)
 
 We now have a longitudinal data set with the correct data
 characteristics to use in simulation. Finally, we can visualize a small
@@ -440,22 +439,19 @@ slopes.
 For example, consider the following longitudinal model with a random
 intercept and random slope:
 
-$$\begin{matrix}
-{y_{ijt} = \underset{\text{intercepts}}{\underbrace{\left( \beta_{0} + \beta_{1}j + \alpha_{i} \right)}} + t\,\underset{\text{slopes}}{\underbrace{\left( \beta_{2} + \beta_{1:2}j + \gamma_{i} \right)}} + \epsilon_{ijt}} \\
-{\epsilon_{ijt} \sim N\left( 0,\sigma^{2} \right)\quad\text{and}\quad\begin{pmatrix}
-\alpha_{i} \\
-\gamma_{i}
-\end{pmatrix} \sim \mathcal{N}\!\left( \begin{pmatrix}
-0 \\
-0
-\end{pmatrix},\mathbf{\Lambda} \right)\quad\text{where}\quad\mathbf{\Lambda} = \begin{pmatrix}
-\sigma_{\alpha}^{2} & {\rho_{\alpha\gamma}\sigma_{\alpha}\sigma_{\gamma}} \\
-{\rho_{\alpha\gamma}\sigma_{\alpha}\sigma_{\gamma}} & \sigma_{\gamma}^{2}
-\end{pmatrix}.}
-\end{matrix}$$ Here: - $j \in \{ 0,1\}$ indicates treatment group (
-$0 =$ control, $1 =$ treatment), - $i$ indexes subjects, - $t$ indexes
-time, - $\alpha_{i}$ is the subject-specific random intercept, -
-$\gamma_{i}$ is the subject-specific random slope.
+\\ \begin{gathered} y\_{ijt} = \underbrace{(\beta_0 + \beta_1 j +
+\alpha_i)}\_{\text{intercepts}} + t\\\underbrace{(\beta_2 + \beta\_{1:2}
+j + \gamma_i)}\_{\text{slopes}} + \epsilon\_{ijt} \\ \epsilon\_{ijt}
+\sim N(0,\sigma^2) \quad \text{and} \quad \begin{pmatrix} \alpha_i \\
+\gamma_i \end{pmatrix} \sim \mathcal{N} \\\left( \begin{pmatrix} 0 \\ 0
+\end{pmatrix}, \mathbf{\Lambda} \right) \quad \text{where}
+\quad\mathbf{\Lambda} = \begin{pmatrix} \sigma\_\alpha^2 &
+\rho\_{\alpha\gamma}\sigma\_\alpha\sigma\_\gamma \\
+\rho\_{\alpha\gamma}\sigma\_\alpha\sigma\_\gamma & \sigma\_\gamma^2
+\end{pmatrix}. \end{gathered} \\ Here: - \\j \in\\0,1\\\\ indicates
+treatment group ( \\0=\\ control, \\1=\\ treatment), - \\i\\ indexes
+subjects, - \\t\\ indexes time, - \\\alpha_i\\ is the subject-specific
+random intercept, - \\\gamma_i\\ is the subject-specific random slope.
 
 In this formulation, the correlation in repeated measurements is induced
 through the shared random effects rather than by directly specifying a
@@ -613,7 +609,7 @@ In the example below, the linear predictor includes:
 
 - a fixed intercept of 10,
 - no baseline treatment effect,
-- a control-group slope of $- {\mathbf{0}\mathbf{.}\mathbf{5}}$,
+- a control-group slope of \\-\mathbf{0 . 5}\\,
 - a treatment-by-time interaction of +1 ,
 - a subject-specific random intercept ( `Cont_1` ),
 - a subject-specific random slope ( `Cont_2 * time` ).

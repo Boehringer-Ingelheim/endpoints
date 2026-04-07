@@ -6,7 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>A User Guide for the `endpoints` Package • endpoints</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -30,13 +36,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="active nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/longitudinal_data.html">Simulating Longitudinal Data with `endpoints`</a></li>
-    <li><a class="dropdown-item" href="../articles/user_guide.html">A User Guide for the `endpoints` Package</a></li>
-  </ul>
-</li>
+<li class="active nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -60,7 +60,7 @@
                         <h4 data-toc-skip class="author">Colin
 Longhurst</h4>
             
-            <h4 data-toc-skip class="date">2026-03-30</h4>
+            <h4 data-toc-skip class="date">2026-04-07</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/Boehringer-Ingelheim/endpoints/blob/main/vignettes/user_guide.Rmd" class="external-link"><code>vignettes/user_guide.Rmd</code></a></small>
       <div class="d-none name"><code>user_guide.Rmd</code></div>
@@ -357,9 +357,8 @@ treatment effects on the log rate-ratio scale. Only one of
 <code>size</code>: Negative binomial dispersion parameter (larger
 values reduce overdispersion and approach the Poisson limit). In the
 parameterization used, the variance of the distribution is equal to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>+</mo><mfrac><msup><mi>μ</mi><mn>2</mn></msup><mi>ϕ</mi></mfrac></mrow><annotation encoding="application/x-tex">\mu + \frac{\mu^2}{\phi}</annotation></semantics></math>.
-Here, <code>size</code> controls
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>.</li>
+<span class="math inline">\(\mu + \frac{\mu^2}{\phi}\)</span>. Here,
+<code>size</code> controls <span class="math inline">\(\phi\)</span>.</li>
 <li>
 <code>p_zero</code>: Zero-inflation probability.</li>
 </ul>
@@ -452,12 +451,10 @@ the dedicated section below.</p>
 </h2>
 <p>To extend the above simulations to settings with several treatment
 groups, we can simply replace scalar inputs with vectors. In general, if
-there are
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math>
-total study arms (including control), then treatment-specific vectors
-(e.g., <code>trt_prob</code>, <code>trt_effect</code>, <code>sd</code>)
-should typically have length
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>G</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">G-1</annotation></semantics></math>,
+there are <span class="math inline">\(G\)</span> total study arms
+(including control), then treatment-specific vectors (e.g.,
+<code>trt_prob</code>, <code>trt_effect</code>, <code>sd</code>) should
+typically have length <span class="math inline">\(G-1\)</span>,
 corresponding to the non-control arms in order.</p>
 <p>For example, imagine we have a 4-grp study with a binary
 endpoint:</p>
@@ -566,20 +563,18 @@ correctly by calling <code>summary</code>:</p>
 </h2>
 <p>Gaussian copulas provide a flexible way to generate multivariate
 outcomes with user-specified marginal distributions and dependence. Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐙</mi><mo>=</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Z</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>Z</mi><mi>J</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mi>⊤</mi></msup><mo>∼</mo><mrow><mi mathvariant="normal">M</mi><mi mathvariant="normal">V</mi><mi mathvariant="normal">N</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mn>𝟎</mn><mo>,</mo><msub><mi>Σ</mi><mi>Z</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{Z} = (Z_1,\dots,Z_J)^\top \sim \mathrm{MVN}(\mathbf{0}, \Sigma_Z)</annotation></semantics></math>.
-Applying the probability integral transform componentwise gives</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>j</mi></msub><mo>=</mo><msubsup><mi>F</mi><mi>j</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo stretchy="false" form="prefix">{</mo><mi>Φ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>Z</mi><mi>j</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="false" form="postfix">}</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>…</mi><mo>,</mo><mi>J</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<span class="math inline">\(\mathbf{Z} = (Z_1,\dots,Z_J)^\top \sim
+\mathrm{MVN}(\mathbf{0}, \Sigma_Z)\)</span>. Applying the probability
+integral transform componentwise gives</p>
+<p><span class="math display">\[
 X_j = F_j^{-1}\{\Phi(Z_j)\}, \qquad j=1,\dots,J,
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Φ</mi><annotation encoding="application/x-tex">\Phi</annotation></semantics></math>
-is the standard normal CDF and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>F</mi><mi>j</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><annotation encoding="application/x-tex">F_j^{-1}</annotation></semantics></math>
-is the inverse CDF (quantile function) of the desired marginal
-distribution for endpoint
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>j</mi><annotation encoding="application/x-tex">j</annotation></semantics></math>.
-This construction preserves the chosen marginals and induces dependence
-across endpoints through the Gaussian copula.</p>
+\]</span></p>
+<p>where <span class="math inline">\(\Phi\)</span> is the standard
+normal CDF and <span class="math inline">\(F_j^{-1}\)</span> is the
+inverse CDF (quantile function) of the desired marginal distribution for
+endpoint <span class="math inline">\(j\)</span>. This construction
+preserves the chosen marginals and induces dependence across endpoints
+through the Gaussian copula.</p>
 <p>Because Pearson correlation is generally <strong>not</strong>
 preserved under nonlinear monotone transformations,
 <code><a href="../reference/makeData.html">makeData()</a></code> optionally uses numerical calibration
@@ -715,16 +710,14 @@ section.</p>
 <h2 id="time-to-event-endpoints-and-censoring">Time-to-event Endpoints and Censoring<a class="anchor" aria-label="anchor" href="#time-to-event-endpoints-and-censoring"></a>
 </h2>
 <p>In <code><a href="../reference/makeData.html">makeData()</a></code>, all time-to-event (TTE) endpoints are
-distributed as exponential random variables
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>x</mi><mo>;</mo><mi>λ</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>λ</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mi>x</mi></mrow></msup></mrow><annotation encoding="application/x-tex">f(x;\lambda) = \lambda e^{-\lambda x}</annotation></semantics></math>.
+distributed as exponential random variables <span class="math inline">\(f(x;\lambda) = \lambda e^{-\lambda x}\)</span>.
 They are encoded as elements in <code>endpoint_details</code> as
 follows:</p>
 <ul>
 <li>
 <code>baseline_rate</code>: The exponential event-rate parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
-for the control group (so the mean event time is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mi>λ</mi></mrow><annotation encoding="application/x-tex">1/\lambda</annotation></semantics></math>).</li>
+<span class="math inline">\(\lambda\)</span> for the control group (so
+the mean event time is <span class="math inline">\(1/\lambda\)</span>).</li>
 <li>
 <code>trt_effect</code>: Scalar or vector of treatment effects on
 the log hazard-ratio scale.</li>
@@ -746,25 +739,19 @@ below for details.</li>
 <span>      fatal_event    <span class="op">=</span> <span class="cn">F</span>     </span>
 <span>    <span class="op">)</span></span></code></pre></div>
 <p><strong>Censoring</strong></p>
-<p>For a time-to-event endpoint, for the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>i</mi><mrow><mi>t</mi><mi>h</mi></mrow></msup><annotation encoding="application/x-tex">i^{th}</annotation></semantics></math>
-patient we observe
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mi>i</mi></msub><mo>=</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>T</mi><mi>i</mi></msub><mo>,</mo><msub><mi>C</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">X_i = \min\{T_i, C_i\}</annotation></semantics></math>
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>T</mi><mo>∼</mo><mi>E</mi><mi>x</mi><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>λ</mi><mi>e</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">T \sim Exp(\lambda_e)</annotation></semantics></math>
-is the event time and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mi>i</mi></msub><mo>∼</mo><mi>E</mi><mi>x</mi><mi>p</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>λ</mi><mi>c</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">C_i \sim Exp(\lambda_c)</annotation></semantics></math>
-is the censoring time. For the primary terminal event (or a non-terminal
-event when there are no terminal events), the probability of observing
-an event is
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>T</mi><mi>i</mi></msub><mo>&lt;</mo><msub><mi>C</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><msub><mi>λ</mi><mi>e</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>λ</mi><mi>e</mi></msub><mi>x</mi></mrow></msup><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>λ</mi><mi>c</mi></msub><mi>x</mi></mrow></msup><mo>=</mo><mfrac><msub><mi>λ</mi><mi>e</mi></msub><mrow><msub><mi>λ</mi><mi>e</mi></msub><mo>+</mo><msub><mi>λ</mi><mi>c</mi></msub></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">P({T}_i &lt; {C}_i) = \int^\infty_0\lambda_ee^{-\lambda_ex}e^{-\lambda_cx} = \frac{\lambda_{e}}{\lambda_e+\lambda_c},</annotation></semantics></math></p>
+<p>For a time-to-event endpoint, for the <span class="math inline">\(i^{th}\)</span> patient we observe <span class="math inline">\(X_i = \min\{T_i, C_i\}\)</span> where <span class="math inline">\(T \sim Exp(\lambda_e)\)</span> is the event time
+and <span class="math inline">\(C_i \sim Exp(\lambda_c)\)</span> is the
+censoring time. For the primary terminal event (or a non-terminal event
+when there are no terminal events), the probability of observing an
+event is <span class="math display">\[P({T}_i &lt; {C}_i) =
+\int^\infty_0\lambda_ee^{-\lambda_ex}e^{-\lambda_cx} =
+\frac{\lambda_{e}}{\lambda_e+\lambda_c},\]</span></p>
 <p>which can be used to select a censoring rate that produces the
 user-specified event rate. In the example from the code chunk above, if
 we want to select a censoring rate such that we observe an event rate of
-.9, some algebra yields
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>λ</mi><mi>c</mi></msub><mo>=</mo><mfrac><mrow><mn>1</mn><mi>/</mi><mn>24</mn></mrow><mn>0.90</mn></mfrac><mo>−</mo><mfrac><mn>1</mn><mn>24</mn></mfrac><mo>=</mo><mn>1</mn><mi>/</mi><mn>216</mn></mrow><annotation encoding="application/x-tex">\lambda_c = \frac{1/24}{0.90} -\frac{1}{24} = 1/216</annotation></semantics></math>.
-This can be calculated by using the helper function
-<code><a href="../reference/rate_from_prob.html">rate_from_prob()</a></code>:</p>
+.9, some algebra yields <span class="math inline">\(\lambda_c =
+\frac{1/24}{0.90} -\frac{1}{24} = 1/216\)</span>. This can be calculated
+by using the helper function <code><a href="../reference/rate_from_prob.html">rate_from_prob()</a></code>:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lambda_c</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rate_from_prob.html">rate_from_prob</a></span><span class="op">(</span></span>
 <span>  target_prob <span class="op">=</span> <span class="fl">0.90</span>, <span class="co"># target proportion of patients with events</span></span>
@@ -775,19 +762,13 @@ This can be calculated by using the helper function
 <pre><code><span><span class="co">## [1] "1/216"</span></span></code></pre>
 <p>When there are semi-competing risks, and the TTE endpoints have low
 correlation, the event rate for the secondary, non-fatal TTE endpoint
-can be approximated as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><msub><mi>λ</mi><mrow><mi>e</mi><mn>2</mn></mrow></msub><mrow><msub><mi>λ</mi><mrow><mi>e</mi><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>λ</mi><mrow><mi>c</mi><mn>1</mn></mrow></msub><mo>+</mo><msub><mi>λ</mi><mrow><mi>e</mi><mn>2</mn></mrow></msub><mo>+</mo><msub><mi>λ</mi><mrow><mi>c</mi><mn>2</mn></mrow></msub></mrow></mfrac><annotation encoding="application/x-tex">\frac{\lambda_{e2}}{\lambda_{e1}+\lambda_{c1}+\lambda_{e2}+\lambda_{c2}}</annotation></semantics></math>
-where the subscripts
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>,</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">1, 2</annotation></semantics></math>
-denote the first and secondary endpoints. The above formula is meant
-only as an approximation as the dependence (induced by the copula)
-between
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mn>1</mn></msub><annotation encoding="application/x-tex">X_1</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mn>2</mn></msub><annotation encoding="application/x-tex">X_2</annotation></semantics></math>
-is not accounted for. This approximation can also be handled by the
-helper function. In this case, the output is the rate of the censoring
-mechanism for the secondary endpoint.</p>
+can be approximated as <span class="math inline">\(\frac{\lambda_{e2}}{\lambda_{e1}+\lambda_{c1}+\lambda_{e2}+\lambda_{c2}}\)</span>
+where the subscripts <span class="math inline">\(1, 2\)</span> denote
+the first and secondary endpoints. The above formula is meant only as an
+approximation as the dependence (induced by the copula) between <span class="math inline">\(X_1\)</span> and <span class="math inline">\(X_2\)</span> is not accounted for. This
+approximation can also be handled by the helper function. In this case,
+the output is the rate of the censoring mechanism for the secondary
+endpoint.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rate_from_prob.html">rate_from_prob</a></span><span class="op">(</span></span>
 <span>  target_prob <span class="op">=</span> <span class="fl">0.20</span>, <span class="co"># hypothetical example</span></span>
@@ -805,20 +786,16 @@ simulation is working as intended, we recommend first simulating the
 data without censoring, confirming the correlation, then re-generating
 the data with censoring.</p>
 <p><strong>Fatal Events</strong></p>
-<p>Let
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mn>1</mn></msub><annotation encoding="application/x-tex">X_1</annotation></semantics></math>
-be a fatal event and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mn>2</mn></msub><annotation encoding="application/x-tex">X_2</annotation></semantics></math>
-be a non-fatal event, then we write
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>X</mi><mn>2</mn></msub><mo>=</mo><mo>min</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>T</mi><mn>1</mn></msub><mo>,</mo><msub><mi>C</mi><mn>1</mn></msub><mo>,</mo><msub><mi>T</mi><mn>2</mn></msub><mo>,</mo><msub><mi>C</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">X_2 = \min\{T_1, C_1, T_2,C_2\}</annotation></semantics></math>.
-That is, we cannot observe any event that occurs after a fatal event
-occurs <strong>or</strong> is censored.</p>
-<p>If a non-fatal event occurs before a fatal event
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>T</mi><mn>2</mn></msub><mo>&lt;</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>T</mi><mn>1</mn></msub><mo>,</mo><msub><mi>C</mi><mn>1</mn></msub><mo>,</mo><msub><mi>C</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">T_2 &lt; \{T_1, C_1,C_2\}</annotation></semantics></math>),
-a fatal event can still be subsequently observed (or censored). If a
-non-fatal event is censored before a fatal event
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mn>2</mn></msub><mo>&lt;</mo><mo stretchy="false" form="prefix">{</mo><msub><mi>T</mi><mn>1</mn></msub><mo>,</mo><msub><mi>C</mi><mn>1</mn></msub><mo>,</mo><msub><mi>T</mi><mn>2</mn></msub><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">C_2 &lt; \{T_1, C_1,T_2\}</annotation></semantics></math>),
-a fatal event can still be subsequently observed (or censored), unless
+<p>Let <span class="math inline">\(X_1\)</span> be a fatal event and
+<span class="math inline">\(X_2\)</span> be a non-fatal event, then we
+write <span class="math inline">\(X_2 = \min\{T_1, C_1,
+T_2,C_2\}\)</span>. That is, we cannot observe any event that occurs
+after a fatal event occurs <strong>or</strong> is censored.</p>
+<p>If a non-fatal event occurs before a fatal event (<span class="math inline">\(T_2 &lt; \{T_1, C_1,C_2\}\)</span>), a fatal event
+can still be subsequently observed (or censored). If a non-fatal event
+is censored before a fatal event (<span class="math inline">\(C_2 &lt;
+\{T_1, C_1,T_2\}\)</span>), a fatal event can still be subsequently
+observed (or censored), unless
 <code>non_fatal_censors_fatal = TRUE</code> is toggled in the main
 <code><a href="../reference/makeData.html">makeData()</a></code> function. This is a global option for all TTEs
 simulated.</p>
@@ -829,16 +806,14 @@ simulated.</p>
 non-fatal. The fatal event has an average time of 50 in the control
 group, and 60 in the treatment group. We want an observed event rate of
 .25 in the control group.</p>
-<p>To solve for the needed log hazard ratio, we solve
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mn>1</mn><mn>60</mn></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>50</mn></mfrac><mo>⋅</mo><mi>H</mi><mi>R</mi><mo>→</mo><mtext mathvariant="normal">HR</mtext><mo>=</mo><mn>.833</mn></mrow><annotation encoding="application/x-tex">\frac{1}{60} = \frac{1}{50} \cdot HR \to \text{HR} = .833</annotation></semantics></math>.
-To solve for the censoring rate, we solve
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mn>1</mn><mi>/</mi><mn>50</mn></mrow><mn>0.25</mn></mfrac><mo>−</mo><mfrac><mn>1</mn><mn>50</mn></mfrac><mo>=</mo><mn>1</mn><mi>/</mi><mn>16.667</mn></mrow><annotation encoding="application/x-tex">\frac{1/50}{0.25} - \frac{1}{50} = 1/ 16.667</annotation></semantics></math>.</p>
+<p>To solve for the needed log hazard ratio, we solve <span class="math inline">\(\frac{1}{60} = \frac{1}{50} \cdot HR \to \text{HR}
+= .833\)</span>. To solve for the censoring rate, we solve <span class="math inline">\(\frac{1/50}{0.25} - \frac{1}{50} = 1/
+16.667\)</span>.</p>
 <p>For the second endpoint, we want a mean time of 35 for control group
 and 45 for treatment group, with an observed event rate of .45 for the
-control group. To solve for the needed log hazard ratio, we solve
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mn>1</mn><mn>45</mn></mfrac><mo>=</mo><mfrac><mn>1</mn><mn>35</mn></mfrac><mo>⋅</mo><mi>H</mi><mi>R</mi><mo>→</mo><mtext mathvariant="normal">HR</mtext><mo>=</mo><mn>0.778</mn></mrow><annotation encoding="application/x-tex">\frac{1}{45} = \frac{1}{35} \cdot HR \to \text{HR} = 0.778</annotation></semantics></math>.
-To solve for the censoring rate, we solve
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mn>1</mn><mi>/</mi><mn>35</mn></mrow><mn>0.45</mn></mfrac><mo>−</mo><mfrac><mn>1</mn><mn>35</mn></mfrac><mo>=</mo><mn>1</mn><mi>/</mi><mn>28.64</mn></mrow><annotation encoding="application/x-tex">\frac{1/35}{0.45} - \frac{1}{35} = 1/ 28.64</annotation></semantics></math>.</p>
+control group. To solve for the needed log hazard ratio, we solve <span class="math inline">\(\frac{1}{45} = \frac{1}{35} \cdot HR \to \text{HR}
+= 0.778\)</span>. To solve for the censoring rate, we solve <span class="math inline">\(\frac{1/35}{0.45} - \frac{1}{35} = 1/
+28.64\)</span>.</p>
 <p>We assume a correlation of .2 between the endpoints.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tte_fatal</span> <span class="op">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -936,26 +911,21 @@ exponential maximum likelihood estimate (MLE)</strong> of the event
 rate, computed from the observed times and event indicators after
 censoring/fatal-event logic has been applied. For a given arm, this
 is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>λ</mi><mo accent="true">̂</mo></mover><mtext mathvariant="normal">exp</mtext></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>δ</mi><mi>i</mi></msub></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>X</mi><mi>i</mi></msub></mrow></mfrac><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">\[
 \widehat{\lambda}_{\text{exp}} = \frac{\sum_i \delta_i}{\sum_i X_i},
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>X</mi><mi>i</mi></msub><annotation encoding="application/x-tex">X_i</annotation></semantics></math>
-is the observed follow-up time for subject
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
-(possibly censored), and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>δ</mi><mi>i</mi></msub><mo>∈</mo><mo stretchy="false" form="prefix">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\delta_i\in\{0,1\}</annotation></semantics></math>
-is the event indicator (1 = event observed, 0 = censored).</p>
+\]</span></p>
+<p>where <span class="math inline">\(X_i\)</span> is the observed
+follow-up time for subject <span class="math inline">\(i\)</span>
+(possibly censored), and <span class="math inline">\(\delta_i\in\{0,1\}\)</span> is the event indicator
+(1 = event observed, 0 = censored).</p>
 <p>This is the standard MLE for an exponential survival model with right
 censoring. In the summary output:</p>
 <ul>
 <li>
 <code>obs_event_rate</code> is the observed proportion of subjects
-with an event (i.e.,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>δ</mi><mo accent="true">‾</mo></mover><annotation encoding="application/x-tex">\bar\delta</annotation></semantics></math>),</li>
+with an event (i.e., <span class="math inline">\(\bar\delta\)</span>),</li>
 <li>
-<code>exp_rate</code> is the exponential rate estimate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>∑</mo><msub><mi>δ</mi><mi>i</mi></msub><mi>/</mi><mo>∑</mo><msub><mi>X</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\sum \delta_i / \sum X_i</annotation></semantics></math>,</li>
+<code>exp_rate</code> is the exponential rate estimate <span class="math inline">\(\sum \delta_i / \sum X_i\)</span>,</li>
 <li>
 <code>est_trt_logHR</code> is the treatment log-hazard ratio
 estimated from a Cox model fit.</li>
@@ -971,15 +941,11 @@ estimated <code>exp_rate</code> may differ from the user-specified
 <code>baseline_rate</code> (and implied treatment-group rates),
 especially in small samples or when censoring is heavy.</p>
 <p>In this example, the arm-specific exp_rate values are close to the
-data-generating exponential event rates (approximately
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>50</mn><mo>,</mo><mn>1</mn><mi>/</mi><mn>60</mn><mo>,</mo><mn>1</mn><mi>/</mi><mn>35</mn></mrow><annotation encoding="application/x-tex">1 / 50,1 / 60,1 / 35</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mn>45</mn></mrow><annotation encoding="application/x-tex">1 / 45</annotation></semantics></math>
-), which is expected here because the sample size is large and censoring
-is independent; even though censoring changes the observed event
-proportion, the exponential MLE
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>∑</mo><msub><mi>δ</mi><mi>i</mi></msub><mi>/</mi><mo>∑</mo><msub><mi>X</mi><mi>i</mi></msub></mrow><annotation encoding="application/x-tex">\sum \delta_i / \sum X_i</annotation></semantics></math>
-remains a consistent estimator of the event hazard under the exponential
+data-generating exponential event rates (approximately <span class="math inline">\(1 / 50,1 / 60,1 / 35\)</span>, and <span class="math inline">\(1 / 45\)</span> ), which is expected here because
+the sample size is large and censoring is independent; even though
+censoring changes the observed event proportion, the exponential MLE
+<span class="math inline">\(\sum \delta_i / \sum X_i\)</span> remains a
+consistent estimator of the event hazard under the exponential
 model.</p>
 </div>
 </div>
@@ -989,17 +955,13 @@ model.</p>
 <div class="section level3">
 <h3 id="administrative-censoring">Administrative Censoring<a class="anchor" aria-label="anchor" href="#administrative-censoring"></a>
 </h3>
-<p>Administrative censoring (which we denote as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math>)
-is controlled via <code>enrollment_details</code> argument, which is a
-list of settings. Within <code>enrollment_details</code> administrative
-censoring is toggled using <code>administrative_censoring = NULL</code>.
-If it is set to a positive value, then any TTE event that occurs (or is
-censored) after
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math>,
-is set to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math>
-as that is the limit of follow-up.</p>
+<p>Administrative censoring (which we denote as <span class="math inline">\(\mathcal{A}\)</span>) is controlled via
+<code>enrollment_details</code> argument, which is a list of settings.
+Within <code>enrollment_details</code> administrative censoring is
+toggled using <code>administrative_censoring = NULL</code>. If it is set
+to a positive value, then any TTE event that occurs (or is censored)
+after <span class="math inline">\(\mathcal{A}\)</span>, is set to <span class="math inline">\(\mathcal{A}\)</span> as that is the limit of
+follow-up.</p>
 <p>To illustrate, we can re-run the example above, but this time setting
 a 24 time-unit limit:</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
@@ -1137,17 +1099,12 @@ censored at time 24:</p>
 <p>Note that an <code>enrollTime</code> column is automatically
 generated when using this feature.</p>
 <p>If there is no non-administrative censoring (e.g. no random
-drop-out), we can solve for expected event rates by evaluating
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mi>𝒜</mi></msubsup><mi>λ</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mi>x</mi></mrow></msup><mi>d</mi><mi>x</mi><mo>=</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mi>x</mi></mrow></msup></mrow><annotation encoding="application/x-tex">\int_{0}^{\mathcal{A}} \lambda e^{-\lambda x} dx = 1 - e^{-\lambda x}</annotation></semantics></math>.
-To solve for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>,
-we calculate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mfrac><mrow><mo>ln</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>r</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><mo>−</mo><mi>𝒜</mi></mrow></mfrac><annotation encoding="application/x-tex">\frac{\ln(1-r)}{-\mathcal{A}}</annotation></semantics></math>
-where r is the desired event rate. For example, if we want to simulate a
-4-year trial with a 20% fatal event rate, we need to set the baseline
-hazard to <code>log(1-.2)/(-4) = .0558.</code> Once again, we can use
-the helper function <code><a href="../reference/rate_from_prob.html">rate_from_prob()</a></code> to solve this
-math:</p>
+drop-out), we can solve for expected event rates by evaluating <span class="math inline">\(\int_{0}^{\mathcal{A}} \lambda e^{-\lambda x} dx =
+1 - e^{-\lambda x}\)</span>. To solve for <span class="math inline">\(\lambda\)</span>, we calculate <span class="math inline">\(\frac{\ln(1-r)}{-\mathcal{A}}\)</span> where r is
+the desired event rate. For example, if we want to simulate a 4-year
+trial with a 20% fatal event rate, we need to set the baseline hazard to
+<code>log(1-.2)/(-4) = .0558.</code> Once again, we can use the helper
+function <code><a href="../reference/rate_from_prob.html">rate_from_prob()</a></code> to solve this math:</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rate_from_prob.html">rate_from_prob</a></span><span class="op">(</span></span>
 <span>  target_prob <span class="op">=</span> <span class="fl">0.20</span>,</span>
@@ -1187,11 +1144,10 @@ via the following arguments:</p>
 <code>enrollment_distribution = c("none","uniform","exponential","piecewise")</code>:
 This specifies the enrollment-time distribution (default is
 <code>"none"</code>). If <code>"uniform"</code>, enrollment time is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝐔</mi><mrow><mo stretchy="true" form="prefix">[</mo><mn>0</mn><mo>,</mo><mi>𝒜</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">\mathbf{U}[0,\mathcal{A}]</annotation></semantics></math>,
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒜</mi><annotation encoding="application/x-tex">\mathcal{A}</annotation></semantics></math>
-is the time of administrative censoring. If <code>"exponential"</code>,
-enrollment time is based on an exponential distribution (see
+<span class="math inline">\(\mathbf{U}[0,\mathcal{A}]\)</span>, where
+<span class="math inline">\(\mathcal{A}\)</span> is the time of
+administrative censoring. If <code>"exponential"</code>, enrollment time
+is based on an exponential distribution (see
 <code>enrollment_exponential_rate</code>). If <code>"piecewise"</code>,
 enrollment follows a piecewise exponential distribution. This option
 requires specifying <code>piecewise_enrollment_cutpoints</code> and
@@ -1208,11 +1164,8 @@ defining the bins for the piecewise enrollment pattern.</li>
 exponential distribution within each time bin.</li>
 </ul>
 <p>If a user specifies stochastic enrollment and administrative
-censoring, then maximum potential time-on-study is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒜</mi><mo>−</mo><msub><mi>T</mi><mi>E</mi></msub></mrow><annotation encoding="application/x-tex">\mathcal{A} - T_E</annotation></semantics></math>,
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>T</mi><mi>E</mi></msub><annotation encoding="application/x-tex">T_E</annotation></semantics></math>
-is time of enrollment. If we re-run the example from above,</p>
+censoring, then maximum potential time-on-study is <span class="math inline">\(\mathcal{A} - T_E\)</span>, where <span class="math inline">\(T_E\)</span> is time of enrollment. If we re-run
+the example from above,</p>
 <div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span> <span class="va">tte_admin_cens_exp_enroll</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
 <span>  correlation_matrix    <span class="op">=</span> <span class="va">small_cor</span>,</span>
@@ -1330,13 +1283,9 @@ materially change observed follow-up time and observed event proportions
 when administrative censoring is present.</p>
 <p><strong>Piecewise Enrollment</strong></p>
 <p>In some trials, we may expect varied enrollment throughout the study
-period (e.g. heavy
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
-light
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
-medium
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>→</mo><annotation encoding="application/x-tex">\rightarrow</annotation></semantics></math>
-heavy) due to seasonal trends or logistic constraints. For example,</p>
+period (e.g. heavy <span class="math inline">\(\rightarrow\)</span>
+light <span class="math inline">\(\rightarrow\)</span> medium <span class="math inline">\(\rightarrow\)</span> heavy) due to seasonal trends
+or logistic constraints. For example,</p>
 <div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pw_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
 <span>  correlation_matrix    <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -1384,9 +1333,8 @@ by reaching the end of all intervals), it ensures the subject’s
 enrollment time does not exceed the final defined cutpoint.</li>
 </ul>
 <p><strong>Piecewise Enrollment with Proportions</strong></p>
-<p>Assume a 24-month trial with a target enrollment of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo>=</mo><mn>1</mn><mo>,</mo><mn>100</mn></mrow><annotation encoding="application/x-tex">N = 1{,}100</annotation></semantics></math>
-patients. Suppose we want the enrollment pattern to be:</p>
+<p>Assume a 24-month trial with a target enrollment of <span class="math inline">\(N = 1{,}100\)</span> patients. Suppose we want the
+enrollment pattern to be:</p>
 <ul>
 <li>10% enrolled during months 0–8,</li>
 <li>35% enrolled during months 8–16, and</li>
@@ -1396,57 +1344,36 @@ patients. Suppose we want the enrollment pattern to be:</p>
 for the exponential rates in each interval using basic probability.</p>
 <p>First, set the cutpoints to define the three enrollment windows
 <code>piecewise_enrollment_cutpoints = c(0, 8, 16, 24)</code>. This
-creates three time bins:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mn>0</mn><mo>,</mo><mn>8</mn><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mo stretchy="false" form="prefix">[</mo><mn>8</mn><mo>,</mo><mn>16</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">[0,8),[8,16)</annotation></semantics></math>,
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">[</mo><mn>16</mn><mo>,</mo><mn>24</mn><mo stretchy="true" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[16,24]</annotation></semantics></math>.
-Next, solve for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>1</mn></msub><annotation encoding="application/x-tex">\lambda_1</annotation></semantics></math>
-so that
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>10</mn><mi>%</mi></mrow><annotation encoding="application/x-tex">10 \%</annotation></semantics></math>
-of patients enroll before month 8. For an exponential waiting time in
-the first interval,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>T</mi><mo>&lt;</mo><mn>8</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>1</mn></msub></mrow></msup><mo>=</mo><mn>0.10</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+creates three time bins: <span class="math inline">\([0,8),[8,16)\)</span>, and <span class="math inline">\([16,24]\)</span>. Next, solve for <span class="math inline">\(\lambda_1\)</span> so that <span class="math inline">\(10 \%\)</span> of patients enroll before month 8.
+For an exponential waiting time in the first interval,</p>
+<p><span class="math display">\[
 P(T&lt;8)=1-e^{-8 \lambda_1}=0.10 .
-</annotation></semantics></math></p>
+\]</span></p>
 <p>Rearranging,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>1</mn></msub></mrow></msup></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0.10</mn></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>1</mn></msub></mrow></msup></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0.90</mn></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>1</mn></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.90</mn><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>λ</mi><mn>1</mn></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mo>−</mo><mfrac><mrow><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>0.90</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mn>8</mn></mfrac><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
+<p><span class="math display">\[\begin{align*}
 1 - e^{-8\lambda_1} &amp;= 0.10 \\
 e^{-8\lambda_1} &amp;= 0.90 \\
 -8\lambda_1 &amp;= \log(0.90) \\
 \lambda_1 &amp;= -\frac{\log(0.90)}{8}.
-\end{align*}</annotation></semantics></math></p>
-<p>Second, solve for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>2</mn></msub><annotation encoding="application/x-tex">\lambda_2</annotation></semantics></math>
-so that
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>35</mn><mi>%</mi></mrow><annotation encoding="application/x-tex">35 \%</annotation></semantics></math>
-of patients enroll in the second bin (months
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8</mn><mo>−</mo><mn>16</mn></mrow><annotation encoding="application/x-tex">8-16</annotation></semantics></math>
-). This probability is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>8</mn><mo>≤</mo><mi>T</mi><mo>&lt;</mo><mn>16</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>T</mi><mo>≥</mo><mn>8</mn><mo stretchy="true" form="postfix">)</mo></mrow><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>T</mi><mo>−</mo><mn>8</mn><mo>&lt;</mo><mn>8</mn><mo>∣</mo><mi>T</mi><mo>≥</mo><mn>8</mn><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>1</mn></msub></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>2</mn></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><mn>0.35</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
-P(8 \leq T&lt;16)=P(T \geq 8) P(T-8&lt;8 \mid T \geq 8)=e^{-8 \lambda_1}\left(1-e^{-8 \lambda_2}\right)=0.35 .
-</annotation></semantics></math></p>
-<p>Using
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>1</mn></msub></mrow></msup><mo>=</mo><mn>0.90</mn></mrow><annotation encoding="application/x-tex">e^{-8 \lambda_1}=0.90</annotation></semantics></math>,
-we get
-<math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="right" style="text-align: right"><mn>0.90</mn><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>2</mn></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>0.35</mn></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>2</mn></msub></mrow></msup></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mfrac><mn>0.35</mn><mn>0.90</mn></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msup><mi>e</mi><mrow><mo>−</mo><mn>8</mn><msub><mi>λ</mi><mn>2</mn></msub></mrow></msup></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mn>1</mn><mo>−</mo><mfrac><mn>0.35</mn><mn>0.90</mn></mfrac></mtd></mtr><mtr><mtd columnalign="right" style="text-align: right"><msub><mi>λ</mi><mn>2</mn></msub></mtd><mtd columnalign="left" style="text-align: left"><mo>=</mo><mo>−</mo><mfrac><mn>1</mn><mn>8</mn></mfrac><mo>log</mo><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><mfrac><mn>0.35</mn><mn>0.90</mn></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{align*}
+\end{align*}\]</span></p>
+<p>Second, solve for <span class="math inline">\(\lambda_2\)</span> so
+that <span class="math inline">\(35 \%\)</span> of patients enroll in
+the second bin (months <span class="math inline">\(8-16\)</span> ). This
+probability is</p>
+<p><span class="math display">\[
+P(8 \leq T&lt;16)=P(T \geq 8) P(T-8&lt;8 \mid T \geq 8)=e^{-8
+\lambda_1}\left(1-e^{-8 \lambda_2}\right)=0.35 .
+\]</span></p>
+<p>Using <span class="math inline">\(e^{-8 \lambda_1}=0.90\)</span>, we
+get <span class="math display">\[\begin{align*}
 0.90\left(1 - e^{-8\lambda_2}\right) &amp;= 0.35 \\
 1 - e^{-8\lambda_2} &amp;= \frac{0.35}{0.90} \\
 e^{-8\lambda_2} &amp;= 1 - \frac{0.35}{0.90} \\
 \lambda_2 &amp;= -\frac{1}{8}\log\left(1 - \frac{0.35}{0.90}\right).
-\end{align*}</annotation></semantics></math> The third rate,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝛌</mi><mn>3</mn></msub><annotation encoding="application/x-tex">\boldsymbol{\lambda}_3</annotation></semantics></math>,
-does not affect the overall proportion enrolled in months 16-24 (that
-remaining
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>55</mn><mi>%</mi></mrow><annotation encoding="application/x-tex">55 \%</annotation></semantics></math>
-is already determined by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>1</mn></msub><annotation encoding="application/x-tex">\lambda_1</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>2</mn></msub><annotation encoding="application/x-tex">\lambda_2</annotation></semantics></math>
-). However,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>λ</mi><mn>3</mn></msub><annotation encoding="application/x-tex">\lambda_3</annotation></semantics></math>
-does affect the shape of the enrollment-time distribution within the
-final bin, here we set this value to 0.25.</p>
+\end{align*}\]</span> The third rate, <span class="math inline">\(\boldsymbol{\lambda}_3\)</span>, does not affect
+the overall proportion enrolled in months 16-24 (that remaining <span class="math inline">\(55 \%\)</span> is already determined by <span class="math inline">\(\lambda_1\)</span> and <span class="math inline">\(\lambda_2\)</span> ). However, <span class="math inline">\(\lambda_3\)</span> does affect the shape of the
+enrollment-time distribution within the final bin, here we set this
+value to 0.25.</p>
 <p>Putting this together:</p>
 <div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># define rates from calculations above</span></span>
