@@ -1,4 +1,12 @@
 url: https://boehringer-ingelheim.github.io/endpoints/
 template:
   bootstrap: 5
+  math-rendering: mathjax
 
+articles:
+- title: Getting Started
+  contents:
+  - user_guide
+- title: Advanced
+  contents:
+  - longitudinal_data
