@@ -8,19 +8,23 @@ corr_make(num_endpoints, values = NULL)
 }
 \arguments{
 \item{num_endpoints}{A single positive integer giving the number of
-endpoints (i.e., the dimension of the correlation matrix to construct).}
+endpoints, that is, the dimension of the correlation matrix to
+construct.}
 
-\item{values}{Optional object coercible to a numeric matrix with 3 columns.
-Each row must have the form \code{c(i, j, rho)}, where: \describe{
-\item{list("i")}{First endpoint index.} \item{list("j")}{Second endpoint
-index.} \item{list("rho")}{Desired correlation between endpoints \code{i}
-and \code{j}.} }
+\item{values}{Optional object coercible to a numeric matrix with
+3 columns. Each row must have the form \code{c(i, j, rho)}, where:
+\describe{
+\item{i}{First endpoint index.}
+\item{j}{Second endpoint index.}
+\item{rho}{Desired correlation between endpoints \code{i} and \code{j}.}
+}
 
-\code{values} may be a matrix, data frame, or vector coercible to 3 columns.
+\code{values} may be a matrix, data frame, or vector coercible to
+3 columns.
 
-The endpoint indices in values correspond to the order in which endpoints
-are supplied in endpoint_details; for example, index 1 refers to the first
-endpoint in the list, index 2 to the second, and so on.
+The endpoint indices in \code{values} correspond to the order in which
+endpoints are supplied in \code{endpoint_details}; for example, index 1
+refers to the first endpoint in the list, index 2 to the second, and so on.
 
 If \code{NULL}, the identity matrix of size \code{num_endpoints} is
 returned. Unspecified off-diagonal entries default to 0.}
@@ -30,28 +34,32 @@ A symmetric numeric correlation matrix of dimension
 \code{num_endpoints x num_endpoints}, with ones on the diagonal.
 }
 \description{
-\code{corr_make()} constructs a correlation matrix from a set of \eqn{(i, j,
-\rho)} triplets, where \eqn{i} and \eqn{j} are endpoint indices and
-\eqn{\rho} is their desired pairwise correlation.
+\code{corr_make()} constructs a correlation matrix from a set of
+\eqn{(i, j, \rho)} triplets, where \eqn{i} and \eqn{j} are endpoint
+indices and \eqn{\rho} is their desired pairwise correlation.
 }
 \details{
-This is a convenience function for specifying sparse correlation structures
-when using \code{\link{makeData}}. Any unspecified off-diagonal entries are
-left at 0, and diagonal entries are set to 1.
+This is a convenience function for specifying sparse correlation
+structures when using \code{\link{makeData}}. Any unspecified
+off-diagonal entries are left at 0, and diagonal entries are set to 1.
 }
 \section{How entries are interpreted}{
 
-
 For each row in \code{values}, the indices \code{i} and \code{j} are mapped
-to the upper triangle of the matrix using: \deqn{ i^\star = \min(i, j),
-\qquad j^\star = \max(i, j), } so the order of the indices does not matter.
-The specified correlation is then assigned symmetrically: \deqn{ R[i^\star,
-j^\star] = R[j^\star, i^\star] = \rho. } Finally, the diagonal is reset to
-exactly 1, so any user-supplied diagonal entries are overwritten.
+to the upper triangle of the matrix using:
+\deqn{
+i^\star = \min(i, j), \qquad j^\star = \max(i, j),
+}
+so the order of the indices does not matter. The specified correlation is
+then assigned symmetrically:
+\deqn{
+R[i^\star, j^\star] = R[j^\star, i^\star] = \rho.
+}
+Finally, the diagonal is reset to exactly 1, so any user-supplied diagonal
+entries are overwritten.
 }
 
 \section{Use with \code{makeData()}}{
-
 
 The resulting matrix can be passed directly to \code{\link{makeData}} as
 \code{correlation_matrix}.
@@ -66,7 +74,6 @@ after marginal transformation.
 }
 
 \examples{
-
 ## Identity correlation matrix
 corr_make(num_endpoints = 3)
 

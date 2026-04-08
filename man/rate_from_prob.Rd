@@ -18,20 +18,30 @@ rate_from_prob(
 \item{target_prob}{A numeric scalar in \code{(0, 1)} giving the target
 observed event probability.
 
-The meaning depends on \code{mode}: \itemize{ \item for \code{"simple"}, the
-desired probability that the event is observed before independent random
-censoring; \item for \code{"admin"}, the desired probability that the event
-occurs before the administrative follow-up limit; \item for
-\code{"semi-competing"}, the desired approximate probability that the
-secondary non-fatal event is observed first. }}
+The meaning depends on \code{mode}:
+\itemize{
+\item for \code{"simple"}, the desired probability that the event is
+observed before independent random censoring;
+\item for \code{"admin"}, the desired probability that the event occurs
+before the administrative follow-up limit;
+\item for \code{"semi-competing"}, the desired approximate probability
+that the secondary non-fatal event is observed first.
+}}
 
 \item{mode}{Character string indicating which probability-to-rate
-relationship to use. Must be one of: \describe{
-\item{list("\"simple\"")}{One time-to-event endpoint with independent
-exponential censoring.} \item{list("\"admin\"")}{One time-to-event endpoint
-with administrative censoring only.}
-\item{list("\"semi-competing\"")}{Approximate semi-competing risks
-calculation for a secondary non-fatal endpoint.} }}
+relationship to use. Must be one of:
+\describe{
+\item{simple}{
+One time-to-event endpoint with independent exponential censoring.
+}
+\item{admin}{
+One time-to-event endpoint with administrative censoring only.
+}
+\item{semi-competing}{
+Approximate semi-competing risks calculation for a secondary
+non-fatal endpoint.
+}
+}}
 
 \item{event_rate}{Numeric scalar giving the exponential event rate
 \eqn{\lambda_e}.
@@ -61,9 +71,13 @@ Used only when \code{mode = "semi-competing"}.}
 \value{
 A numeric scalar giving the solved rate parameter.
 
-Depending on \code{mode}, this is: \itemize{ \item the censoring rate
-(\code{"simple"}), \item the event rate (\code{"admin"}), or \item the
-approximate non-fatal censoring rate (\code{"semi-competing"}). }
+Depending on \code{mode}, this is:
+\itemize{
+\item the censoring rate (\code{"simple"}),
+\item the event rate (\code{"admin"}), or
+\item the approximate non-fatal censoring rate
+(\code{"semi-competing"}).
+}
 }
 \description{
 \code{rate_from_prob()} is a helper for converting a user-specified observed
@@ -72,75 +86,88 @@ time-to-event design settings.
 }
 \details{
 Depending on \code{mode}, the function solves for:
-
-\itemize{ \item an independent exponential censoring rate (\code{"simple"}),
+\itemize{
+\item an independent exponential censoring rate (\code{"simple"}),
 \item an exponential event rate under pure administrative censoring
-(\code{"admin"}), or \item an approximate censoring rate for a secondary
-non-fatal endpoint in a semi-competing risks setting
-(\code{"semi-competing"}). }
+(\code{"admin"}), or
+\item an approximate censoring rate for a secondary non-fatal endpoint in
+a semi-competing risks setting (\code{"semi-competing"}).
+}
 
 This is intended as a design-stage helper for choosing rate parameters
 before calling \code{\link{makeData}}. Not all cases are covered. In more
-complicated settings, we recommend iteration may be necessary.
+complicated settings, iteration may be necessary.
 }
 \section{Mode = \code{"simple"}}{
-
 
 Assume a single event time \eqn{T \sim \mathrm{Exp}(\lambda_e)} and an
 independent censoring time \eqn{C \sim \mathrm{Exp}(\lambda_c)}.
 
 The probability of observing the event is
 
-\deqn{ P(T < C) = \frac{\lambda_e}{\lambda_e + \lambda_c}. }
+\deqn{
+P(T < C) = \frac{\lambda_e}{\lambda_e + \lambda_c}.
+}
 
 Given \eqn{\lambda_e} and a target probability \eqn{p}, the function solves
 for the censoring rate \eqn{\lambda_c}:
 
-\deqn{ \lambda_c = \frac{\lambda_e}{p} - \lambda_e. }
+\deqn{
+\lambda_c = \frac{\lambda_e}{p} - \lambda_e.
+}
 
 In this mode, the returned value is the required independent censoring rate.
 }
 
 \section{Mode = \code{"admin"}}{
 
-
 Assume a single event time \eqn{T \sim \mathrm{Exp}(\lambda_e)} with fixed
 administrative censoring at time \eqn{A > 0}.
 
 The probability of observing the event by time \eqn{A} is
 
-\deqn{ P(T \le A) = 1 - e^{-\lambda_e A}. }
+\deqn{
+P(T \le A) = 1 - e^{-\lambda_e A}.
+}
 
 Given \eqn{A} and a target probability \eqn{p}, the function solves for the
 event rate \eqn{\lambda_e}:
 
-\deqn{ \lambda_e = -\frac{\log(1 - p)}{A}. }
+\deqn{
+\lambda_e = -\frac{\log(1 - p)}{A}.
+}
 
 In this mode, the returned value is the required event rate.
 }
 
 \section{Mode = \code{"semi-competing"}}{
 
-
-This mode uses a low-correlation / independent-clock approximation for a
+This mode uses a low-correlation or independent-clock approximation for a
 secondary non-fatal event in a semi-competing risks setting.
 
-Let: \itemize{ \item \eqn{\lambda_{e1}} be the fatal event rate, \item
-\eqn{\lambda_{c1}} be the censoring rate for the fatal endpoint, \item
-\eqn{\lambda_{e2}} be the non-fatal event rate, \item \eqn{\lambda_{c2}} be
-the censoring rate for the non-fatal endpoint. }
+Let:
+\itemize{
+\item \eqn{\lambda_{e1}} be the fatal event rate,
+\item \eqn{\lambda_{c1}} be the censoring rate for the fatal endpoint,
+\item \eqn{\lambda_{e2}} be the non-fatal event rate, and
+\item \eqn{\lambda_{c2}} be the censoring rate for the non-fatal endpoint.
+}
 
 Under the approximation used in the package vignette, the probability that
 the secondary non-fatal event is observed first is
 
-\deqn{ p \approx \frac{\lambda_{e2}} {\lambda_{e1} + \lambda_{c1} +
-\lambda_{e2} + \lambda_{c2}}. }
+\deqn{
+p \approx \frac{\lambda_{e2}}
+{\lambda_{e1} + \lambda_{c1} + \lambda_{e2} + \lambda_{c2}}.
+}
 
 Given \eqn{p}, \eqn{\lambda_{e1}}, \eqn{\lambda_{c1}}, and
 \eqn{\lambda_{e2}}, the function solves for \eqn{\lambda_{c2}}:
 
-\deqn{ \lambda_{c2} = \frac{\lambda_{e2}}{p} - \left(\lambda_{e1} +
-\lambda_{c1} + \lambda_{e2}\right). }
+\deqn{
+\lambda_{c2} = \frac{\lambda_{e2}}{p} -
+\left(\lambda_{e1} + \lambda_{c1} + \lambda_{e2}\right).
+}
 
 In this mode, the returned value is the approximate non-fatal censoring
 rate.
@@ -151,7 +178,6 @@ and fatal-event logic are fully applied.
 }
 
 \examples{
-
 # ------------------------------------------------------------
 # 1) Independent exponential censoring only
 # Solve for censoring rate given event rate and target event probability
@@ -163,7 +189,6 @@ rate_from_prob(
 )
 # approximately 1/216
 
-
 # ------------------------------------------------------------
 # 2) Administrative censoring only
 # Solve for event rate given follow-up time and target event probability
@@ -174,7 +199,6 @@ rate_from_prob(
   admin_time = 4
 )
 # approximately 0.0558
-
 
 # ------------------------------------------------------------
 # 3) Semi-competing risks approximation
