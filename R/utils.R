@@ -14,127 +14,164 @@ logit <- function(p) {
 inv_logit <- function(x) plogis(x)
 
 #' Solve exponential rate parameters from target observed event probabilities
-#' 
+#'
 #' \code{rate_from_prob()} is a helper for converting a user-specified observed
 #' event probability into an exponential rate parameter under several common
 #' time-to-event design settings.
-#' 
+#'
 #' Depending on \code{mode}, the function solves for:
-#' 
-#' \itemize{ \item an independent exponential censoring rate (\code{"simple"}),
-#' \item an exponential event rate under pure administrative censoring
-#' (\code{"admin"}), or \item an approximate censoring rate for a secondary
-#' non-fatal endpoint in a semi-competing risks setting
-#' (\code{"semi-competing"}). }
-#' 
+#' \itemize{
+#'   \item an independent exponential censoring rate (\code{"simple"}),
+#'   \item an exponential event rate under pure administrative censoring
+#'   (\code{"admin"}), or
+#'   \item an approximate censoring rate for a secondary non-fatal endpoint in
+#'   a semi-competing risks setting (\code{"semi-competing"}).
+#' }
+#'
 #' This is intended as a design-stage helper for choosing rate parameters
 #' before calling \code{\link{makeData}}. Not all cases are covered. In more
-#' complicated settings, we recommend iteration may be necessary.
-#' 
-#' 
+#' complicated settings, iteration may be necessary.
+#'
 #' @param target_prob A numeric scalar in \code{(0, 1)} giving the target
-#' observed event probability.
-#' 
-#' The meaning depends on \code{mode}: \itemize{ \item for \code{"simple"}, the
-#' desired probability that the event is observed before independent random
-#' censoring; \item for \code{"admin"}, the desired probability that the event
-#' occurs before the administrative follow-up limit; \item for
-#' \code{"semi-competing"}, the desired approximate probability that the
-#' secondary non-fatal event is observed first. }
+#'   observed event probability.
+#'
+#'   The meaning depends on \code{mode}:
+#'   \itemize{
+#'     \item for \code{"simple"}, the desired probability that the event is
+#'     observed before independent random censoring;
+#'     \item for \code{"admin"}, the desired probability that the event occurs
+#'     before the administrative follow-up limit;
+#'     \item for \code{"semi-competing"}, the desired approximate probability
+#'     that the secondary non-fatal event is observed first.
+#'   }
+#'
 #' @param mode Character string indicating which probability-to-rate
-#' relationship to use. Must be one of: \describe{
-#' \item{list("\"simple\"")}{One time-to-event endpoint with independent
-#' exponential censoring.} \item{list("\"admin\"")}{One time-to-event endpoint
-#' with administrative censoring only.}
-#' \item{list("\"semi-competing\"")}{Approximate semi-competing risks
-#' calculation for a secondary non-fatal endpoint.} }
+#'   relationship to use. Must be one of:
+#'   \describe{
+#'     \item{simple}{
+#'       One time-to-event endpoint with independent exponential censoring.
+#'     }
+#'     \item{admin}{
+#'       One time-to-event endpoint with administrative censoring only.
+#'     }
+#'     \item{semi-competing}{
+#'       Approximate semi-competing risks calculation for a secondary
+#'       non-fatal endpoint.
+#'     }
+#'   }
+#'
 #' @param event_rate Numeric scalar giving the exponential event rate
-#' \eqn{\lambda_e}.
-#' 
-#' Used only when \code{mode = "simple"}.
+#'   \eqn{\lambda_e}.
+#'
+#'   Used only when \code{mode = "simple"}.
+#'
 #' @param admin_time Numeric scalar giving the administrative censoring time
-#' horizon \eqn{A}.
-#' 
-#' Used only when \code{mode = "admin"}.
+#'   horizon \eqn{A}.
+#'
+#'   Used only when \code{mode = "admin"}.
+#'
 #' @param fatal_event_rate Numeric scalar giving the event rate for the primary
-#' fatal event, denoted \eqn{\lambda_{e1}}.
-#' 
-#' Used only when \code{mode = "semi-competing"}.
+#'   fatal event, denoted \eqn{\lambda_{e1}}.
+#'
+#'   Used only when \code{mode = "semi-competing"}.
+#'
 #' @param fatal_censor_rate Numeric scalar giving the independent censoring
-#' rate for the fatal endpoint, denoted \eqn{\lambda_{c1}}.
-#' 
-#' Used only when \code{mode = "semi-competing"}.
+#'   rate for the fatal endpoint, denoted \eqn{\lambda_{c1}}.
+#'
+#'   Used only when \code{mode = "semi-competing"}.
+#'
 #' @param nonfatal_event_rate Numeric scalar giving the event rate for the
-#' secondary non-fatal endpoint, denoted \eqn{\lambda_{e2}}.
-#' 
-#' Used only when \code{mode = "semi-competing"}.
+#'   secondary non-fatal endpoint, denoted \eqn{\lambda_{e2}}.
+#'
+#'   Used only when \code{mode = "semi-competing"}.
+#'
 #' @return A numeric scalar giving the solved rate parameter.
-#' 
-#' Depending on \code{mode}, this is: \itemize{ \item the censoring rate
-#' (\code{"simple"}), \item the event rate (\code{"admin"}), or \item the
-#' approximate non-fatal censoring rate (\code{"semi-competing"}). }
+#'
+#'   Depending on \code{mode}, this is:
+#'   \itemize{
+#'     \item the censoring rate (\code{"simple"}),
+#'     \item the event rate (\code{"admin"}), or
+#'     \item the approximate non-fatal censoring rate
+#'     (\code{"semi-competing"}).
+#'   }
+#'
 #' @section Mode = \code{"simple"}:
-#' 
 #' Assume a single event time \eqn{T \sim \mathrm{Exp}(\lambda_e)} and an
 #' independent censoring time \eqn{C \sim \mathrm{Exp}(\lambda_c)}.
-#' 
+#'
 #' The probability of observing the event is
-#' 
-#' \deqn{ P(T < C) = \frac{\lambda_e}{\lambda_e + \lambda_c}. }
-#' 
+#'
+#' \deqn{
+#' P(T < C) = \frac{\lambda_e}{\lambda_e + \lambda_c}.
+#' }
+#'
 #' Given \eqn{\lambda_e} and a target probability \eqn{p}, the function solves
 #' for the censoring rate \eqn{\lambda_c}:
-#' 
-#' \deqn{ \lambda_c = \frac{\lambda_e}{p} - \lambda_e. }
-#' 
+#'
+#' \deqn{
+#' \lambda_c = \frac{\lambda_e}{p} - \lambda_e.
+#' }
+#'
 #' In this mode, the returned value is the required independent censoring rate.
+#'
 #' @section Mode = \code{"admin"}:
-#' 
 #' Assume a single event time \eqn{T \sim \mathrm{Exp}(\lambda_e)} with fixed
 #' administrative censoring at time \eqn{A > 0}.
-#' 
+#'
 #' The probability of observing the event by time \eqn{A} is
-#' 
-#' \deqn{ P(T \le A) = 1 - e^{-\lambda_e A}. }
-#' 
+#'
+#' \deqn{
+#' P(T \le A) = 1 - e^{-\lambda_e A}.
+#' }
+#'
 #' Given \eqn{A} and a target probability \eqn{p}, the function solves for the
 #' event rate \eqn{\lambda_e}:
-#' 
-#' \deqn{ \lambda_e = -\frac{\log(1 - p)}{A}. }
-#' 
+#'
+#' \deqn{
+#' \lambda_e = -\frac{\log(1 - p)}{A}.
+#' }
+#'
 #' In this mode, the returned value is the required event rate.
+#'
 #' @section Mode = \code{"semi-competing"}:
-#' 
-#' This mode uses a low-correlation / independent-clock approximation for a
+#' This mode uses a low-correlation or independent-clock approximation for a
 #' secondary non-fatal event in a semi-competing risks setting.
-#' 
-#' Let: \itemize{ \item \eqn{\lambda_{e1}} be the fatal event rate, \item
-#' \eqn{\lambda_{c1}} be the censoring rate for the fatal endpoint, \item
-#' \eqn{\lambda_{e2}} be the non-fatal event rate, \item \eqn{\lambda_{c2}} be
-#' the censoring rate for the non-fatal endpoint. }
-#' 
+#'
+#' Let:
+#' \itemize{
+#'   \item \eqn{\lambda_{e1}} be the fatal event rate,
+#'   \item \eqn{\lambda_{c1}} be the censoring rate for the fatal endpoint,
+#'   \item \eqn{\lambda_{e2}} be the non-fatal event rate, and
+#'   \item \eqn{\lambda_{c2}} be the censoring rate for the non-fatal endpoint.
+#' }
+#'
 #' Under the approximation used in the package vignette, the probability that
 #' the secondary non-fatal event is observed first is
-#' 
-#' \deqn{ p \approx \frac{\lambda_{e2}} {\lambda_{e1} + \lambda_{c1} +
-#' \lambda_{e2} + \lambda_{c2}}. }
-#' 
+#'
+#' \deqn{
+#' p \approx \frac{\lambda_{e2}}
+#' {\lambda_{e1} + \lambda_{c1} + \lambda_{e2} + \lambda_{c2}}.
+#' }
+#'
 #' Given \eqn{p}, \eqn{\lambda_{e1}}, \eqn{\lambda_{c1}}, and
 #' \eqn{\lambda_{e2}}, the function solves for \eqn{\lambda_{c2}}:
-#' 
-#' \deqn{ \lambda_{c2} = \frac{\lambda_{e2}}{p} - \left(\lambda_{e1} +
-#' \lambda_{c1} + \lambda_{e2}\right). }
-#' 
+#'
+#' \deqn{
+#' \lambda_{c2} = \frac{\lambda_{e2}}{p} -
+#' \left(\lambda_{e1} + \lambda_{c1} + \lambda_{e2}\right).
+#' }
+#'
 #' In this mode, the returned value is the approximate non-fatal censoring
 #' rate.
-#' 
+#'
 #' Because this is an approximation, the realized observed non-fatal event
 #' probability in \code{\link{makeData}} may differ once dependence, censoring,
 #' and fatal-event logic are fully applied.
+#'
 #' @seealso \code{\link{makeData}} for simulation of trial datasets using the
-#' resulting rates.
+#'   resulting rates.
+#'
 #' @examples
-#' 
 #' # ------------------------------------------------------------
 #' # 1) Independent exponential censoring only
 #' # Solve for censoring rate given event rate and target event probability
@@ -145,8 +182,7 @@ inv_logit <- function(x) plogis(x)
 #'   event_rate = 1 / 24
 #' )
 #' # approximately 1/216
-#' 
-#' 
+#'
 #' # ------------------------------------------------------------
 #' # 2) Administrative censoring only
 #' # Solve for event rate given follow-up time and target event probability
@@ -157,8 +193,7 @@ inv_logit <- function(x) plogis(x)
 #'   admin_time = 4
 #' )
 #' # approximately 0.0558
-#' 
-#' 
+#'
 #' # ------------------------------------------------------------
 #' # 3) Semi-competing risks approximation
 #' # Solve for the non-fatal censoring rate
@@ -170,7 +205,7 @@ inv_logit <- function(x) plogis(x)
 #'   fatal_censor_rate = 1 / 16.667,
 #'   nonfatal_event_rate = 1 / 35
 #' )
-#' 
+#'
 #' @export
 rate_from_prob <- function(target_prob,
                            mode = c("simple", "admin", "semi-competing"),
@@ -242,65 +277,79 @@ rate_from_prob <- function(target_prob,
 }
 
 #' Construct a correlation matrix from endpoint-index triplets
-#' 
-#' \code{corr_make()} constructs a correlation matrix from a set of \eqn{(i, j,
-#' \rho)} triplets, where \eqn{i} and \eqn{j} are endpoint indices and
-#' \eqn{\rho} is their desired pairwise correlation.
-#' 
-#' This is a convenience function for specifying sparse correlation structures
-#' when using \code{\link{makeData}}. Any unspecified off-diagonal entries are
-#' left at 0, and diagonal entries are set to 1.
-#' 
-#' 
+#'
+#' \code{corr_make()} constructs a correlation matrix from a set of
+#' \eqn{(i, j, \rho)} triplets, where \eqn{i} and \eqn{j} are endpoint
+#' indices and \eqn{\rho} is their desired pairwise correlation.
+#'
+#' This is a convenience function for specifying sparse correlation
+#' structures when using \code{\link{makeData}}. Any unspecified
+#' off-diagonal entries are left at 0, and diagonal entries are set to 1.
+#'
 #' @param num_endpoints A single positive integer giving the number of
-#' endpoints (i.e., the dimension of the correlation matrix to construct).
-#' @param values Optional object coercible to a numeric matrix with 3 columns.
-#' Each row must have the form \code{c(i, j, rho)}, where: \describe{
-#' \item{list("i")}{First endpoint index.} \item{list("j")}{Second endpoint
-#' index.} \item{list("rho")}{Desired correlation between endpoints \code{i}
-#' and \code{j}.} }
-#' 
-#' \code{values} may be a matrix, data frame, or vector coercible to 3 columns.
-#' 
-#' The endpoint indices in values correspond to the order in which endpoints
-#' are supplied in endpoint_details; for example, index 1 refers to the first
-#' endpoint in the list, index 2 to the second, and so on.
-#' 
-#' If \code{NULL}, the identity matrix of size \code{num_endpoints} is
-#' returned. Unspecified off-diagonal entries default to 0.
+#'   endpoints, that is, the dimension of the correlation matrix to
+#'   construct.
+#'
+#' @param values Optional object coercible to a numeric matrix with
+#'   3 columns. Each row must have the form \code{c(i, j, rho)}, where:
+#'   \describe{
+#'     \item{i}{First endpoint index.}
+#'     \item{j}{Second endpoint index.}
+#'     \item{rho}{Desired correlation between endpoints \code{i} and \code{j}.}
+#'   }
+#'
+#'   \code{values} may be a matrix, data frame, or vector coercible to
+#'   3 columns.
+#'
+#'   The endpoint indices in \code{values} correspond to the order in which
+#'   endpoints are supplied in \code{endpoint_details}; for example, index 1
+#'   refers to the first endpoint in the list, index 2 to the second, and so on.
+#'
+#'   If \code{NULL}, the identity matrix of size \code{num_endpoints} is
+#'   returned. Unspecified off-diagonal entries default to 0.
+#'
 #' @return A symmetric numeric correlation matrix of dimension
-#' \code{num_endpoints x num_endpoints}, with ones on the diagonal.
+#'   \code{num_endpoints x num_endpoints}, with ones on the diagonal.
+#'
 #' @section How entries are interpreted:
-#' 
 #' For each row in \code{values}, the indices \code{i} and \code{j} are mapped
-#' to the upper triangle of the matrix using: \deqn{ i^\star = \min(i, j),
-#' \qquad j^\star = \max(i, j), } so the order of the indices does not matter.
-#' The specified correlation is then assigned symmetrically: \deqn{ R[i^\star,
-#' j^\star] = R[j^\star, i^\star] = \rho. } Finally, the diagonal is reset to
-#' exactly 1, so any user-supplied diagonal entries are overwritten.
+#' to the upper triangle of the matrix using:
+#' \deqn{
+#' i^\star = \min(i, j), \qquad j^\star = \max(i, j),
+#' }
+#' so the order of the indices does not matter. The specified correlation is
+#' then assigned symmetrically:
+#' \deqn{
+#' R[i^\star, j^\star] = R[j^\star, i^\star] = \rho.
+#' }
+#' Finally, the diagonal is reset to exactly 1, so any user-supplied diagonal
+#' entries are overwritten.
+#'
 #' @section Use with \code{makeData()}:
-#' 
 #' The resulting matrix can be passed directly to \code{\link{makeData}} as
 #' \code{correlation_matrix}.
-#' 
+#'
 #' When \code{target_correlation = FALSE}, the resulting matrix is interpreted
 #' as the latent Gaussian correlation matrix.
-#' 
+#'
 #' When \code{target_correlation = TRUE}, the resulting matrix is treated as
 #' the desired observed Pearson correlation matrix, and the simulation routine
 #' attempts to calibrate a latent Gaussian matrix to approximately match it
 #' after marginal transformation.
-#' @seealso \code{\link{makeData}} for the main simulation function.
-#' 
+#'
+#' @seealso
+#' \code{\link{makeData}} for the main simulation function.
+#'
 #' \code{\link{endpoint_details}} for endpoint specification details.
-#' 
+#'
 #' \code{\link{calibration_control}} for correlation calibration settings.
+#'
 #' @keywords utilities
+#'
 #' @examples
-#' 
 #' ## Identity correlation matrix
 #' corr_make(num_endpoints = 3)
-#' 
+#'
 #' ## Three endpoints with pairwise specification
 #' R3 <- corr_make(
 #'   num_endpoints = 3,
@@ -311,7 +360,7 @@ rate_from_prob <- function(target_prob,
 #'   )
 #' )
 #' R3
-#' 
+#'
 #' ## AR(1)-style structure across five repeated measures
 #' rho <- 0.5
 #' R5 <- corr_make(
@@ -324,7 +373,7 @@ rate_from_prob <- function(target_prob,
 #'   )
 #' )
 #' R5
-#' 
+#'
 #' ## Order of indices does not matter
 #' corr_make(
 #'   num_endpoints = 3,
@@ -708,150 +757,277 @@ print.makeDataSim <- function(x, ...) {
 
 
 #' Summarize simulated data from a \code{makeDataSim} object
-#' 
+#'
 #' \code{summary.makeDataSim()} computes arm-specific diagnostic summaries for
 #' a \code{"makeDataSim"} object returned by \code{\link{makeData}}.
-#' 
-#' The summary includes: \itemize{ \item the target correlation matrix supplied
-#' to \code{makeData()}, \item empirical endpoint correlations within each
-#' treatment arm, \item endpoint-specific marginal summaries for continuous,
-#' binary, count, and time-to-event outcomes. }
-#' 
+#'
+#' The summary includes:
+#' \itemize{
+#'   \item the target correlation matrix supplied to \code{makeData()},
+#'   \item empirical endpoint correlations within each treatment arm, and
+#'   \item endpoint-specific marginal summaries for continuous, binary, count,
+#'   and time-to-event outcomes.
+#' }
+#'
 #' These summaries are intended as a quick validation tool for checking that
 #' the simulated dataset is broadly consistent with the requested
 #' data-generating parameters.
-#' 
-#' 
+#'
 #' @param object An object of class \code{"makeDataSim"}, typically created by
-#' \code{\link{makeData}}.
+#'   \code{\link{makeData}}.
+#'
 #' @param \dots Currently unused. Included for S3 method compatibility.
+#'
 #' @return A list of class \code{"summary.makeDataSim"} with components:
-#' \describe{ \item{list("target_correlation")}{The target correlation matrix
-#' supplied to \code{makeData()}, or \code{NULL} in single-endpoint mode.}
-#' \item{list("estimated_correlation_by_arm")}{A named list of empirical
-#' arm-specific correlation matrices.} \item{list("continuous")}{A data frame
-#' of continuous-endpoint summaries, or \code{NULL} if no continuous endpoints
-#' were simulated.} \item{list("binary")}{A data frame of binary-endpoint
-#' summaries, or \code{NULL} if no binary endpoints were simulated.}
-#' \item{list("count")}{A data frame of count-endpoint summaries, or
-#' \code{NULL} if no count endpoints were simulated.} \item{list("tte")}{A data
-#' frame of time-to-event summaries, or \code{NULL} if no TTE endpoints were
-#' simulated.} \item{list("n_arms")}{The total number of treatment arms
-#' represented in the simulated dataset.} }
+#'   \describe{
+#'     \item{target_correlation}{
+#'       The target correlation matrix supplied to \code{makeData()}, or
+#'       \code{NULL} in single-endpoint mode.
+#'     }
+#'     \item{estimated_correlation_by_arm}{
+#'       A named list of empirical arm-specific correlation matrices.
+#'     }
+#'     \item{continuous}{
+#'       A data frame of continuous-endpoint summaries, or \code{NULL} if no
+#'       continuous endpoints were simulated.
+#'     }
+#'     \item{binary}{
+#'       A data frame of binary-endpoint summaries, or \code{NULL} if no binary
+#'       endpoints were simulated.
+#'     }
+#'     \item{count}{
+#'       A data frame of count-endpoint summaries, or \code{NULL} if no count
+#'       endpoints were simulated.
+#'     }
+#'     \item{tte}{
+#'       A data frame of time-to-event summaries, or \code{NULL} if no TTE
+#'       endpoints were simulated.
+#'     }
+#'     \item{n_arms}{
+#'       The total number of treatment arms represented in the simulated
+#'       dataset.
+#'     }
+#'   }
+#'
 #' @section General behavior:
-#' 
 #' The summary method extracts the simulated dataset and metadata stored in the
-#' \code{"makeDataSim"} object, then computes: \enumerate{ \item the requested
-#' target correlation matrix (as stored in
-#' \code{object$meta$correlation_matrix}), \item the observed Pearson
-#' correlation matrix among endpoint columns within each treatment arm, \item
-#' endpoint-type-specific summaries based on simple fitted models or direct
-#' descriptive estimators. }
+#' \code{"makeDataSim"} object, then computes:
+#' \enumerate{
+#'   \item the requested target correlation matrix, as stored in
+#'   \code{object$meta$correlation_matrix},
+#'   \item the observed Pearson correlation matrix among endpoint columns within
+#'   each treatment arm, and
+#'   \item endpoint-type-specific summaries based on simple fitted models or
+#'   direct descriptive estimators.
+#' }
+#'
 #' @section Arm-specific empirical correlation:
-#' 
 #' For each study arm, the method computes the Pearson correlation matrix of
 #' the simulated endpoint columns listed in \code{object$meta$endpoint_names}.
 #' These are returned as a named list in \code{$estimated_correlation_by_arm},
 #' with elements named \code{"arm_0"}, \code{"arm_1"}, and so on.
-#' 
+#'
 #' Correlations are computed using \code{cor()} and rounded to 3 decimal
-#' places. %If some endpoint combinations are degenerate or discrete, warnings
-#' from \code{cor()} are suppressed.
+#' places.
+#'
 #' @section Continuous endpoints:
-#' 
-#' For each continuous endpoint: \itemize{ \item a linear model is fit
-#' (\code{lm(y ~ trt)} in multi-arm settings, otherwise \code{lm(y ~ 1)}),
-#' \item the control-group intercept is used as the estimated baseline mean,
-#' \item treatment coefficients are reported as estimated mean shifts, \item
-#' arm-specific residual SDs are computed from the residuals of the fitted
-#' model. }
-#' 
-#' The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-#' name (e.g. \code{Cont_1}).} \item{list("arm")}{Arm index.}
-#' \item{list("input_baseline_mean")}{Encoded control-group mean.}
-#' \item{list("input_sd")}{Encoded SD for that arm.}
-#' \item{list("input_trt_effect")}{Encoded treatment effect for that arm.}
-#' \item{list("est_baseline_mean")}{Estimated control-group mean from the
-#' fitted model.} \item{list("est_trt_effect")}{Estimated mean shift for that
-#' arm vs control.} \item{list("est_resid_sd")}{Residual SD within that arm.} }
+#' For each continuous endpoint:
+#' \itemize{
+#'   \item a linear model is fit, \code{lm(y ~ trt)} in multi-arm settings and
+#'   \code{lm(y ~ 1)} otherwise,
+#'   \item the control-group intercept is used as the estimated baseline mean,
+#'   \item treatment coefficients are reported as estimated mean shifts, and
+#'   \item arm-specific residual SDs are computed from the residuals of the
+#'   fitted model.
+#' }
+#'
+#' The returned table includes:
+#' \describe{
+#'   \item{endpoint}{
+#'     Endpoint name, for example \code{Cont_1}.
+#'   }
+#'   \item{arm}{
+#'     Arm index.
+#'   }
+#'   \item{input_baseline_mean}{
+#'     Encoded control-group mean.
+#'   }
+#'   \item{input_sd}{
+#'     Encoded SD for that arm.
+#'   }
+#'   \item{input_trt_effect}{
+#'     Encoded treatment effect for that arm.
+#'   }
+#'   \item{est_baseline_mean}{
+#'     Estimated control-group mean from the fitted model.
+#'   }
+#'   \item{est_trt_effect}{
+#'     Estimated mean shift for that arm versus control.
+#'   }
+#'   \item{est_resid_sd}{
+#'     Residual SD within that arm.
+#'   }
+#' }
+#'
 #' @section Binary endpoints:
-#' 
-#' For each binary endpoint: \itemize{ \item a logistic regression model is fit
-#' (\code{glm(..., family = binomial())}), \item the control-group intercept is
-#' interpreted on the logit scale, \item treatment coefficients are reported as
-#' estimated log-odds ratios, \item observed arm-specific event probabilities
-#' are computed directly as sample means. }
-#' 
-#' The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-#' name (e.g. \code{Bin_1}).} \item{list("arm")}{Arm index.}
-#' \item{list("input_baseline_prob")}{Encoded control-group probability.}
-#' \item{list("input_trt_logOR")}{Encoded treatment effect on the log-odds
-#' scale.} \item{list("input_trt_prob")}{Encoded arm-specific probability.}
-#' \item{list("est_baseline_prob")}{Estimated control-group probability from
-#' the fitted model.} \item{list("est_trt_logOR")}{Estimated treatment log-odds
-#' ratio for that arm vs control.} \item{list("est_prob")}{Observed
-#' arm-specific event proportion.} }
+#' For each binary endpoint:
+#' \itemize{
+#'   \item a logistic regression model is fit using
+#'   \code{glm(..., family = binomial())},
+#'   \item the control-group intercept is interpreted on the logit scale,
+#'   \item treatment coefficients are reported as estimated log-odds ratios,
+#'   and
+#'   \item observed arm-specific event probabilities are computed directly as
+#'   sample means.
+#' }
+#'
+#' The returned table includes:
+#' \describe{
+#'   \item{endpoint}{
+#'     Endpoint name, for example \code{Bin_1}.
+#'   }
+#'   \item{arm}{
+#'     Arm index.
+#'   }
+#'   \item{input_baseline_prob}{
+#'     Encoded control-group probability.
+#'   }
+#'   \item{input_trt_logOR}{
+#'     Encoded treatment effect on the log-odds scale.
+#'   }
+#'   \item{input_trt_prob}{
+#'     Encoded arm-specific probability.
+#'   }
+#'   \item{est_baseline_prob}{
+#'     Estimated control-group probability from the fitted model.
+#'   }
+#'   \item{est_trt_logOR}{
+#'     Estimated treatment log-odds ratio for that arm versus control.
+#'   }
+#'   \item{est_prob}{
+#'     Observed arm-specific event proportion.
+#'   }
+#' }
+#'
 #' @section Count endpoints:
-#' 
-#' For each count endpoint: \itemize{ \item a negative binomial model is fit
-#' using \code{MASS::glm.nb()}, \item the control-group intercept is
-#' exponentiated to obtain the estimated baseline mean, \item treatment
-#' coefficients are reported as estimated log rate-ratios, \item the fitted
-#' dispersion parameter is reported, \item observed arm-specific means and
-#' structural zero proportions are computed directly. }
-#' 
-#' The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-#' name (e.g. \code{Int_1}).} \item{list("arm")}{Arm index.}
-#' \item{list("input_baseline_mean")}{Specified control-group mean.}
-#' \item{list("input_trt_logRR")}{Specified treatment effect on the log
-#' rate-ratio scale.} \item{list("input_trt_mean")}{Specified arm-specific mean
-#' count.} \item{list("input_size")}{Specified negative-binomial size
-#' parameter.} \item{list("input_p_zero")}{Specified structural zero
-#' probability.} \item{list("est_baseline_mean")}{Estimated control-group mean
-#' from the fitted model.} \item{list("est_trt_logRR")}{Estimated treatment log
-#' rate-ratio for that arm vs control.} \item{list("est_size")}{Estimated
-#' negative-binomial size parameter.} \item{list("obs_mean")}{Observed
-#' arm-specific mean count.} \item{list("obs_p0")}{Observed proportion of zeros
-#' in that arm.} }
+#' For each count endpoint:
+#' \itemize{
+#'   \item a negative binomial model is fit using \code{MASS::glm.nb()},
+#'   \item the control-group intercept is exponentiated to obtain the estimated
+#'   baseline mean,
+#'   \item treatment coefficients are reported as estimated log rate-ratios,
+#'   \item the fitted dispersion parameter is reported, and
+#'   \item observed arm-specific means and structural zero proportions are
+#'   computed directly.
+#' }
+#'
+#' The returned table includes:
+#' \describe{
+#'   \item{endpoint}{
+#'     Endpoint name, for example \code{Int_1}.
+#'   }
+#'   \item{arm}{
+#'     Arm index.
+#'   }
+#'   \item{input_baseline_mean}{
+#'     Specified control-group mean.
+#'   }
+#'   \item{input_trt_logRR}{
+#'     Specified treatment effect on the log rate-ratio scale.
+#'   }
+#'   \item{input_trt_mean}{
+#'     Specified arm-specific mean count.
+#'   }
+#'   \item{input_size}{
+#'     Specified negative-binomial size parameter.
+#'   }
+#'   \item{input_p_zero}{
+#'     Specified structural zero probability.
+#'   }
+#'   \item{est_baseline_mean}{
+#'     Estimated control-group mean from the fitted model.
+#'   }
+#'   \item{est_trt_logRR}{
+#'     Estimated treatment log rate-ratio for that arm versus control.
+#'   }
+#'   \item{est_size}{
+#'     Estimated negative-binomial size parameter.
+#'   }
+#'   \item{obs_mean}{
+#'     Observed arm-specific mean count.
+#'   }
+#'   \item{obs_p0}{
+#'     Observed proportion of zeros in that arm.
+#'   }
+#' }
+#'
 #' @section Time-to-event endpoints:
-#' 
-#' For each time-to-event endpoint: \itemize{ \item a Cox proportional hazards
-#' model is fit using \code{survival::coxph()}, \item treatment coefficients
-#' are reported as estimated log hazard-ratios, \item observed arm-specific
-#' event proportions are reported, \item an arm-specific exponential maximum
-#' likelihood estimate of the event rate is computed as \eqn{\hat\lambda =
-#' \sum_i \delta_i / \sum_i t_i}, where \eqn{t_i} is observed follow-up time
-#' and \eqn{\delta_i} is the event indicator. }
-#' 
-#' The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-#' name (e.g. \code{TTE_1}).} \item{list("arm")}{Arm index.}
-#' \item{list("censor_col")}{Corresponding event-indicator column name (e.g.
-#' \code{Status_1}).} \item{list("input_baseline_rate")}{Requested
-#' control-group exponential event rate.}
-#' \item{list("input_trt_logHR")}{Requested treatment effect on the log
-#' hazard-ratio scale.} \item{list("est_trt_logHR")}{Estimated log hazard-ratio
-#' from the Cox model.} \item{list("input_trt_HR")}{Requested treatment effect
-#' on the hazard-ratio scale.} \item{list("est_trt_HR")}{Estimated hazard-ratio
-#' from the Cox model.} \item{list("obs_event_rate")}{Observed event proportion
-#' in that arm.} \item{list("exp_rate")}{Arm-specific exponential MLE
-#' event-rate estimate.} }
+#' For each time-to-event endpoint:
+#' \itemize{
+#'   \item a Cox proportional hazards model is fit using
+#'   \code{survival::coxph()},
+#'   \item treatment coefficients are reported as estimated log hazard-ratios,
+#'   \item observed arm-specific event proportions are reported, and
+#'   \item an arm-specific exponential maximum likelihood estimate of the event
+#'   rate is computed as
+#'   \eqn{\hat\lambda = \sum_i \delta_i / \sum_i t_i}, where \eqn{t_i} is
+#'   observed follow-up time and \eqn{\delta_i} is the event indicator.
+#' }
+#'
+#' The returned table includes:
+#' \describe{
+#'   \item{endpoint}{
+#'     Endpoint name, for example \code{TTE_1}.
+#'   }
+#'   \item{arm}{
+#'     Arm index.
+#'   }
+#'   \item{censor_col}{
+#'     Corresponding event-indicator column name, for example
+#'     \code{Status_1}.
+#'   }
+#'   \item{input_baseline_rate}{
+#'     Requested control-group exponential event rate.
+#'   }
+#'   \item{input_trt_logHR}{
+#'     Requested treatment effect on the log hazard-ratio scale.
+#'   }
+#'   \item{est_trt_logHR}{
+#'     Estimated log hazard-ratio from the Cox model.
+#'   }
+#'   \item{input_trt_HR}{
+#'     Requested treatment effect on the hazard-ratio scale.
+#'   }
+#'   \item{est_trt_HR}{
+#'     Estimated hazard-ratio from the Cox model.
+#'   }
+#'   \item{obs_event_rate}{
+#'     Observed event proportion in that arm.
+#'   }
+#'   \item{exp_rate}{
+#'     Arm-specific exponential MLE event-rate estimate.
+#'   }
+#' }
+#'
 #' @section Interpretation:
-#' 
 #' Because simulations are finite-sample and may involve nonlinear marginal
 #' transformations, censoring, administrative censoring, and fatal/non-fatal
 #' event logic, the estimated summaries will generally not match the requested
 #' inputs exactly. The summary output is therefore best viewed as a diagnostic
 #' check rather than an exact recovery target.
-#' @seealso \code{\link{makeData}} for the main simulation routine.
-#' 
+#'
+#' @seealso
+#' \code{\link{makeData}} for the main simulation routine.
+#'
 #' \code{print.summary.makeDataSim} for the print method.
-#' 
+#'
 #' \code{\link{plot.makeDataSim}} for graphical diagnostics.
-#' 
+#'
 #' \code{\link{corr_make}} for building correlation matrices.
+#'
 #' @keywords methods
+#'
 #' @examples
-#' 
 #' ## Continuous + binary example
 #' ep1 <- list(
 #'   endpoint_type = "continuous",
@@ -859,36 +1035,36 @@ print.makeDataSim <- function(x, ...) {
 #'   sd            = 2,
 #'   trt_effect    = -1
 #' )
-#' 
+#'
 #' ep2 <- list(
 #'   endpoint_type = "binary",
 #'   baseline_prob = 0.30,
 #'   trt_prob      = 0.45
 #' )
-#' 
+#'
 #' R2 <- corr_make(
 #'   num_endpoints = 2,
 #'   values = rbind(c(1, 2, 0.2))
 #' )
-#' 
+#'
 #' sim_obj <- makeData(
 #'   correlation_matrix    = R2,
 #'   sample_size_per_group = 500,
 #'   SEED                  = 1,
 #'   endpoint_details      = list(ep1, ep2)
 #' )
-#' 
+#'
 #' ss <- summary(sim_obj)
-#' 
+#'
 #' ## Display top-level structure
 #' ss$n_arms
 #' ss$target_correlation
 #' ss$estimated_correlation_by_arm
-#' 
+#'
 #' ## Endpoint-specific summaries
 #' ss$continuous
 #' ss$binary
-#' 
+#'
 #' ## Time-to-event example
 #' ep_tte <- list(
 #'   endpoint_type  = "tte",
@@ -897,16 +1073,16 @@ print.makeDataSim <- function(x, ...) {
 #'   censoring_rate = 1 / 216,
 #'   fatal_event    = TRUE
 #' )
-#' 
+#'
 #' sim_tte <- makeData(
 #'   correlation_matrix    = NULL,
 #'   sample_size_per_group = 1000,
 #'   SEED                  = 2,
 #'   endpoint_details      = list(ep_tte)
 #' )
-#' 
+#'
 #' summary(sim_tte)$tte
-#' 
+#'
 #' @exportS3Method
 summary.makeDataSim <- function(object, ...) {
   dat  <- object$data
@@ -1237,30 +1413,30 @@ print.summary.makeDataSim <- function(x, ...) {
 
 #' Pairwise visualization of simulated endpoints from a \code{makeDataSim}
 #' object
-#' 
+#'
 #' \code{plot.makeDataSim()} produces a pairwise plot matrix for the simulated
 #' endpoints stored in a \code{"makeDataSim"} object returned by
 #' \code{\link{makeData}}.
-#' 
+#'
 #' The method uses \code{GGally::ggpairs()} to display scatterplots in the
 #' upper triangle and pairwise correlations in the lower triangle for the
 #' selected study arm. This is intended as a quick diagnostic tool for
 #' inspecting the joint structure of simulated endpoints.
-#' 
-#' 
+#'
+#'
 #' @param x An object of class \code{"makeDataSim"}, created by
 #' \code{\link{makeData}}.
 #' @param arm Numeric scalar indicating which treatment arm to plot.
-#' 
+#'
 #' If the simulated dataset includes a \code{trt} column, \code{arm} must be
 #' one of \code{0, 1, \dots, K - 1}, where \code{K} is the number of arms.
-#' 
+#'
 #' If the object was generated in control-only mode (i.e., no \code{trt} column
 #' is present), the \code{arm} argument is ignored and all simulated
 #' observations are plotted.
 #' @param names Optional character vector used to relabel the plotted endpoint
 #' columns.
-#' 
+#'
 #' If supplied, \code{names} must have length equal to the number of simulated
 #' endpoints. This affects only the displayed labels in the plot and does not
 #' modify the underlying data.
@@ -1271,7 +1447,7 @@ print.summary.makeDataSim <- function(x, ...) {
 #' \code{ggplot}-compatible object and can be printed or further modified using
 #' standard \pkg{ggplot2} syntax.
 #' @section Displayed data:
-#' 
+#'
 #' The plotting method extracts the simulated endpoint columns recorded in
 #' \code{x$meta$endpoint_names}. These are the automatically renamed endpoint
 #' variables, such as: \describe{ \item{Continuous endpoints}{\code{Cont_1},
@@ -1291,28 +1467,28 @@ print.summary.makeDataSim <- function(x, ...) {
 #' @seealso \code{\link[=summary.makeDataSim]{summary.makeDataSim}} for
 #' numerical summaries of the simulated data.
 #' @examples
-#' 
-#' 
+#'
+#'
 #' ep1 <- list(
 #'   endpoint_type = "continuous",
 #'   baseline_mean = 10,
 #'   sd            = 2,
 #'   trt_effect    = -1
 #' )
-#' 
+#'
 #' ep2 <- list(
 #'   endpoint_type = "binary",
 #'   baseline_prob = 0.30,
 #'   trt_prob      = 0.45
 #' )
-#' 
+#'
 #' ep3 <- list(
 #'   endpoint_type = "count",
 #'   baseline_mean = 8,
 #'   trt_count     = 10,
 #'   size          = 20
 #' )
-#' 
+#'
 #' R3 <- corr_make(
 #'   num_endpoints = 3,
 #'   values = rbind(
@@ -1321,20 +1497,20 @@ print.summary.makeDataSim <- function(x, ...) {
 #'     c(2, 3, 0.15)
 #'   )
 #' )
-#' 
+#'
 #' sim_obj <- makeData(
 #'   correlation_matrix    = R3,
 #'   sample_size_per_group = 500,
 #'   SEED                  = 1,
 #'   endpoint_details      = list(ep1, ep2, ep3)
 #' )
-#' 
+#'
 #' ## Plot control arm
 #' plot(sim_obj)
-#' 
+#'
 #' ## Plot treatment arm with custom labels
 #' plot(sim_obj, arm = 1, names = c("Biomarker", "Responder", "Hospitalizations"))
-#' 
+#'
 #' @exportS3Method
 plot.makeDataSim <- function(x,
                              arm = 0,

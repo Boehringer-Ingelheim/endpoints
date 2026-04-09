@@ -14,28 +14,48 @@
 }
 \value{
 A list of class \code{"summary.makeDataSim"} with components:
-\describe{ \item{list("target_correlation")}{The target correlation matrix
-supplied to \code{makeData()}, or \code{NULL} in single-endpoint mode.}
-\item{list("estimated_correlation_by_arm")}{A named list of empirical
-arm-specific correlation matrices.} \item{list("continuous")}{A data frame
-of continuous-endpoint summaries, or \code{NULL} if no continuous endpoints
-were simulated.} \item{list("binary")}{A data frame of binary-endpoint
-summaries, or \code{NULL} if no binary endpoints were simulated.}
-\item{list("count")}{A data frame of count-endpoint summaries, or
-\code{NULL} if no count endpoints were simulated.} \item{list("tte")}{A data
-frame of time-to-event summaries, or \code{NULL} if no TTE endpoints were
-simulated.} \item{list("n_arms")}{The total number of treatment arms
-represented in the simulated dataset.} }
+\describe{
+\item{target_correlation}{
+The target correlation matrix supplied to \code{makeData()}, or
+\code{NULL} in single-endpoint mode.
+}
+\item{estimated_correlation_by_arm}{
+A named list of empirical arm-specific correlation matrices.
+}
+\item{continuous}{
+A data frame of continuous-endpoint summaries, or \code{NULL} if no
+continuous endpoints were simulated.
+}
+\item{binary}{
+A data frame of binary-endpoint summaries, or \code{NULL} if no binary
+endpoints were simulated.
+}
+\item{count}{
+A data frame of count-endpoint summaries, or \code{NULL} if no count
+endpoints were simulated.
+}
+\item{tte}{
+A data frame of time-to-event summaries, or \code{NULL} if no TTE
+endpoints were simulated.
+}
+\item{n_arms}{
+The total number of treatment arms represented in the simulated
+dataset.
+}
+}
 }
 \description{
 \code{summary.makeDataSim()} computes arm-specific diagnostic summaries for
 a \code{"makeDataSim"} object returned by \code{\link{makeData}}.
 }
 \details{
-The summary includes: \itemize{ \item the target correlation matrix supplied
-to \code{makeData()}, \item empirical endpoint correlations within each
-treatment arm, \item endpoint-specific marginal summaries for continuous,
-binary, count, and time-to-event outcomes. }
+The summary includes:
+\itemize{
+\item the target correlation matrix supplied to \code{makeData()},
+\item empirical endpoint correlations within each treatment arm, and
+\item endpoint-specific marginal summaries for continuous, binary, count,
+and time-to-event outcomes.
+}
 
 These summaries are intended as a quick validation tool for checking that
 the simulated dataset is broadly consistent with the requested
@@ -43,18 +63,19 @@ data-generating parameters.
 }
 \section{General behavior}{
 
-
 The summary method extracts the simulated dataset and metadata stored in the
-\code{"makeDataSim"} object, then computes: \enumerate{ \item the requested
-target correlation matrix (as stored in
-\code{object$meta$correlation_matrix}), \item the observed Pearson
-correlation matrix among endpoint columns within each treatment arm, \item
-endpoint-type-specific summaries based on simple fitted models or direct
-descriptive estimators. }
+\code{"makeDataSim"} object, then computes:
+\enumerate{
+\item the requested target correlation matrix, as stored in
+\code{object$meta$correlation_matrix},
+\item the observed Pearson correlation matrix among endpoint columns within
+each treatment arm, and
+\item endpoint-type-specific summaries based on simple fitted models or
+direct descriptive estimators.
+}
 }
 
 \section{Arm-specific empirical correlation}{
-
 
 For each study arm, the method computes the Pearson correlation matrix of
 the simulated endpoint columns listed in \code{object$meta$endpoint_names}.
@@ -62,102 +83,197 @@ These are returned as a named list in \code{$estimated_correlation_by_arm},
 with elements named \code{"arm_0"}, \code{"arm_1"}, and so on.
 
 Correlations are computed using \code{cor()} and rounded to 3 decimal
-places. \%If some endpoint combinations are degenerate or discrete, warnings
-from \code{cor()} are suppressed.
+places.
 }
 
 \section{Continuous endpoints}{
 
-
-For each continuous endpoint: \itemize{ \item a linear model is fit
-(\code{lm(y ~ trt)} in multi-arm settings, otherwise \code{lm(y ~ 1)}),
+For each continuous endpoint:
+\itemize{
+\item a linear model is fit, \code{lm(y ~ trt)} in multi-arm settings and
+\code{lm(y ~ 1)} otherwise,
 \item the control-group intercept is used as the estimated baseline mean,
-\item treatment coefficients are reported as estimated mean shifts, \item
-arm-specific residual SDs are computed from the residuals of the fitted
-model. }
+\item treatment coefficients are reported as estimated mean shifts, and
+\item arm-specific residual SDs are computed from the residuals of the
+fitted model.
+}
 
-The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-name (e.g. \code{Cont_1}).} \item{list("arm")}{Arm index.}
-\item{list("input_baseline_mean")}{Encoded control-group mean.}
-\item{list("input_sd")}{Encoded SD for that arm.}
-\item{list("input_trt_effect")}{Encoded treatment effect for that arm.}
-\item{list("est_baseline_mean")}{Estimated control-group mean from the
-fitted model.} \item{list("est_trt_effect")}{Estimated mean shift for that
-arm vs control.} \item{list("est_resid_sd")}{Residual SD within that arm.} }
+The returned table includes:
+\describe{
+\item{endpoint}{
+Endpoint name, for example \code{Cont_1}.
+}
+\item{arm}{
+Arm index.
+}
+\item{input_baseline_mean}{
+Encoded control-group mean.
+}
+\item{input_sd}{
+Encoded SD for that arm.
+}
+\item{input_trt_effect}{
+Encoded treatment effect for that arm.
+}
+\item{est_baseline_mean}{
+Estimated control-group mean from the fitted model.
+}
+\item{est_trt_effect}{
+Estimated mean shift for that arm versus control.
+}
+\item{est_resid_sd}{
+Residual SD within that arm.
+}
+}
 }
 
 \section{Binary endpoints}{
 
+For each binary endpoint:
+\itemize{
+\item a logistic regression model is fit using
+\code{glm(..., family = binomial())},
+\item the control-group intercept is interpreted on the logit scale,
+\item treatment coefficients are reported as estimated log-odds ratios,
+and
+\item observed arm-specific event probabilities are computed directly as
+sample means.
+}
 
-For each binary endpoint: \itemize{ \item a logistic regression model is fit
-(\code{glm(..., family = binomial())}), \item the control-group intercept is
-interpreted on the logit scale, \item treatment coefficients are reported as
-estimated log-odds ratios, \item observed arm-specific event probabilities
-are computed directly as sample means. }
-
-The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-name (e.g. \code{Bin_1}).} \item{list("arm")}{Arm index.}
-\item{list("input_baseline_prob")}{Encoded control-group probability.}
-\item{list("input_trt_logOR")}{Encoded treatment effect on the log-odds
-scale.} \item{list("input_trt_prob")}{Encoded arm-specific probability.}
-\item{list("est_baseline_prob")}{Estimated control-group probability from
-the fitted model.} \item{list("est_trt_logOR")}{Estimated treatment log-odds
-ratio for that arm vs control.} \item{list("est_prob")}{Observed
-arm-specific event proportion.} }
+The returned table includes:
+\describe{
+\item{endpoint}{
+Endpoint name, for example \code{Bin_1}.
+}
+\item{arm}{
+Arm index.
+}
+\item{input_baseline_prob}{
+Encoded control-group probability.
+}
+\item{input_trt_logOR}{
+Encoded treatment effect on the log-odds scale.
+}
+\item{input_trt_prob}{
+Encoded arm-specific probability.
+}
+\item{est_baseline_prob}{
+Estimated control-group probability from the fitted model.
+}
+\item{est_trt_logOR}{
+Estimated treatment log-odds ratio for that arm versus control.
+}
+\item{est_prob}{
+Observed arm-specific event proportion.
+}
+}
 }
 
 \section{Count endpoints}{
 
+For each count endpoint:
+\itemize{
+\item a negative binomial model is fit using \code{MASS::glm.nb()},
+\item the control-group intercept is exponentiated to obtain the estimated
+baseline mean,
+\item treatment coefficients are reported as estimated log rate-ratios,
+\item the fitted dispersion parameter is reported, and
+\item observed arm-specific means and structural zero proportions are
+computed directly.
+}
 
-For each count endpoint: \itemize{ \item a negative binomial model is fit
-using \code{MASS::glm.nb()}, \item the control-group intercept is
-exponentiated to obtain the estimated baseline mean, \item treatment
-coefficients are reported as estimated log rate-ratios, \item the fitted
-dispersion parameter is reported, \item observed arm-specific means and
-structural zero proportions are computed directly. }
-
-The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-name (e.g. \code{Int_1}).} \item{list("arm")}{Arm index.}
-\item{list("input_baseline_mean")}{Specified control-group mean.}
-\item{list("input_trt_logRR")}{Specified treatment effect on the log
-rate-ratio scale.} \item{list("input_trt_mean")}{Specified arm-specific mean
-count.} \item{list("input_size")}{Specified negative-binomial size
-parameter.} \item{list("input_p_zero")}{Specified structural zero
-probability.} \item{list("est_baseline_mean")}{Estimated control-group mean
-from the fitted model.} \item{list("est_trt_logRR")}{Estimated treatment log
-rate-ratio for that arm vs control.} \item{list("est_size")}{Estimated
-negative-binomial size parameter.} \item{list("obs_mean")}{Observed
-arm-specific mean count.} \item{list("obs_p0")}{Observed proportion of zeros
-in that arm.} }
+The returned table includes:
+\describe{
+\item{endpoint}{
+Endpoint name, for example \code{Int_1}.
+}
+\item{arm}{
+Arm index.
+}
+\item{input_baseline_mean}{
+Specified control-group mean.
+}
+\item{input_trt_logRR}{
+Specified treatment effect on the log rate-ratio scale.
+}
+\item{input_trt_mean}{
+Specified arm-specific mean count.
+}
+\item{input_size}{
+Specified negative-binomial size parameter.
+}
+\item{input_p_zero}{
+Specified structural zero probability.
+}
+\item{est_baseline_mean}{
+Estimated control-group mean from the fitted model.
+}
+\item{est_trt_logRR}{
+Estimated treatment log rate-ratio for that arm versus control.
+}
+\item{est_size}{
+Estimated negative-binomial size parameter.
+}
+\item{obs_mean}{
+Observed arm-specific mean count.
+}
+\item{obs_p0}{
+Observed proportion of zeros in that arm.
+}
+}
 }
 
 \section{Time-to-event endpoints}{
 
+For each time-to-event endpoint:
+\itemize{
+\item a Cox proportional hazards model is fit using
+\code{survival::coxph()},
+\item treatment coefficients are reported as estimated log hazard-ratios,
+\item observed arm-specific event proportions are reported, and
+\item an arm-specific exponential maximum likelihood estimate of the event
+rate is computed as
+\eqn{\hat\lambda = \sum_i \delta_i / \sum_i t_i}, where \eqn{t_i} is
+observed follow-up time and \eqn{\delta_i} is the event indicator.
+}
 
-For each time-to-event endpoint: \itemize{ \item a Cox proportional hazards
-model is fit using \code{survival::coxph()}, \item treatment coefficients
-are reported as estimated log hazard-ratios, \item observed arm-specific
-event proportions are reported, \item an arm-specific exponential maximum
-likelihood estimate of the event rate is computed as \eqn{\hat\lambda =
-\sum_i \delta_i / \sum_i t_i}, where \eqn{t_i} is observed follow-up time
-and \eqn{\delta_i} is the event indicator. }
-
-The returned table includes: \describe{ \item{list("endpoint")}{Endpoint
-name (e.g. \code{TTE_1}).} \item{list("arm")}{Arm index.}
-\item{list("censor_col")}{Corresponding event-indicator column name (e.g.
-\code{Status_1}).} \item{list("input_baseline_rate")}{Requested
-control-group exponential event rate.}
-\item{list("input_trt_logHR")}{Requested treatment effect on the log
-hazard-ratio scale.} \item{list("est_trt_logHR")}{Estimated log hazard-ratio
-from the Cox model.} \item{list("input_trt_HR")}{Requested treatment effect
-on the hazard-ratio scale.} \item{list("est_trt_HR")}{Estimated hazard-ratio
-from the Cox model.} \item{list("obs_event_rate")}{Observed event proportion
-in that arm.} \item{list("exp_rate")}{Arm-specific exponential MLE
-event-rate estimate.} }
+The returned table includes:
+\describe{
+\item{endpoint}{
+Endpoint name, for example \code{TTE_1}.
+}
+\item{arm}{
+Arm index.
+}
+\item{censor_col}{
+Corresponding event-indicator column name, for example
+\code{Status_1}.
+}
+\item{input_baseline_rate}{
+Requested control-group exponential event rate.
+}
+\item{input_trt_logHR}{
+Requested treatment effect on the log hazard-ratio scale.
+}
+\item{est_trt_logHR}{
+Estimated log hazard-ratio from the Cox model.
+}
+\item{input_trt_HR}{
+Requested treatment effect on the hazard-ratio scale.
+}
+\item{est_trt_HR}{
+Estimated hazard-ratio from the Cox model.
+}
+\item{obs_event_rate}{
+Observed event proportion in that arm.
+}
+\item{exp_rate}{
+Arm-specific exponential MLE event-rate estimate.
+}
+}
 }
 
 \section{Interpretation}{
-
 
 Because simulations are finite-sample and may involve nonlinear marginal
 transformations, censoring, administrative censoring, and fatal/non-fatal
@@ -167,7 +283,6 @@ check rather than an exact recovery target.
 }
 
 \examples{
-
 ## Continuous + binary example
 ep1 <- list(
   endpoint_type = "continuous",
