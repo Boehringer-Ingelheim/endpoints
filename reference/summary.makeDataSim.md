@@ -26,37 +26,37 @@ summary(object, ...)
 
 A list of class `"summary.makeDataSim"` with components:
 
-- list("target_correlation"):
+- target_correlation:
 
   The target correlation matrix supplied to
   [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md),
   or `NULL` in single-endpoint mode.
 
-- list("estimated_correlation_by_arm"):
+- estimated_correlation_by_arm:
 
   A named list of empirical arm-specific correlation matrices.
 
-- list("continuous"):
+- continuous:
 
   A data frame of continuous-endpoint summaries, or `NULL` if no
   continuous endpoints were simulated.
 
-- list("binary"):
+- binary:
 
   A data frame of binary-endpoint summaries, or `NULL` if no binary
   endpoints were simulated.
 
-- list("count"):
+- count:
 
   A data frame of count-endpoint summaries, or `NULL` if no count
   endpoints were simulated.
 
-- list("tte"):
+- tte:
 
   A data frame of time-to-event summaries, or `NULL` if no TTE endpoints
   were simulated.
 
-- list("n_arms"):
+- n_arms:
 
   The total number of treatment arms represented in the simulated
   dataset.
@@ -68,7 +68,7 @@ The summary includes:
 - the target correlation matrix supplied to
   [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md),
 
-- empirical endpoint correlations within each treatment arm,
+- empirical endpoint correlations within each treatment arm, and
 
 - endpoint-specific marginal summaries for continuous, binary, count,
   and time-to-event outcomes.
@@ -82,11 +82,11 @@ data-generating parameters.
 The summary method extracts the simulated dataset and metadata stored in
 the `"makeDataSim"` object, then computes:
 
-1.  the requested target correlation matrix (as stored in
-    `object$meta$correlation_matrix`),
+1.  the requested target correlation matrix, as stored in
+    `object$meta$correlation_matrix`,
 
 2.  the observed Pearson correlation matrix among endpoint columns
-    within each treatment arm,
+    within each treatment arm, and
 
 3.  endpoint-type-specific summaries based on simple fitted models or
     direct descriptive estimators.
@@ -101,55 +101,53 @@ of the simulated endpoint columns listed in
 
 Correlations are computed using
 [`cor()`](https://rdrr.io/r/stats/cor.html) and rounded to 3 decimal
-places. %If some endpoint combinations are degenerate or discrete,
-warnings from [`cor()`](https://rdrr.io/r/stats/cor.html) are
-suppressed.
+places.
 
 ## Continuous endpoints
 
 For each continuous endpoint:
 
-- a linear model is fit (`lm(y ~ trt)` in multi-arm settings, otherwise
-  `lm(y ~ 1)`),
+- a linear model is fit, `lm(y ~ trt)` in multi-arm settings and
+  `lm(y ~ 1)` otherwise,
 
 - the control-group intercept is used as the estimated baseline mean,
 
-- treatment coefficients are reported as estimated mean shifts,
+- treatment coefficients are reported as estimated mean shifts, and
 
 - arm-specific residual SDs are computed from the residuals of the
   fitted model.
 
 The returned table includes:
 
-- list("endpoint"):
+- endpoint:
 
-  Endpoint name (e.g. `Cont_1`).
+  Endpoint name, for example `Cont_1`.
 
-- list("arm"):
+- arm:
 
   Arm index.
 
-- list("input_baseline_mean"):
+- input_baseline_mean:
 
   Encoded control-group mean.
 
-- list("input_sd"):
+- input_sd:
 
   Encoded SD for that arm.
 
-- list("input_trt_effect"):
+- input_trt_effect:
 
   Encoded treatment effect for that arm.
 
-- list("est_baseline_mean"):
+- est_baseline_mean:
 
   Estimated control-group mean from the fitted model.
 
-- list("est_trt_effect"):
+- est_trt_effect:
 
-  Estimated mean shift for that arm vs control.
+  Estimated mean shift for that arm versus control.
 
-- list("est_resid_sd"):
+- est_resid_sd:
 
   Residual SD within that arm.
 
@@ -157,46 +155,47 @@ The returned table includes:
 
 For each binary endpoint:
 
-- a logistic regression model is fit (`glm(..., family = binomial())`),
+- a logistic regression model is fit using
+  `glm(..., family = binomial())`,
 
 - the control-group intercept is interpreted on the logit scale,
 
-- treatment coefficients are reported as estimated log-odds ratios,
+- treatment coefficients are reported as estimated log-odds ratios, and
 
 - observed arm-specific event probabilities are computed directly as
   sample means.
 
 The returned table includes:
 
-- list("endpoint"):
+- endpoint:
 
-  Endpoint name (e.g. `Bin_1`).
+  Endpoint name, for example `Bin_1`.
 
-- list("arm"):
+- arm:
 
   Arm index.
 
-- list("input_baseline_prob"):
+- input_baseline_prob:
 
   Encoded control-group probability.
 
-- list("input_trt_logOR"):
+- input_trt_logOR:
 
   Encoded treatment effect on the log-odds scale.
 
-- list("input_trt_prob"):
+- input_trt_prob:
 
   Encoded arm-specific probability.
 
-- list("est_baseline_prob"):
+- est_baseline_prob:
 
   Estimated control-group probability from the fitted model.
 
-- list("est_trt_logOR"):
+- est_trt_logOR:
 
-  Estimated treatment log-odds ratio for that arm vs control.
+  Estimated treatment log-odds ratio for that arm versus control.
 
-- list("est_prob"):
+- est_prob:
 
   Observed arm-specific event proportion.
 
@@ -212,58 +211,58 @@ For each count endpoint:
 
 - treatment coefficients are reported as estimated log rate-ratios,
 
-- the fitted dispersion parameter is reported,
+- the fitted dispersion parameter is reported, and
 
 - observed arm-specific means and structural zero proportions are
   computed directly.
 
 The returned table includes:
 
-- list("endpoint"):
+- endpoint:
 
-  Endpoint name (e.g. `Int_1`).
+  Endpoint name, for example `Int_1`.
 
-- list("arm"):
+- arm:
 
   Arm index.
 
-- list("input_baseline_mean"):
+- input_baseline_mean:
 
   Specified control-group mean.
 
-- list("input_trt_logRR"):
+- input_trt_logRR:
 
   Specified treatment effect on the log rate-ratio scale.
 
-- list("input_trt_mean"):
+- input_trt_mean:
 
   Specified arm-specific mean count.
 
-- list("input_size"):
+- input_size:
 
   Specified negative-binomial size parameter.
 
-- list("input_p_zero"):
+- input_p_zero:
 
   Specified structural zero probability.
 
-- list("est_baseline_mean"):
+- est_baseline_mean:
 
   Estimated control-group mean from the fitted model.
 
-- list("est_trt_logRR"):
+- est_trt_logRR:
 
-  Estimated treatment log rate-ratio for that arm vs control.
+  Estimated treatment log rate-ratio for that arm versus control.
 
-- list("est_size"):
+- est_size:
 
   Estimated negative-binomial size parameter.
 
-- list("obs_mean"):
+- obs_mean:
 
   Observed arm-specific mean count.
 
-- list("obs_p0"):
+- obs_p0:
 
   Observed proportion of zeros in that arm.
 
@@ -276,7 +275,7 @@ For each time-to-event endpoint:
 
 - treatment coefficients are reported as estimated log hazard-ratios,
 
-- observed arm-specific event proportions are reported,
+- observed arm-specific event proportions are reported, and
 
 - an arm-specific exponential maximum likelihood estimate of the event
   rate is computed as \\\hat\lambda = \sum_i \delta_i / \sum_i t_i\\,
@@ -285,43 +284,43 @@ For each time-to-event endpoint:
 
 The returned table includes:
 
-- list("endpoint"):
+- endpoint:
 
-  Endpoint name (e.g. `TTE_1`).
+  Endpoint name, for example `TTE_1`.
 
-- list("arm"):
+- arm:
 
   Arm index.
 
-- list("censor_col"):
+- censor_col:
 
-  Corresponding event-indicator column name (e.g. `Status_1`).
+  Corresponding event-indicator column name, for example `Status_1`.
 
-- list("input_baseline_rate"):
+- input_baseline_rate:
 
   Requested control-group exponential event rate.
 
-- list("input_trt_logHR"):
+- input_trt_logHR:
 
   Requested treatment effect on the log hazard-ratio scale.
 
-- list("est_trt_logHR"):
+- est_trt_logHR:
 
   Estimated log hazard-ratio from the Cox model.
 
-- list("input_trt_HR"):
+- input_trt_HR:
 
   Requested treatment effect on the hazard-ratio scale.
 
-- list("est_trt_HR"):
+- est_trt_HR:
 
   Estimated hazard-ratio from the Cox model.
 
-- list("obs_event_rate"):
+- obs_event_rate:
 
   Observed event proportion in that arm.
 
-- list("exp_rate"):
+- exp_rate:
 
   Arm-specific exponential MLE event-rate estimate.
 

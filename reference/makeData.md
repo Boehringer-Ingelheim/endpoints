@@ -2,10 +2,11 @@
 
 `makeData()` simulates subject-level trial data with one or more
 endpoints. Supported endpoint types include continuous, binary, count,
-and time-to-event. When multiple endpoints are supplied, dependence may
-be induced through a Gaussian copula (NORTA-style construction), with
-optional numerical calibration to approximately match a target Pearson
-correlation matrix on the observed endpoint scale.
+and time-to-event outcomes. When multiple endpoints are supplied,
+dependence may be induced through a Gaussian copula (NORTA-style
+construction), with optional numerical calibration to approximately
+match a target Pearson correlation matrix on the observed endpoint
+scale.
 
 ## Usage
 
@@ -29,10 +30,10 @@ makeData(
 - correlation_matrix:
 
   A numeric correlation matrix specifying the dependence structure
-  across endpoints (Pearson correlation on the *latent Gaussian* scale).
-  If `NULL`, `makeData()` enters *single-endpoint mode*, and exactly one
-  endpoint must be supplied in `endpoint_details`. Typically created
-  with
+  across endpoints. If `target_correlation = FALSE`, this is interpreted
+  on the *latent Gaussian* scale. If `NULL`, `makeData()` enters
+  single-endpoint mode, and exactly one endpoint must be supplied in
+  `endpoint_details`. Typically created with
   [`corr_make`](https://boehringer-ingelheim.github.io/endpoints/reference/corr_make.md).
 
 - SEED:
@@ -45,8 +46,8 @@ makeData(
 
   Integer scalar or integer vector giving the sample size per arm. If a
   scalar, the same sample size is used for all arms. If a vector, it
-  must be of length \\G\\, where \\K\\ is the total number of
-  arms(including control).
+  must be of length \\K\\, where \\K\\ is the total number of arms,
+  including control.
 
 - endpoint_details:
 
@@ -63,29 +64,29 @@ makeData(
   A named list controlling enrollment and administrative follow-up.
   Fields include:
 
-  list("administrative_censoring")
+  administrative_censoring
 
   :   Numeric scalar. If non-`NULL`, follow-up is administratively
       censored at this time.
 
-  list("enrollment_distribution")
+  enrollment_distribution
 
-  :   Character. One of `"none"`, `"uniform"`, `"exponential"`,
+  :   Character. One of `"none"`, `"uniform"`, `"exponential"`, or
       `"piecewise"`.
 
-  list("enrollment_exponential_rate")
+  enrollment_exponential_rate
 
-  :   Numeric scalar rate for exponential enrollment if
-      `enrollment_distribution="exponential"`.
+  :   Numeric scalar rate for exponential enrollment when
+      `enrollment_distribution = "exponential"`.
 
-  list("piecewise_enrollment_cutpoints")
+  piecewise_enrollment_cutpoints
 
   :   Numeric vector of cutpoints defining intervals for piecewise
       enrollment.
 
-  list("piecewise_enrollment_rates")
+  piecewise_enrollment_rates
 
-  :   Numeric vector of rates (one per interval) for piecewise
+  :   Numeric vector of rates, one per interval, for piecewise
       exponential enrollment.
 
   See
@@ -96,7 +97,7 @@ makeData(
 
   Logical. Controls semi-competing risks behavior when multiple TTE
   endpoints are present. If `TRUE`, censoring of a non-fatal endpoint
-  can censor subsequent TTE endpoints according to the package’s
+  can censor subsequent TTE endpoints according to the package's
   semi-competing-risk rules. If `FALSE`, non-fatal censoring does not
   censor other TTE endpoints.
 
@@ -112,7 +113,7 @@ makeData(
   If `FALSE`, the supplied `correlation_matrix` is used directly as the
   latent Gaussian correlation matrix.
 
-  This should value should generally be set to `TRUE`, unless there is a
+  This value should generally be set to `TRUE`, unless there is a
   compelling reason otherwise.
 
 - arm_mode:
@@ -120,29 +121,29 @@ makeData(
   Character string controlling how the number of treatment arms is
   determined. Must be one of:
 
-  list("\\auto\\")
+  auto
 
   :   Infer the number of arms from the endpoint specifications. If no
       treatment-specific quantities are supplied, control-only mode is
       used.
 
-  list("\\full\\")
+  full
 
   :   Force a full multi-arm interpretation, even if some endpoint
       specifications omit treatment-specific effects.
 
-  list("\\control\\")
+  control
 
   :   Force control-only mode. In this case, treatment-specific
       arguments such as `trt_effect`, `trt_prob`, and `trt_count` are
       not allowed.
 
-  This should value should generally be set to `auto`.
+  This value should generally be set to `"auto"`.
 
 - calibration_control:
 
   Named list of controls for the correlation calibration routine used
-  when `target_correlation=TRUE`. Common controls include Monte Carlo
+  when `target_correlation = TRUE`. Common controls include Monte Carlo
   size, tolerance, iteration caps, and constraints to ensure a valid
   correlation matrix. See
   [`calibration_control`](https://boehringer-ingelheim.github.io/endpoints/reference/calibration_control.md)
@@ -154,122 +155,42 @@ An object of class `"makeDataSim"`.
 
 Internally, this is a list with at least:
 
-- list("data"):
+- data:
 
   A `data.frame` containing the simulated dataset.
 
-- list("meta"):
+- meta:
 
   A metadata list storing endpoint types, endpoint names, arm counts,
   and input settings.
 
-The `data` component includes some subset of:
+The `data` component may include:
 
-- list("trt"):
+- trt:
 
-  Treatment arm indicator (omitted in control-only mode).
+  Treatment arm indicator, omitted in control-only mode.
 
-- list("Cont_1"):
-
-  Continuous endpoints.
-
-- , :
+- Cont_1, Cont_2, ...:
 
   Continuous endpoints.
 
-- list("Cont_2"):
-
-  Continuous endpoints.
-
-- , :
-
-  Continuous endpoints.
-
-- list():
-
-  Continuous endpoints.
-
-- list("Bin_1"):
+- Bin_1, Bin_2, ...:
 
   Binary endpoints.
 
-- , :
-
-  Binary endpoints.
-
-- list("Bin_2"):
-
-  Binary endpoints.
-
-- , :
-
-  Binary endpoints.
-
-- list():
-
-  Binary endpoints.
-
-- list("Int_1"):
+- Int_1, Int_2, ...:
 
   Count endpoints.
 
-- , :
-
-  Count endpoints.
-
-- list("Int_2"):
-
-  Count endpoints.
-
-- , :
-
-  Count endpoints.
-
-- list():
-
-  Count endpoints.
-
-- list("TTE_1"):
+- TTE_1, TTE_2, ...:
 
   Observed time-to-event variables.
 
-- , :
+- Status_1, Status_2, ...:
 
-  Observed time-to-event variables.
+  TTE event indicators, with `1 = event` and `0 = censored`.
 
-- list("TTE_2"):
-
-  Observed time-to-event variables.
-
-- , :
-
-  Observed time-to-event variables.
-
-- list():
-
-  Observed time-to-event variables.
-
-- list("Status_1"):
-
-  TTE event indicators (`1 = event`, `0 = censored`).
-
-- , :
-
-  TTE event indicators (`1 = event`, `0 = censored`).
-
-- list("Status_2"):
-
-  TTE event indicators (`1 = event`, `0 = censored`).
-
-- , :
-
-  TTE event indicators (`1 = event`, `0 = censored`).
-
-- list():
-
-  TTE event indicators (`1 = event`, `0 = censored`).
-
-- list("enrollTime"):
+- enrollTime:
 
   Enrollment times, when stochastic enrollment is used.
 
@@ -287,9 +208,9 @@ The function also supports:
 - administrative censoring,
 
 - stochastic enrollment (uniform, exponential, or piecewise
-  exponential),
+  exponential), and
 
-- and can be used to generate longitudinal data.
+- generation of longitudinal data.
 
 ## Overview
 
@@ -306,17 +227,10 @@ functions are applied to the copula uniforms.
 ## Treatment arms
 
 The total number of study arms is generally determined from the lengths
-of treatment-specific inputs in `endpoint_details` (e.g. the length of
-`trt_effect`). %
-
-- `trt_effect` for continuous, binary, count, and TTE endpoints, %
-
-- `trt_prob` for binary endpoints, %
-
-- `trt_count` for count endpoints. %
-
-When treatment arms are present, the output includes a `trt` column
-coded as `0, 1, 2, ...`. This can also be controlled via `arm_mode`.
+of treatment-specific inputs in `endpoint_details`, for example the
+length of `trt_effect`. When treatment arms are present, the output
+includes a `trt` column coded as `0, 1, 2, ...`. This can also be
+controlled via `arm_mode`.
 
 ## Administrative censoring and enrollment
 
@@ -334,8 +248,8 @@ with:
 
 - [`print()`](https://rdrr.io/r/base/print.html) for a compact overview,
 
-- [`summary()`](https://rdrr.io/r/base/summary.html) for
-  marginal/correlation diagnostics,
+- [`summary()`](https://rdrr.io/r/base/summary.html) for marginal and
+  correlation diagnostics, and
 
 - [`plot()`](https://rdrr.io/r/graphics/plot.default.html) for quick
   visualization of endpoint relationships.
@@ -371,6 +285,7 @@ vignette for simulating longitudinal data.
 
 ``` r
 library(endpoints)
+
 ## One continuous endpoint, two-arm trial
 ep1 <- list(
   endpoint_type = "continuous",

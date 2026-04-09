@@ -7,15 +7,15 @@
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Simulate trial data with mixed endpoint types, optional Gaussian-copula dependence, and enrollment/censoring features — makeData"><meta name="description" content="makeData() simulates subject-level trial data with one or more
 endpoints. Supported endpoint types include continuous, binary, count, and
-time-to-event. When multiple endpoints are supplied, dependence may be
-induced through a Gaussian copula (NORTA-style construction), with optional
-numerical calibration to approximately match a target Pearson correlation
-matrix on the observed endpoint scale."><meta property="og:description" content="makeData() simulates subject-level trial data with one or more
+time-to-event outcomes. When multiple endpoints are supplied, dependence may
+be induced through a Gaussian copula (NORTA-style construction), with
+optional numerical calibration to approximately match a target Pearson
+correlation matrix on the observed endpoint scale."><meta property="og:description" content="makeData() simulates subject-level trial data with one or more
 endpoints. Supported endpoint types include continuous, binary, count, and
-time-to-event. When multiple endpoints are supplied, dependence may be
-induced through a Gaussian copula (NORTA-style construction), with optional
-numerical calibration to approximately match a target Pearson correlation
-matrix on the observed endpoint scale."></head><body>
+time-to-event outcomes. When multiple endpoints are supplied, dependence may
+be induced through a Gaussian copula (NORTA-style construction), with
+optional numerical calibration to approximately match a target Pearson
+correlation matrix on the observed endpoint scale."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -52,10 +52,10 @@ matrix on the observed endpoint scale."></head><body>
     <div class="ref-description section level2">
     <p><code>makeData()</code> simulates subject-level trial data with one or more
 endpoints. Supported endpoint types include continuous, binary, count, and
-time-to-event. When multiple endpoints are supplied, dependence may be
-induced through a Gaussian copula (NORTA-style construction), with optional
-numerical calibration to approximately match a target Pearson correlation
-matrix on the observed endpoint scale.</p>
+time-to-event outcomes. When multiple endpoints are supplied, dependence may
+be induced through a Gaussian copula (NORTA-style construction), with
+optional numerical calibration to approximately match a target Pearson
+correlation matrix on the observed endpoint scale.</p>
     </div>
 
     <div class="section level2">
@@ -80,10 +80,11 @@ matrix on the observed endpoint scale.</p>
 
 <dl><dt id="arg-correlation-matrix">correlation_matrix<a class="anchor" aria-label="anchor" href="#arg-correlation-matrix"></a></dt>
 <dd><p>A numeric correlation matrix specifying the
-dependence structure across endpoints (Pearson correlation on the
-<em>latent Gaussian</em> scale). If <code>NULL</code>, <code>makeData()</code> enters
-<em>single-endpoint mode</em>, and exactly one endpoint must be supplied in
-<code>endpoint_details</code>. Typically created with <code><a href="corr_make.html">corr_make</a></code>.</p></dd>
+dependence structure across endpoints. If <code>target_correlation = FALSE</code>,
+this is interpreted on the <em>latent Gaussian</em> scale. If <code>NULL</code>,
+<code>makeData()</code> enters single-endpoint mode, and exactly one endpoint
+must be supplied in <code>endpoint_details</code>. Typically created with
+<code><a href="corr_make.html">corr_make</a></code>.</p></dd>
 
 
 <dt id="arg-seed">SEED<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
@@ -94,89 +95,88 @@ RNG state is used.</p></dd>
 
 <dt id="arg-sample-size-per-group">sample_size_per_group<a class="anchor" aria-label="anchor" href="#arg-sample-size-per-group"></a></dt>
 <dd><p>Integer scalar or integer vector giving the
-sample size per arm. If a scalar, the same sample size is used for all arms.
-If a vector, it must be of length \(G\), where \(K\) is the total number
-of arms(including control).</p></dd>
+sample size per arm. If a scalar, the same sample size is used for all
+arms. If a vector, it must be of length \(K\), where \(K\) is the
+total number of arms, including control.</p></dd>
 
 
 <dt id="arg-endpoint-details">endpoint_details<a class="anchor" aria-label="anchor" href="#arg-endpoint-details"></a></dt>
 <dd><p>A non-empty list of endpoint specification lists,
 one per endpoint.</p>
-<p>Each sub-list defines the marginal distribution and arm-specific parameters
-for one endpoint. See <code><a href="endpoint_details.html">endpoint_details</a></code> for the complete
-schema, supported endpoint types, and detailed examples.</p></dd>
+<p>Each sub-list defines the marginal distribution and arm-specific
+parameters for one endpoint. See <code><a href="endpoint_details.html">endpoint_details</a></code> for the
+complete schema, supported endpoint types, and detailed examples.</p></dd>
 
 
 <dt id="arg-enrollment-details">enrollment_details<a class="anchor" aria-label="anchor" href="#arg-enrollment-details"></a></dt>
 <dd><p>A named list controlling enrollment and
-administrative follow-up. Fields include:</p><dl><dt>list("administrative_censoring")</dt>
-<dd><p>Numeric scalar. If non-<code>NULL</code>,
-follow-up is administratively censored at this time.</p></dd>
+administrative follow-up. Fields include:</p><dl><dt>administrative_censoring</dt>
+<dd><p>Numeric scalar. If non-<code>NULL</code>, follow-up is administratively
+censored at this time.</p></dd>
 
-<dt>list("enrollment_distribution")</dt>
-<dd><p>Character. One of <code>"none"</code>,
-<code>"uniform"</code>, <code>"exponential"</code>, <code>"piecewise"</code>.</p></dd>
+<dt>enrollment_distribution</dt>
+<dd><p>Character. One of <code>"none"</code>, <code>"uniform"</code>,
+<code>"exponential"</code>, or <code>"piecewise"</code>.</p></dd>
 
-<dt>list("enrollment_exponential_rate")</dt>
-<dd><p>Numeric scalar rate for
-exponential enrollment if <code>enrollment_distribution="exponential"</code>.</p></dd>
+<dt>enrollment_exponential_rate</dt>
+<dd><p>Numeric scalar rate for exponential enrollment when
+<code>enrollment_distribution = "exponential"</code>.</p></dd>
 
-<dt>list("piecewise_enrollment_cutpoints")</dt>
-<dd><p>Numeric vector of cutpoints
-defining intervals for piecewise enrollment.</p></dd>
+<dt>piecewise_enrollment_cutpoints</dt>
+<dd><p>Numeric vector of cutpoints defining intervals for piecewise
+enrollment.</p></dd>
 
-<dt>list("piecewise_enrollment_rates")</dt>
-<dd><p>Numeric vector of rates (one per
-interval) for piecewise exponential enrollment.</p></dd>
+<dt>piecewise_enrollment_rates</dt>
+<dd><p>Numeric vector of rates, one per interval, for piecewise exponential
+enrollment.</p></dd>
 
-</dl><p>See
-<code><a href="enrollment_details.html">enrollment_details</a></code> for full details and recommended
+
+</dl><p>See <code><a href="enrollment_details.html">enrollment_details</a></code> for full details and recommended
 parameterization.</p></dd>
 
 
 <dt id="arg-non-fatal-censors-fatal">non_fatal_censors_fatal<a class="anchor" aria-label="anchor" href="#arg-non-fatal-censors-fatal"></a></dt>
 <dd><p>Logical. Controls semi-competing risks
 behavior when multiple TTE endpoints are present. If <code>TRUE</code>, censoring
-of a non-fatal endpoint can censor subsequent TTE endpoints according to the
-package’s semi-competing-risk rules. If <code>FALSE</code>, non-fatal censoring
-does not censor other TTE endpoints.</p></dd>
+of a non-fatal endpoint can censor subsequent TTE endpoints according to
+the package's semi-competing-risk rules. If <code>FALSE</code>, non-fatal
+censoring does not censor other TTE endpoints.</p></dd>
 
 
 <dt id="arg-target-correlation">target_correlation<a class="anchor" aria-label="anchor" href="#arg-target-correlation"></a></dt>
 <dd><p>Logical scalar.</p>
-<p>If <code>TRUE</code> and <code>correlation_matrix</code> is not <code>NULL</code>, a numerical
-calibration step is used to search for a latent Gaussian correlation matrix
-whose transformed endpoints approximately match the requested observed
-Pearson correlation matrix.</p>
-<p>If <code>FALSE</code>, the supplied <code>correlation_matrix</code> is used directly as
-the latent Gaussian correlation matrix.</p>
-<p>This should value should generally be set to <code>TRUE</code>, unless there is a
+<p>If <code>TRUE</code> and <code>correlation_matrix</code> is not <code>NULL</code>, a
+numerical calibration step is used to search for a latent Gaussian
+correlation matrix whose transformed endpoints approximately match the
+requested observed Pearson correlation matrix.</p>
+<p>If <code>FALSE</code>, the supplied <code>correlation_matrix</code> is used directly
+as the latent Gaussian correlation matrix.</p>
+<p>This value should generally be set to <code>TRUE</code>, unless there is a
 compelling reason otherwise.</p></dd>
 
 
 <dt id="arg-arm-mode">arm_mode<a class="anchor" aria-label="anchor" href="#arg-arm-mode"></a></dt>
 <dd><p>Character string controlling how the number of treatment
-arms is determined. Must be one of:</p><dl><dt>list("\"auto\"")</dt>
-<dd><p>Infer
-the number of arms from the endpoint specifications. If no
+arms is determined. Must be one of:</p><dl><dt>auto</dt>
+<dd><p>Infer the number of arms from the endpoint specifications. If no
 treatment-specific quantities are supplied, control-only mode is used.</p></dd>
 
-<dt>list("\"full\"")</dt>
-<dd><p>Force a full multi-arm interpretation, even if some
-endpoint specifications omit treatment-specific effects.</p></dd>
+<dt>full</dt>
+<dd><p>Force a full multi-arm interpretation, even if some endpoint
+specifications omit treatment-specific effects.</p></dd>
 
-<dt>list("\"control\"")</dt>
-<dd><p>Force control-only mode. In this case,
-treatment-specific arguments such as <code>trt_effect</code>, <code>trt_prob</code>, and
-<code>trt_count</code> are not allowed.</p></dd>
+<dt>control</dt>
+<dd><p>Force control-only mode. In this case, treatment-specific arguments
+such as <code>trt_effect</code>, <code>trt_prob</code>, and <code>trt_count</code> are
+not allowed.</p></dd>
 
-</dl><p>This should value should generally be
-set to <code>auto</code>.</p></dd>
+
+</dl><p>This value should generally be set to <code>"auto"</code>.</p></dd>
 
 
 <dt id="arg-calibration-control">calibration_control<a class="anchor" aria-label="anchor" href="#arg-calibration-control"></a></dt>
 <dd><p>Named list of controls for the correlation
-calibration routine used when <code>target_correlation=TRUE</code>. Common
+calibration routine used when <code>target_correlation = TRUE</code>. Common
 controls include Monte Carlo size, tolerance, iteration caps, and
 constraints to ensure a valid correlation matrix. See
 <code><a href="calibration_control.html">calibration_control</a></code> for more detail.</p></dd>
@@ -185,110 +185,61 @@ constraints to ensure a valid correlation matrix. See
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>"makeDataSim"</code>.</p>
-<p>Internally, this is a list with at least:</p><dl><dt>list("data")</dt>
-<dd><p>A
-<code>data.frame</code> containing the simulated dataset.</p></dd>
- <dt>list("meta")</dt>
-<dd><p>A
-metadata list storing endpoint types, endpoint names, arm counts, and input
-settings.</p></dd>
+<p>Internally, this is a list with at least:</p><dl><dt>data</dt>
+<dd><p>A <code>data.frame</code> containing the simulated dataset.</p></dd>
 
-</dl><p>The <code>data</code> component includes some subset of:</p><dl><dt>list("trt")</dt>
-<dd><p>Treatment arm indicator (omitted in control-only mode).</p></dd>
+<dt>meta</dt>
+<dd><p>A metadata list storing endpoint types, endpoint names, arm counts,
+and input settings.</p></dd>
 
-<dt>list("Cont_1")</dt>
+
+</dl><p>The <code>data</code> component may include:</p><dl><dt>trt</dt>
+<dd><p>Treatment arm indicator, omitted in control-only mode.</p></dd>
+
+<dt>Cont_1, Cont_2, ...</dt>
 <dd><p>Continuous endpoints.</p></dd>
-<dt>, </dt>
-<dd><p>Continuous
-endpoints.</p></dd>
-<dt>list("Cont_2")</dt>
-<dd><p>Continuous endpoints.</p></dd>
-<dt>, </dt>
-<dd><p>Continuous
-endpoints.</p></dd>
-<dt>list()</dt>
-<dd><p>Continuous endpoints.</p></dd>
- <dt>list("Bin_1")</dt>
-<dd><p>Binary
-endpoints.</p></dd>
-<dt>, </dt>
-<dd><p>Binary endpoints.</p></dd>
-<dt>list("Bin_2")</dt>
-<dd><p>Binary
-endpoints.</p></dd>
-<dt>, </dt>
-<dd><p>Binary endpoints.</p></dd>
-<dt>list()</dt>
+
+<dt>Bin_1, Bin_2, ...</dt>
 <dd><p>Binary endpoints.</p></dd>
 
-<dt>list("Int_1")</dt>
+<dt>Int_1, Int_2, ...</dt>
 <dd><p>Count endpoints.</p></dd>
-<dt>, </dt>
-<dd><p>Count
-endpoints.</p></dd>
-<dt>list("Int_2")</dt>
-<dd><p>Count endpoints.</p></dd>
-<dt>, </dt>
-<dd><p>Count
-endpoints.</p></dd>
-<dt>list()</dt>
-<dd><p>Count endpoints.</p></dd>
- <dt>list("TTE_1")</dt>
-<dd><p>Observed
-time-to-event variables.</p></dd>
-<dt>, </dt>
-<dd><p>Observed time-to-event
-variables.</p></dd>
-<dt>list("TTE_2")</dt>
+
+<dt>TTE_1, TTE_2, ...</dt>
 <dd><p>Observed time-to-event variables.</p></dd>
-<dt>,
-</dt>
-<dd><p>Observed time-to-event variables.</p></dd>
-<dt>list()</dt>
-<dd><p>Observed time-to-event
-variables.</p></dd>
- <dt>list("Status_1")</dt>
-<dd><p>TTE event indicators (<code>1 = event</code>,
-<code>0 = censored</code>).</p></dd>
-<dt>, </dt>
-<dd><p>TTE event indicators (<code>1 = event</code>,
-<code>0 = censored</code>).</p></dd>
-<dt>list("Status_2")</dt>
-<dd><p>TTE event indicators (<code>1
-= event</code>, <code>0 = censored</code>).</p></dd>
-<dt>, </dt>
-<dd><p>TTE event indicators (<code>1 =
-event</code>, <code>0 = censored</code>).</p></dd>
-<dt>list()</dt>
-<dd><p>TTE event indicators (<code>1 =
-event</code>, <code>0 = censored</code>).</p></dd>
- <dt>list("enrollTime")</dt>
-<dd><p>Enrollment times,
-when stochastic enrollment is used.</p></dd>
+
+<dt>Status_1, Status_2, ...</dt>
+<dd><p>TTE event indicators, with <code>1 = event</code> and
+<code>0 = censored</code>.</p></dd>
+
+<dt>enrollTime</dt>
+<dd><p>Enrollment times, when stochastic enrollment is used.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The function also supports:</p><ul><li><p>multiple treatment arms,</p></li>
 <li><p>independent censoring for time-to-event outcomes,</p></li>
-<li><p>fatal and non-fatal
-time-to-event logic (including semi-competing risks),</p></li>
-<li><p>administrative
-censoring,</p></li>
+<li><p>fatal and non-fatal time-to-event logic (including semi-competing
+risks),</p></li>
+<li><p>administrative censoring,</p></li>
 <li><p>stochastic enrollment (uniform, exponential, or piecewise
-exponential),</p></li>
-<li><p>and can be used to generate longitudinal data.</p></li>
+exponential), and</p></li>
+<li><p>generation of longitudinal data.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a></h2>
 
 
-
 <p>When multiple endpoints are simulated, <code>makeData()</code> uses a Gaussian
 copula construction. If \(\mathbf{Z} \sim N(\mathbf{0}, \Sigma_Z)\) is a
-latent multivariate normal vector, then each endpoint is generated as $$
-X_j = F_j^{-1}\{\Phi(Z_j)\}, $$ where \(\Phi\) is the standard normal CDF
-and \(F_j^{-1}\) is the endpoint-specific quantile function.</p>
+latent multivariate normal vector, then each endpoint is generated as
+$$
+X_j = F_j^{-1}\{\Phi(Z_j)\},
+$$
+where \(\Phi\) is the standard normal CDF and \(F_j^{-1}\) is the
+endpoint-specific quantile function.</p>
 <p>For continuous endpoints this yields Gaussian margins; for binary, count,
 and time-to-event endpoints, the corresponding marginal quantile functions
 are applied to the copula uniforms.</p>
@@ -297,21 +248,14 @@ are applied to the copula uniforms.</p>
     <h2 id="treatment-arms">Treatment arms<a class="anchor" aria-label="anchor" href="#treatment-arms"></a></h2>
 
 
-
 <p>The total number of study arms is generally determined from the lengths of
-treatment-specific inputs in <code>endpoint_details</code> (e.g. the length of
-<code>trt_effect</code>). %</p><ul><li><p><code>trt_effect</code> for continuous,
-binary, count, and TTE endpoints, %</p></li>
-<li><p><code>trt_prob</code> for binary
-endpoints, %</p></li>
-<li><p><code>trt_count</code> for count endpoints. %</p></li>
-</ul><p>When treatment
-arms are present, the output includes a <code>trt</code> column coded as <code>0,
-1, 2, ...</code>. This can also be controlled via <code>arm_mode</code>.</p>
+treatment-specific inputs in <code>endpoint_details</code>, for example the length
+of <code>trt_effect</code>. When treatment arms are present, the output includes a
+<code>trt</code> column coded as <code>0, 1, 2, ...</code>. This can also be
+controlled via <code>arm_mode</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="administrative-censoring-and-enrollment">Administrative censoring and enrollment<a class="anchor" aria-label="anchor" href="#administrative-censoring-and-enrollment"></a></h2>
-
 
 
 <p>If <code>administrative_censoring</code> is supplied, all TTE outcomes are
@@ -324,12 +268,10 @@ the administrative censoring time and \(T_E\) is the enrollment time.</p>
     <h2 id="output-object">Output object<a class="anchor" aria-label="anchor" href="#output-object"></a></h2>
 
 
-
 <p>The returned object has class <code>"makeDataSim"</code> and is intended to be
 used with:</p><ul><li><p><code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> for a compact overview,</p></li>
-<li><p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> for marginal/correlation diagnostics,</p></li>
-<li><p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>
-for quick visualization of endpoint relationships.</p></li>
+<li><p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> for marginal and correlation diagnostics, and</p></li>
+<li><p><code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> for quick visualization of endpoint relationships.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -346,14 +288,15 @@ enrollment options.</p>
 <p><code><a href="calibration_control.html">calibration_control</a></code> for calibration tuning parameters.</p>
 <p><code><a href="corr_make.html">corr_make</a></code> for creating correlation matrices.</p>
 <p>See the <code><a href="../articles/user_guide.html">vignette("user_guide", package = "endpoints")</a></code> vignette for
-introductory examples, and the <code><a href="../articles/longitudinal_data.html">vignette("longitudinal_data", package =
-"endpoints")</a></code> vignette for simulating longitudinal data.</p></div>
+introductory examples, and the
+<code><a href="../articles/longitudinal_data.html">vignette("longitudinal_data", package = "endpoints")</a></code> vignette for
+simulating longitudinal data.</p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Boehringer-Ingelheim/endpoints" class="external-link">endpoints</a></span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Boehringer-Ingelheim/endpoints" class="external-link">endpoints</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## One continuous endpoint, two-arm trial</span></span></span>
 <span class="r-in"><span><span class="va">ep1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  endpoint_type <span class="op">=</span> <span class="st">"continuous"</span>,</span></span>

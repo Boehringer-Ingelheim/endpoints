@@ -56,89 +56,84 @@ approximately equal to the user-supplied <code>correlation_matrix</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="default-values">Default values<a class="anchor" aria-label="anchor" href="#default-values"></a></h2>
-    <p>The default list is:</p><div class="sourceCode"><pre><code><span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> n_mc <span class="op">=</span></span>
-<span><span class="fl">10000</span>, tol <span class="op">=</span> <span class="fl">0.001</span>, maxit <span class="op">=</span> <span class="fl">100</span>, rho_cap <span class="op">=</span> <span class="fl">0.999</span>, ensure_pd <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>conv_norm_type <span class="op">=</span> <span class="st">"F"</span> <span class="op">)</span> </span></code></pre></div>
+
+
+<p>The default list is:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  n_mc <span class="op">=</span> <span class="fl">10000</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  maxit <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  rho_cap <span class="op">=</span> <span class="fl">0.999</span>,</span>
+<span>  ensure_pd <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  conv_norm_type <span class="op">=</span> <span class="st">"F"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
-    <p></p><dl><dt>list("n_mc")</dt>
-<dd><p>Monte Carlo sample size
-used internally when approximating the transformed correlation induced by a
-candidate latent Gaussian correlation.  Larger values generally improve
-numerical stability but increase computation time.</p></dd>
 
 
-<dt>list("tol")</dt>
-<dd><p>Positive numeric tolerance passed to the one-dimensional
-root-finding routine used in pairwise calibration.  Smaller values can
-improve accuracy but may require more iterations and computation.</p></dd>
+<dl><dt>n_mc</dt>
+<dd><p>Monte Carlo sample size used internally when approximating the
+transformed correlation induced by a candidate latent Gaussian
+correlation. Larger values generally improve numerical stability but
+increase computation time.</p></dd>
 
+<dt>tol</dt>
+<dd><p>Positive numeric tolerance passed to the one-dimensional root-finding
+routine used in pairwise calibration. Smaller values can improve
+accuracy but may require more iterations and computation.</p></dd>
 
-<dt>list("maxit")</dt>
-<dd><p>Positive integer giving the maximum number of
-root-finding iterations.</p></dd>
+<dt>maxit</dt>
+<dd><p>Positive integer giving the maximum number of root-finding iterations.</p></dd>
 
+<dt>rho_cap</dt>
+<dd><p>Numeric scalar in \((0,1)\) giving the maximum absolute latent
+Gaussian correlation considered during calibration. This avoids
+numerical instability at the exact boundaries \(\pm 1\).</p></dd>
 
-<dt>list("rho_cap")</dt>
-<dd><p>Numeric scalar in (0,1) giving the maximum absolute
-latent Gaussian correlation considered during calibration.  This avoids
-numerical instability at the exact boundaries \((\pm 1\)).</p></dd>
-
-
-<dt>list("ensure_pd")</dt>
-<dd><p>Logical scalar. If <code>TRUE</code>, the calibrated
-latent correlation matrix is repaired (if needed) to ensure it is a valid
+<dt>ensure_pd</dt>
+<dd><p>Logical scalar. If <code>TRUE</code>, the calibrated latent correlation
+matrix is repaired, if needed, to ensure it is a valid
 positive-definite correlation matrix before simulation proceeds.</p></dd>
 
+<dt>conv_norm_type</dt>
+<dd><p>Character scalar passed through to positive-definiteness repair
+routines, for example
+<code>Matrix::nearPD(..., conv.norm.type = ...)</code> when available.
+The default is <code>"F"</code> (Frobenius norm).</p></dd>
 
-<dt>list("conv_norm_type")</dt>
-<dd><p>Character scalar passed through to
-positive-definiteness repair routines (for example,
-<code>Matrix::nearPD(..., conv.norm.type = ...)</code> when available).  The
-default <code>"F"</code> (Frobenius)).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="when-calibration-is-used">When calibration is used<a class="anchor" aria-label="anchor" href="#when-calibration-is-used"></a></h2>
 
 
-
-<p>These settings are used only when:</p><ul><li><p><code>correlation_matrix</code>
-is not <code>NULL</code>, and</p></li>
+<p>These settings are used only when:</p><ul><li><p><code>correlation_matrix</code> is not <code>NULL</code>, and</p></li>
 <li><p><code>target_correlation = TRUE</code>.</p></li>
-</ul><p>If <code>target_correlation = FALSE</code>, the supplied <code>correlation_matrix</code>
-is used directly as the latent Gaussian correlation matrix, and
-<code>calibration_control</code> is ignored. In general, it is recommended that
-<code>target_correlation = TRUE</code>.</p>
+</ul><p>If <code>target_correlation = FALSE</code>, the supplied
+<code>correlation_matrix</code> is used directly as the latent Gaussian
+correlation matrix, and <code>calibration_control</code> is ignored. In general,
+it is recommended that <code>target_correlation = TRUE</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="practical-guidance">Practical guidance<a class="anchor" aria-label="anchor" href="#practical-guidance"></a></h2>
-    <p></p><ul><li><p>In many applications, the
-defaults have been observed to be sufficient.</p></li>
-<li><p>If the estimated
-correlation matrices differ substantially from the target, the increasing
-<code>n_mc</code> will usually have the most impact. Note that increasing this
-value will increase computation time.</p></li>
-<li><p>When all simulated endpoints
-are continuous Gaussian, target_correlation = FALSE may be used as Pearson
-correlation is preserved under the normal marginal transformation and no
-calibration is needed. This may be especially important in simulation
-studies as this will save computation time.  %</p></li>
-<li><p>For publication-quality
-simulation studies where observed Pearson correlation matching is important,
-% increasing <code>n_mc</code> may improve stability.  %</p></li>
-<li><p>If calibration
-becomes slow, consider reducing <code>n_mc</code>, loosening <code>tol</code>, or using
-% <code>target_correlation = FALSE</code> when the latent Gaussian correlation is
-acceptable.</p></li>
-<li><p>Even with calibration, finite-sample summaries from the
-simulated data will not match the target matrix exactly.</p></li>
-<li><p>Please note
-that not all combinations of endpoint marginals and target Pearson
-correlations are feasible, so some requested correlation structures may be
-unattainable under the specified data-generating distributions.</p></li>
+
+
+<ul><li><p>In many applications, the defaults have been observed to be
+sufficient.</p></li>
+<li><p>If the estimated correlation matrices differ substantially from the
+target, increasing <code>n_mc</code> will usually have the most impact. Note
+that increasing this value will increase computation time.</p></li>
+<li><p>When all simulated endpoints are continuous Gaussian,
+<code>target_correlation = FALSE</code> may be used, since Pearson correlation
+is preserved under the normal marginal transformation and no calibration
+is needed.</p></li>
+<li><p>Even with calibration, finite-sample summaries from the simulated
+data will not match the target matrix exactly.</p></li>
+<li><p>Not all combinations of endpoint marginals and target Pearson
+correlations are feasible, so some requested correlation structures may
+be unattainable under the specified data-generating distributions.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -149,8 +144,7 @@ unattainable under the specified data-generating distributions.</p></li>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Default settings</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Default settings</span></span></span>
 <span class="r-in"><span><span class="va">calibration_control</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  n_mc <span class="op">=</span> <span class="fl">10000</span>,</span></span>
 <span class="r-in"><span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span></span>
@@ -169,7 +163,6 @@ unattainable under the specified data-generating distributions.</p></li>
 <span class="r-in"><span>  ensure_pd <span class="op">=</span> <span class="cn">TRUE</span>,</span></span>
 <span class="r-in"><span>  conv_norm_type <span class="op">=</span> <span class="st">"F"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

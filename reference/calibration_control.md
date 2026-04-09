@@ -15,46 +15,51 @@ approximately equal to the user-supplied `correlation_matrix`.
 
 The default list is:
 
-     list( n_mc =
-    10000, tol = 0.001, maxit = 100, rho_cap = 0.999, ensure_pd = TRUE,
-    conv_norm_type = "F" ) 
+    list(
+      n_mc = 10000,
+      tol = 0.001,
+      maxit = 100,
+      rho_cap = 0.999,
+      ensure_pd = TRUE,
+      conv_norm_type = "F"
+    )
 
 ## Arguments
 
-- list("n_mc"):
+- n_mc:
 
   Monte Carlo sample size used internally when approximating the
   transformed correlation induced by a candidate latent Gaussian
   correlation. Larger values generally improve numerical stability but
   increase computation time.
 
-- list("tol"):
+- tol:
 
   Positive numeric tolerance passed to the one-dimensional root-finding
   routine used in pairwise calibration. Smaller values can improve
   accuracy but may require more iterations and computation.
 
-- list("maxit"):
+- maxit:
 
   Positive integer giving the maximum number of root-finding iterations.
 
-- list("rho_cap"):
+- rho_cap:
 
-  Numeric scalar in (0,1) giving the maximum absolute latent Gaussian
-  correlation considered during calibration. This avoids numerical
-  instability at the exact boundaries \\(\pm 1\\).
+  Numeric scalar in \\(0,1)\\ giving the maximum absolute latent
+  Gaussian correlation considered during calibration. This avoids
+  numerical instability at the exact boundaries \\\pm 1\\.
 
-- list("ensure_pd"):
+- ensure_pd:
 
   Logical scalar. If `TRUE`, the calibrated latent correlation matrix is
-  repaired (if needed) to ensure it is a valid positive-definite
+  repaired, if needed, to ensure it is a valid positive-definite
   correlation matrix before simulation proceeds.
 
-- list("conv_norm_type"):
+- conv_norm_type:
 
   Character scalar passed through to positive-definiteness repair
-  routines (for example, `Matrix::nearPD(..., conv.norm.type = ...)`
-  when available). The default `"F"` (Frobenius)).
+  routines, for example `Matrix::nearPD(..., conv.norm.type = ...)` when
+  available. The default is `"F"` (Frobenius norm).
 
 ## When calibration is used
 
@@ -75,30 +80,20 @@ used directly as the latent Gaussian correlation matrix, and
   sufficient.
 
 - If the estimated correlation matrices differ substantially from the
-  target, the increasing `n_mc` will usually have the most impact. Note
-  that increasing this value will increase computation time.
+  target, increasing `n_mc` will usually have the most impact. Note that
+  increasing this value will increase computation time.
 
 - When all simulated endpoints are continuous Gaussian,
-  target_correlation = FALSE may be used as Pearson correlation is
+  `target_correlation = FALSE` may be used, since Pearson correlation is
   preserved under the normal marginal transformation and no calibration
-  is needed. This may be especially important in simulation studies as
-  this will save computation time. %
-
-- For publication-quality simulation studies where observed Pearson
-  correlation matching is important, % increasing `n_mc` may improve
-  stability. %
-
-- If calibration becomes slow, consider reducing `n_mc`, loosening
-  `tol`, or using % `target_correlation = FALSE` when the latent
-  Gaussian correlation is acceptable.
+  is needed.
 
 - Even with calibration, finite-sample summaries from the simulated data
   will not match the target matrix exactly.
 
-- Please note that not all combinations of endpoint marginals and target
-  Pearson correlations are feasible, so some requested correlation
-  structures may be unattainable under the specified data-generating
-  distributions.
+- Not all combinations of endpoint marginals and target Pearson
+  correlations are feasible, so some requested correlation structures
+  may be unattainable under the specified data-generating distributions.
 
 ## See also
 

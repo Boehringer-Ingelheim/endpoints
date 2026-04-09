@@ -67,41 +67,41 @@ a <code>"makeDataSim"</code> object returned by <code><a href="makeData.html">ma
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list of class <code>"summary.makeDataSim"</code> with components:</p><dl><dt>list("target_correlation")</dt>
-<dd><p>The target correlation matrix
-supplied to <code><a href="makeData.html">makeData()</a></code>, or <code>NULL</code> in single-endpoint mode.</p></dd>
+    <p>A list of class <code>"summary.makeDataSim"</code> with components:</p><dl><dt>target_correlation</dt>
+<dd><p>The target correlation matrix supplied to <code><a href="makeData.html">makeData()</a></code>, or
+<code>NULL</code> in single-endpoint mode.</p></dd>
 
-<dt>list("estimated_correlation_by_arm")</dt>
-<dd><p>A named list of empirical
-arm-specific correlation matrices.</p></dd>
- <dt>list("continuous")</dt>
-<dd><p>A data frame
-of continuous-endpoint summaries, or <code>NULL</code> if no continuous endpoints
-were simulated.</p></dd>
- <dt>list("binary")</dt>
-<dd><p>A data frame of binary-endpoint
-summaries, or <code>NULL</code> if no binary endpoints were simulated.</p></dd>
+<dt>estimated_correlation_by_arm</dt>
+<dd><p>A named list of empirical arm-specific correlation matrices.</p></dd>
 
-<dt>list("count")</dt>
-<dd><p>A data frame of count-endpoint summaries, or
-<code>NULL</code> if no count endpoints were simulated.</p></dd>
- <dt>list("tte")</dt>
-<dd><p>A data
-frame of time-to-event summaries, or <code>NULL</code> if no TTE endpoints were
-simulated.</p></dd>
- <dt>list("n_arms")</dt>
-<dd><p>The total number of treatment arms
-represented in the simulated dataset.</p></dd>
+<dt>continuous</dt>
+<dd><p>A data frame of continuous-endpoint summaries, or <code>NULL</code> if no
+continuous endpoints were simulated.</p></dd>
+
+<dt>binary</dt>
+<dd><p>A data frame of binary-endpoint summaries, or <code>NULL</code> if no binary
+endpoints were simulated.</p></dd>
+
+<dt>count</dt>
+<dd><p>A data frame of count-endpoint summaries, or <code>NULL</code> if no count
+endpoints were simulated.</p></dd>
+
+<dt>tte</dt>
+<dd><p>A data frame of time-to-event summaries, or <code>NULL</code> if no TTE
+endpoints were simulated.</p></dd>
+
+<dt>n_arms</dt>
+<dd><p>The total number of treatment arms represented in the simulated
+dataset.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The summary includes:</p><ul><li><p>the target correlation matrix supplied
-to <code><a href="makeData.html">makeData()</a></code>,</p></li>
-<li><p>empirical endpoint correlations within each
-treatment arm,</p></li>
-<li><p>endpoint-specific marginal summaries for continuous,
-binary, count, and time-to-event outcomes.</p></li>
+    <p>The summary includes:</p><ul><li><p>the target correlation matrix supplied to <code><a href="makeData.html">makeData()</a></code>,</p></li>
+<li><p>empirical endpoint correlations within each treatment arm, and</p></li>
+<li><p>endpoint-specific marginal summaries for continuous, binary, count,
+and time-to-event outcomes.</p></li>
 </ul><p>These summaries are intended as a quick validation tool for checking that
 the simulated dataset is broadly consistent with the requested
 data-generating parameters.</p>
@@ -110,19 +110,16 @@ data-generating parameters.</p>
     <h2 id="general-behavior">General behavior<a class="anchor" aria-label="anchor" href="#general-behavior"></a></h2>
 
 
-
 <p>The summary method extracts the simulated dataset and metadata stored in the
-<code>"makeDataSim"</code> object, then computes:</p><ol><li><p>the requested
-target correlation matrix (as stored in
-<code>object$meta$correlation_matrix</code>),</p></li>
-<li><p>the observed Pearson
-correlation matrix among endpoint columns within each treatment arm,</p></li>
-<li><p>endpoint-type-specific summaries based on simple fitted models or direct
-descriptive estimators.</p></li>
+<code>"makeDataSim"</code> object, then computes:</p><ol><li><p>the requested target correlation matrix, as stored in
+<code>object$meta$correlation_matrix</code>,</p></li>
+<li><p>the observed Pearson correlation matrix among endpoint columns within
+each treatment arm, and</p></li>
+<li><p>endpoint-type-specific summaries based on simple fitted models or
+direct descriptive estimators.</p></li>
 </ol></div>
     <div class="section level2">
     <h2 id="arm-specific-empirical-correlation">Arm-specific empirical correlation<a class="anchor" aria-label="anchor" href="#arm-specific-empirical-correlation"></a></h2>
-
 
 
 <p>For each study arm, the method computes the Pearson correlation matrix of
@@ -130,188 +127,177 @@ the simulated endpoint columns listed in <code>object$meta$endpoint_names</code>
 These are returned as a named list in <code>$estimated_correlation_by_arm</code>,
 with elements named <code>"arm_0"</code>, <code>"arm_1"</code>, and so on.</p>
 <p>Correlations are computed using <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor()</a></code> and rounded to 3 decimal
-places. %If some endpoint combinations are degenerate or discrete, warnings
-from <code><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor()</a></code> are suppressed.</p>
+places.</p>
     </div>
     <div class="section level2">
     <h2 id="continuous-endpoints">Continuous endpoints<a class="anchor" aria-label="anchor" href="#continuous-endpoints"></a></h2>
 
 
-
-<p>For each continuous endpoint:</p><ul><li><p>a linear model is fit
-(<code>lm(y ~ trt)</code> in multi-arm settings, otherwise <code>lm(y ~ 1)</code>),</p></li>
+<p>For each continuous endpoint:</p><ul><li><p>a linear model is fit, <code>lm(y ~ trt)</code> in multi-arm settings and
+<code>lm(y ~ 1)</code> otherwise,</p></li>
 <li><p>the control-group intercept is used as the estimated baseline mean,</p></li>
-<li><p>treatment coefficients are reported as estimated mean shifts,</p></li>
-<li><p>arm-specific residual SDs are computed from the residuals of the fitted
-model.</p></li>
-</ul><p>The returned table includes:</p><dl><dt>list("endpoint")</dt>
-<dd><p>Endpoint
-name (e.g. <code>Cont_1</code>).</p></dd>
- <dt>list("arm")</dt>
+<li><p>treatment coefficients are reported as estimated mean shifts, and</p></li>
+<li><p>arm-specific residual SDs are computed from the residuals of the
+fitted model.</p></li>
+</ul><p>The returned table includes:</p><dl><dt>endpoint</dt>
+<dd><p>Endpoint name, for example <code>Cont_1</code>.</p></dd>
+
+<dt>arm</dt>
 <dd><p>Arm index.</p></dd>
 
-<dt>list("input_baseline_mean")</dt>
+<dt>input_baseline_mean</dt>
 <dd><p>Encoded control-group mean.</p></dd>
 
-<dt>list("input_sd")</dt>
+<dt>input_sd</dt>
 <dd><p>Encoded SD for that arm.</p></dd>
 
-<dt>list("input_trt_effect")</dt>
+<dt>input_trt_effect</dt>
 <dd><p>Encoded treatment effect for that arm.</p></dd>
 
-<dt>list("est_baseline_mean")</dt>
-<dd><p>Estimated control-group mean from the
-fitted model.</p></dd>
- <dt>list("est_trt_effect")</dt>
-<dd><p>Estimated mean shift for that
-arm vs control.</p></dd>
- <dt>list("est_resid_sd")</dt>
+<dt>est_baseline_mean</dt>
+<dd><p>Estimated control-group mean from the fitted model.</p></dd>
+
+<dt>est_trt_effect</dt>
+<dd><p>Estimated mean shift for that arm versus control.</p></dd>
+
+<dt>est_resid_sd</dt>
 <dd><p>Residual SD within that arm.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
     <h2 id="binary-endpoints">Binary endpoints<a class="anchor" aria-label="anchor" href="#binary-endpoints"></a></h2>
 
 
+<p>For each binary endpoint:</p><ul><li><p>a logistic regression model is fit using
+<code>glm(..., family = binomial())</code>,</p></li>
+<li><p>the control-group intercept is interpreted on the logit scale,</p></li>
+<li><p>treatment coefficients are reported as estimated log-odds ratios,
+and</p></li>
+<li><p>observed arm-specific event probabilities are computed directly as
+sample means.</p></li>
+</ul><p>The returned table includes:</p><dl><dt>endpoint</dt>
+<dd><p>Endpoint name, for example <code>Bin_1</code>.</p></dd>
 
-<p>For each binary endpoint:</p><ul><li><p>a logistic regression model is fit
-(<code>glm(..., family = binomial())</code>),</p></li>
-<li><p>the control-group intercept is
-interpreted on the logit scale,</p></li>
-<li><p>treatment coefficients are reported as
-estimated log-odds ratios,</p></li>
-<li><p>observed arm-specific event probabilities
-are computed directly as sample means.</p></li>
-</ul><p>The returned table includes:</p><dl><dt>list("endpoint")</dt>
-<dd><p>Endpoint
-name (e.g. <code>Bin_1</code>).</p></dd>
- <dt>list("arm")</dt>
+<dt>arm</dt>
 <dd><p>Arm index.</p></dd>
 
-<dt>list("input_baseline_prob")</dt>
+<dt>input_baseline_prob</dt>
 <dd><p>Encoded control-group probability.</p></dd>
 
-<dt>list("input_trt_logOR")</dt>
-<dd><p>Encoded treatment effect on the log-odds
-scale.</p></dd>
- <dt>list("input_trt_prob")</dt>
+<dt>input_trt_logOR</dt>
+<dd><p>Encoded treatment effect on the log-odds scale.</p></dd>
+
+<dt>input_trt_prob</dt>
 <dd><p>Encoded arm-specific probability.</p></dd>
 
-<dt>list("est_baseline_prob")</dt>
-<dd><p>Estimated control-group probability from
-the fitted model.</p></dd>
- <dt>list("est_trt_logOR")</dt>
-<dd><p>Estimated treatment log-odds
-ratio for that arm vs control.</p></dd>
- <dt>list("est_prob")</dt>
-<dd><p>Observed
-arm-specific event proportion.</p></dd>
+<dt>est_baseline_prob</dt>
+<dd><p>Estimated control-group probability from the fitted model.</p></dd>
+
+<dt>est_trt_logOR</dt>
+<dd><p>Estimated treatment log-odds ratio for that arm versus control.</p></dd>
+
+<dt>est_prob</dt>
+<dd><p>Observed arm-specific event proportion.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
     <h2 id="count-endpoints">Count endpoints<a class="anchor" aria-label="anchor" href="#count-endpoints"></a></h2>
 
 
+<p>For each count endpoint:</p><ul><li><p>a negative binomial model is fit using <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>,</p></li>
+<li><p>the control-group intercept is exponentiated to obtain the estimated
+baseline mean,</p></li>
+<li><p>treatment coefficients are reported as estimated log rate-ratios,</p></li>
+<li><p>the fitted dispersion parameter is reported, and</p></li>
+<li><p>observed arm-specific means and structural zero proportions are
+computed directly.</p></li>
+</ul><p>The returned table includes:</p><dl><dt>endpoint</dt>
+<dd><p>Endpoint name, for example <code>Int_1</code>.</p></dd>
 
-<p>For each count endpoint:</p><ul><li><p>a negative binomial model is fit
-using <code><a href="https://rdrr.io/pkg/MASS/man/glm.nb.html" class="external-link">MASS::glm.nb()</a></code>,</p></li>
-<li><p>the control-group intercept is
-exponentiated to obtain the estimated baseline mean,</p></li>
-<li><p>treatment
-coefficients are reported as estimated log rate-ratios,</p></li>
-<li><p>the fitted
-dispersion parameter is reported,</p></li>
-<li><p>observed arm-specific means and
-structural zero proportions are computed directly.</p></li>
-</ul><p>The returned table includes:</p><dl><dt>list("endpoint")</dt>
-<dd><p>Endpoint
-name (e.g. <code>Int_1</code>).</p></dd>
- <dt>list("arm")</dt>
+<dt>arm</dt>
 <dd><p>Arm index.</p></dd>
 
-<dt>list("input_baseline_mean")</dt>
+<dt>input_baseline_mean</dt>
 <dd><p>Specified control-group mean.</p></dd>
 
-<dt>list("input_trt_logRR")</dt>
-<dd><p>Specified treatment effect on the log
-rate-ratio scale.</p></dd>
- <dt>list("input_trt_mean")</dt>
-<dd><p>Specified arm-specific mean
-count.</p></dd>
- <dt>list("input_size")</dt>
-<dd><p>Specified negative-binomial size
-parameter.</p></dd>
- <dt>list("input_p_zero")</dt>
-<dd><p>Specified structural zero
-probability.</p></dd>
- <dt>list("est_baseline_mean")</dt>
-<dd><p>Estimated control-group mean
-from the fitted model.</p></dd>
- <dt>list("est_trt_logRR")</dt>
-<dd><p>Estimated treatment log
-rate-ratio for that arm vs control.</p></dd>
- <dt>list("est_size")</dt>
-<dd><p>Estimated
-negative-binomial size parameter.</p></dd>
- <dt>list("obs_mean")</dt>
-<dd><p>Observed
-arm-specific mean count.</p></dd>
- <dt>list("obs_p0")</dt>
-<dd><p>Observed proportion of zeros
-in that arm.</p></dd>
+<dt>input_trt_logRR</dt>
+<dd><p>Specified treatment effect on the log rate-ratio scale.</p></dd>
+
+<dt>input_trt_mean</dt>
+<dd><p>Specified arm-specific mean count.</p></dd>
+
+<dt>input_size</dt>
+<dd><p>Specified negative-binomial size parameter.</p></dd>
+
+<dt>input_p_zero</dt>
+<dd><p>Specified structural zero probability.</p></dd>
+
+<dt>est_baseline_mean</dt>
+<dd><p>Estimated control-group mean from the fitted model.</p></dd>
+
+<dt>est_trt_logRR</dt>
+<dd><p>Estimated treatment log rate-ratio for that arm versus control.</p></dd>
+
+<dt>est_size</dt>
+<dd><p>Estimated negative-binomial size parameter.</p></dd>
+
+<dt>obs_mean</dt>
+<dd><p>Observed arm-specific mean count.</p></dd>
+
+<dt>obs_p0</dt>
+<dd><p>Observed proportion of zeros in that arm.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
     <h2 id="time-to-event-endpoints">Time-to-event endpoints<a class="anchor" aria-label="anchor" href="#time-to-event-endpoints"></a></h2>
 
 
+<p>For each time-to-event endpoint:</p><ul><li><p>a Cox proportional hazards model is fit using
+<code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>,</p></li>
+<li><p>treatment coefficients are reported as estimated log hazard-ratios,</p></li>
+<li><p>observed arm-specific event proportions are reported, and</p></li>
+<li><p>an arm-specific exponential maximum likelihood estimate of the event
+rate is computed as
+\(\hat\lambda = \sum_i \delta_i / \sum_i t_i\), where \(t_i\) is
+observed follow-up time and \(\delta_i\) is the event indicator.</p></li>
+</ul><p>The returned table includes:</p><dl><dt>endpoint</dt>
+<dd><p>Endpoint name, for example <code>TTE_1</code>.</p></dd>
 
-<p>For each time-to-event endpoint:</p><ul><li><p>a Cox proportional hazards
-model is fit using <code><a href="https://rdrr.io/pkg/survival/man/coxph.html" class="external-link">survival::coxph()</a></code>,</p></li>
-<li><p>treatment coefficients
-are reported as estimated log hazard-ratios,</p></li>
-<li><p>observed arm-specific
-event proportions are reported,</p></li>
-<li><p>an arm-specific exponential maximum
-likelihood estimate of the event rate is computed as \(\hat\lambda =
-\sum_i \delta_i / \sum_i t_i\), where \(t_i\) is observed follow-up time
-and \(\delta_i\) is the event indicator.</p></li>
-</ul><p>The returned table includes:</p><dl><dt>list("endpoint")</dt>
-<dd><p>Endpoint
-name (e.g. <code>TTE_1</code>).</p></dd>
- <dt>list("arm")</dt>
+<dt>arm</dt>
 <dd><p>Arm index.</p></dd>
 
-<dt>list("censor_col")</dt>
-<dd><p>Corresponding event-indicator column name (e.g.
-<code>Status_1</code>).</p></dd>
- <dt>list("input_baseline_rate")</dt>
-<dd><p>Requested
-control-group exponential event rate.</p></dd>
+<dt>censor_col</dt>
+<dd><p>Corresponding event-indicator column name, for example
+<code>Status_1</code>.</p></dd>
 
-<dt>list("input_trt_logHR")</dt>
-<dd><p>Requested treatment effect on the log
-hazard-ratio scale.</p></dd>
- <dt>list("est_trt_logHR")</dt>
-<dd><p>Estimated log hazard-ratio
-from the Cox model.</p></dd>
- <dt>list("input_trt_HR")</dt>
-<dd><p>Requested treatment effect
-on the hazard-ratio scale.</p></dd>
- <dt>list("est_trt_HR")</dt>
-<dd><p>Estimated hazard-ratio
-from the Cox model.</p></dd>
- <dt>list("obs_event_rate")</dt>
-<dd><p>Observed event proportion
-in that arm.</p></dd>
- <dt>list("exp_rate")</dt>
-<dd><p>Arm-specific exponential MLE
-event-rate estimate.</p></dd>
+<dt>input_baseline_rate</dt>
+<dd><p>Requested control-group exponential event rate.</p></dd>
+
+<dt>input_trt_logHR</dt>
+<dd><p>Requested treatment effect on the log hazard-ratio scale.</p></dd>
+
+<dt>est_trt_logHR</dt>
+<dd><p>Estimated log hazard-ratio from the Cox model.</p></dd>
+
+<dt>input_trt_HR</dt>
+<dd><p>Requested treatment effect on the hazard-ratio scale.</p></dd>
+
+<dt>est_trt_HR</dt>
+<dd><p>Estimated hazard-ratio from the Cox model.</p></dd>
+
+<dt>obs_event_rate</dt>
+<dd><p>Observed event proportion in that arm.</p></dd>
+
+<dt>exp_rate</dt>
+<dd><p>Arm-specific exponential MLE event-rate estimate.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
     <h2 id="interpretation">Interpretation<a class="anchor" aria-label="anchor" href="#interpretation"></a></h2>
-
 
 
 <p>Because simulations are finite-sample and may involve nonlinear marginal
@@ -330,8 +316,7 @@ check rather than an exact recovery target.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Continuous + binary example</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Continuous + binary example</span></span></span>
 <span class="r-in"><span><span class="va">ep1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  endpoint_type <span class="op">=</span> <span class="st">"continuous"</span>,</span></span>
 <span class="r-in"><span>  baseline_mean <span class="op">=</span> <span class="fl">10</span>,</span></span>

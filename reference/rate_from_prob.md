@@ -41,15 +41,15 @@ rate_from_prob(
   Character string indicating which probability-to-rate relationship to
   use. Must be one of:
 
-  list("\\simple\\")
+  simple
 
   :   One time-to-event endpoint with independent exponential censoring.
 
-  list("\\admin\\")
+  admin
 
   :   One time-to-event endpoint with administrative censoring only.
 
-  list("\\semi-competing\\")
+  semi-competing
 
   :   Approximate semi-competing risks calculation for a secondary
       non-fatal endpoint.
@@ -114,8 +114,8 @@ Depending on `mode`, the function solves for:
 This is intended as a design-stage helper for choosing rate parameters
 before calling
 [`makeData`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md).
-Not all cases are covered. In more complicated settings, we recommend
-iteration may be necessary.
+Not all cases are covered. In more complicated settings, iteration may
+be necessary.
 
 ## Mode = `"simple"`
 
@@ -152,8 +152,8 @@ In this mode, the returned value is the required event rate.
 
 ## Mode = `"semi-competing"`
 
-This mode uses a low-correlation / independent-clock approximation for a
-secondary non-fatal event in a semi-competing risks setting.
+This mode uses a low-correlation or independent-clock approximation for
+a secondary non-fatal event in a semi-competing risks setting.
 
 Let:
 
@@ -161,7 +161,7 @@ Let:
 
 - \\\lambda\_{c1}\\ be the censoring rate for the fatal endpoint,
 
-- \\\lambda\_{e2}\\ be the non-fatal event rate,
+- \\\lambda\_{e2}\\ be the non-fatal event rate, and
 
 - \\\lambda\_{c2}\\ be the censoring rate for the non-fatal endpoint.
 
@@ -206,7 +206,6 @@ rate_from_prob(
 #> [1] 0.00462963
 # approximately 1/216
 
-
 # ------------------------------------------------------------
 # 2) Administrative censoring only
 # Solve for event rate given follow-up time and target event probability
@@ -218,7 +217,6 @@ rate_from_prob(
 )
 #> [1] 0.05578589
 # approximately 0.0558
-
 
 # ------------------------------------------------------------
 # 3) Semi-competing risks approximation

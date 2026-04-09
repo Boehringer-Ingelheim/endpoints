@@ -14,31 +14,31 @@ corr_make(num_endpoints, values = NULL)
 
 - num_endpoints:
 
-  A single positive integer giving the number of endpoints (i.e., the
-  dimension of the correlation matrix to construct).
+  A single positive integer giving the number of endpoints, that is, the
+  dimension of the correlation matrix to construct.
 
 - values:
 
   Optional object coercible to a numeric matrix with 3 columns. Each row
   must have the form `c(i, j, rho)`, where:
 
-  list("i")
+  i
 
   :   First endpoint index.
 
-  list("j")
+  j
 
   :   Second endpoint index.
 
-  list("rho")
+  rho
 
   :   Desired correlation between endpoints `i` and `j`.
 
   `values` may be a matrix, data frame, or vector coercible to 3
   columns.
 
-  The endpoint indices in values correspond to the order in which
-  endpoints are supplied in endpoint_details; for example, index 1
+  The endpoint indices in `values` correspond to the order in which
+  endpoints are supplied in `endpoint_details`; for example, index 1
   refers to the first endpoint in the list, index 2 to the second, and
   so on.
 

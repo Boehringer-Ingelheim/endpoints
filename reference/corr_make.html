@@ -5,11 +5,11 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Construct a correlation matrix from endpoint-index triplets — corr_make"><meta name="description" content="corr_make() constructs a correlation matrix from a set of \((i, j,
-\rho)\) triplets, where \(i\) and \(j\) are endpoint indices and
-\(\rho\) is their desired pairwise correlation."><meta property="og:description" content="corr_make() constructs a correlation matrix from a set of \((i, j,
-\rho)\) triplets, where \(i\) and \(j\) are endpoint indices and
-\(\rho\) is their desired pairwise correlation."></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Construct a correlation matrix from endpoint-index triplets — corr_make"><meta name="description" content="corr_make() constructs a correlation matrix from a set of
+\((i, j, \rho)\) triplets, where \(i\) and \(j\) are endpoint
+indices and \(\rho\) is their desired pairwise correlation."><meta property="og:description" content="corr_make() constructs a correlation matrix from a set of
+\((i, j, \rho)\) triplets, where \(i\) and \(j\) are endpoint
+indices and \(\rho\) is their desired pairwise correlation."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -44,9 +44,9 @@
     </div>
 
     <div class="ref-description section level2">
-    <p><code>corr_make()</code> constructs a correlation matrix from a set of \((i, j,
-\rho)\) triplets, where \(i\) and \(j\) are endpoint indices and
-\(\rho\) is their desired pairwise correlation.</p>
+    <p><code>corr_make()</code> constructs a correlation matrix from a set of
+\((i, j, \rho)\) triplets, where \(i\) and \(j\) are endpoint
+indices and \(\rho\) is their desired pairwise correlation.</p>
     </div>
 
     <div class="section level2">
@@ -60,24 +60,27 @@
 
 <dl><dt id="arg-num-endpoints">num_endpoints<a class="anchor" aria-label="anchor" href="#arg-num-endpoints"></a></dt>
 <dd><p>A single positive integer giving the number of
-endpoints (i.e., the dimension of the correlation matrix to construct).</p></dd>
+endpoints, that is, the dimension of the correlation matrix to
+construct.</p></dd>
 
 
 <dt id="arg-values">values<a class="anchor" aria-label="anchor" href="#arg-values"></a></dt>
-<dd><p>Optional object coercible to a numeric matrix with 3 columns.
-Each row must have the form <code>c(i, j, rho)</code>, where:</p><dl><dt>list("i")</dt>
+<dd><p>Optional object coercible to a numeric matrix with
+3 columns. Each row must have the form <code>c(i, j, rho)</code>, where:</p><dl><dt>i</dt>
 <dd><p>First endpoint index.</p></dd>
- <dt>list("j")</dt>
-<dd><p>Second endpoint
-index.</p></dd>
- <dt>list("rho")</dt>
-<dd><p>Desired correlation between endpoints <code>i</code>
-and <code>j</code>.</p></dd>
 
-</dl><p><code>values</code> may be a matrix, data frame, or vector coercible to 3 columns.</p>
-<p>The endpoint indices in values correspond to the order in which endpoints
-are supplied in endpoint_details; for example, index 1 refers to the first
-endpoint in the list, index 2 to the second, and so on.</p>
+<dt>j</dt>
+<dd><p>Second endpoint index.</p></dd>
+
+<dt>rho</dt>
+<dd><p>Desired correlation between endpoints <code>i</code> and <code>j</code>.</p></dd>
+
+
+</dl><p><code>values</code> may be a matrix, data frame, or vector coercible to
+3 columns.</p>
+<p>The endpoint indices in <code>values</code> correspond to the order in which
+endpoints are supplied in <code>endpoint_details</code>; for example, index 1
+refers to the first endpoint in the list, index 2 to the second, and so on.</p>
 <p>If <code>NULL</code>, the identity matrix of size <code>num_endpoints</code> is
 returned. Unspecified off-diagonal entries default to 0.</p></dd>
 
@@ -89,25 +92,29 @@ returned. Unspecified off-diagonal entries default to 0.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>This is a convenience function for specifying sparse correlation structures
-when using <code><a href="makeData.html">makeData</a></code>. Any unspecified off-diagonal entries are
-left at 0, and diagonal entries are set to 1.</p>
+    <p>This is a convenience function for specifying sparse correlation
+structures when using <code><a href="makeData.html">makeData</a></code>. Any unspecified
+off-diagonal entries are left at 0, and diagonal entries are set to 1.</p>
     </div>
     <div class="section level2">
     <h2 id="how-entries-are-interpreted">How entries are interpreted<a class="anchor" aria-label="anchor" href="#how-entries-are-interpreted"></a></h2>
 
 
-
 <p>For each row in <code>values</code>, the indices <code>i</code> and <code>j</code> are mapped
-to the upper triangle of the matrix using: $$ i^\star = \min(i, j),
-\qquad j^\star = \max(i, j), $$ so the order of the indices does not matter.
-The specified correlation is then assigned symmetrically: $$ R[i^\star,
-j^\star] = R[j^\star, i^\star] = \rho. $$ Finally, the diagonal is reset to
-exactly 1, so any user-supplied diagonal entries are overwritten.</p>
+to the upper triangle of the matrix using:
+$$
+i^\star = \min(i, j), \qquad j^\star = \max(i, j),
+$$
+so the order of the indices does not matter. The specified correlation is
+then assigned symmetrically:
+$$
+R[i^\star, j^\star] = R[j^\star, i^\star] = \rho.
+$$
+Finally, the diagonal is reset to exactly 1, so any user-supplied diagonal
+entries are overwritten.</p>
     </div>
     <div class="section level2">
     <h2 id="use-with-makedata-">Use with <code><a href="makeData.html">makeData()</a></code><a class="anchor" aria-label="anchor" href="#use-with-makedata-"></a></h2>
-
 
 
 <p>The resulting matrix can be passed directly to <code><a href="makeData.html">makeData</a></code> as
@@ -128,8 +135,7 @@ after marginal transformation.</p>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Identity correlation matrix</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Identity correlation matrix</span></span></span>
 <span class="r-in"><span><span class="fu">corr_make</span><span class="op">(</span>num_endpoints <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>      [,1] [,2] [,3]</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1,]    1    0    0</span>
