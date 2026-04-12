@@ -28,7 +28,7 @@ There are two ways in which the `endpoints` package can be used to generate long
 Suppose we want to simulate a longitudinal continuous outcome measured at a fixed set of visits, with trajectories that differ by treatment group. For illustration, consider the marginal mean model
 
 $$
-Y_{i t}=\beta_0+\beta_{\text {time }} t+\beta_{\text {trt }} x_i+\boldsymbol\beta_{\text {time:trt }} t x_i+\varepsilon_{i t}, \quad i=1, \ldots, n, \quad t \in\{0,1, \ldots, T-1\},
+Y_{i t}=\beta_0+\beta_{\text {time }} t+\beta_{\text {trt }} x_i+\beta_{\text {time:trt }} t x_i+\varepsilon_{i t}, \quad i=1, \ldots, n, \quad t \in\{0,1, \ldots, T-1\},
 $$
 
 where $x_i \in\{0,1\}$ is the treatment indicator and the residual vector $\varepsilon_i=\left(\varepsilon_{i 0}, \ldots, \varepsilon_{i, T-1}\right)^{\top}$ follows
