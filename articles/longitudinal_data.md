@@ -21,8 +21,8 @@ at a fixed set of visits, with trajectories that differ by treatment
 group. For illustration, consider the marginal mean model
 
 \\ Y\_{i t}=\beta_0+\beta\_{\text {time }} t+\beta\_{\text {trt }}
-x_i+\boldsymbol\beta\_{\text {time:trt }} t x_i+\varepsilon\_{i t},
-\quad i=1, \ldots, n, \quad t \in\\0,1, \ldots, T-1\\, \\
+x_i+\beta\_{\text {time:trt }} t x_i+\varepsilon\_{i t}, \quad i=1,
+\ldots, n, \quad t \in\\0,1, \ldots, T-1\\, \\
 
 where \\x_i \in\\0,1\\\\ is the treatment indicator and the residual
 vector \\\varepsilon_i=\left(\varepsilon\_{i 0}, \ldots,

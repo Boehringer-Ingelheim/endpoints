@@ -60,7 +60,7 @@
                         <h4 data-toc-skip class="author">Colin
 Longhurst</h4>
             
-            <h4 data-toc-skip class="date">2026-04-09</h4>
+            <h4 data-toc-skip class="date">2026-04-13</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/Boehringer-Ingelheim/endpoints/blob/main/vignettes/longitudinal_data.Rmd" class="external-link"><code>vignettes/longitudinal_data.Rmd</code></a></small>
       <div class="d-none name"><code>longitudinal_data.Rmd</code></div>
@@ -90,8 +90,8 @@ measured at a fixed set of visits, with trajectories that differ by
 treatment group. For illustration, consider the marginal mean model</p>
 <p><span class="math display">\[
 Y_{i t}=\beta_0+\beta_{\text {time }} t+\beta_{\text {trt }}
-x_i+\boldsymbol\beta_{\text {time:trt }} t x_i+\varepsilon_{i t}, \quad
-i=1, \ldots, n, \quad t \in\{0,1, \ldots, T-1\},
+x_i+\beta_{\text {time:trt }} t x_i+\varepsilon_{i t}, \quad i=1,
+\ldots, n, \quad t \in\{0,1, \ldots, T-1\},
 \]</span></p>
 <p>where <span class="math inline">\(x_i \in\{0,1\}\)</span> is the
 treatment indicator and the residual vector <span class="math inline">\(\varepsilon_i=\left(\varepsilon_{i 0}, \ldots,
