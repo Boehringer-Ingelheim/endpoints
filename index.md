@@ -38,8 +38,8 @@ simulation studies.
 Install from GitHub with:
 
 ``` r
-# install.packages("pak")
-pak::pak("Boehringer-Ingelheim/endpoints")
+# install.packages("remotes")
+remotes::install_github("Boehringer-Ingelheim/endpoints")
 ```
 
 ## Documentation
