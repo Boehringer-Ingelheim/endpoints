@@ -38,6 +38,7 @@ simulation studies.
 Install from GitHub with:
 
 ``` r
+
 # install.packages("remotes")
 remotes::install_github("Boehringer-Ingelheim/endpoints")
 ```
@@ -55,6 +56,7 @@ Generate a data set with three correlated endpoints, one time-to-event,
 one continuous and one binary:
 
 ``` r
+
 library(endpoints)
 
 # correlation structure across the 3 endpoints

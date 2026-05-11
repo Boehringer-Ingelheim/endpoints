@@ -8,6 +8,7 @@ If omitted,
 [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
 fills in defaults internally:
 
+
     list(
       administrative_censoring       = NULL,
       enrollment_distribution        = "none",

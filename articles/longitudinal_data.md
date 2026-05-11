@@ -1,6 +1,7 @@
 # Simulating Longitudinal Data with \`endpoints\`
 
 ``` r
+
 library(endpoints)
 library(tidyverse)
 ```
@@ -54,6 +55,7 @@ We encode the AR(1) structure directly using
 [`corr_make()`](https://boehringer-ingelheim.github.io/endpoints/reference/corr_make.md):
 
 ``` r
+
 N_visits <- 5 
 rho <- 0.5
 
@@ -76,6 +78,7 @@ outcome. Each entry below specifies the marginal mean at a visit for
 control, plus the visit-specific treatment effect.
 
 ``` r
+
 sigma <- 0.95 # constant residual error
 
 baseline <- list(
@@ -94,6 +97,7 @@ v4 <- list(endpoint_type = "continuous", baseline_mean = 0.45, trt_effect = -0.4
 **Step 3: Simulate wide data with makeData()**
 
 ``` r
+
 correlated_visits_wide <- makeData(
   correlation_matrix    = corMat_5_visits,
   SEED                  = 321,
@@ -103,6 +107,7 @@ correlated_visits_wide <- makeData(
 ```
 
 ``` r
+
 knitr::kable(
   head(correlated_visits_wide$data),
   caption = "Wide data returned by makeData() (one column per visit)"
@@ -118,7 +123,7 @@ knitr::kable(
 | -0.5574394 | -1.0931459 |  0.3318037 | -0.0710577 |  0.6245473 |   0 |
 |  0.6971626 |  1.1483199 |  1.5965616 |  0.8228409 | -0.0226198 |   0 |
 
-Wide data returned by makeData() (one column per visit)
+Wide data returned by makeData() (one column per visit) {.table}
 
 At this stage we have a standard “wide” format dataset: each visit
 appears as a separate column (`Cont_1`, …, `Cont_5`). The key
@@ -128,6 +133,7 @@ interpreted as repeated measures once we reshape the data.
 **Step 4: Convert wide \\\rightarrow\\ long**
 
 ``` r
+
 library(tidyverse)
 correlated_visits_long <- 
   correlated_visits_wide$data %>%
@@ -147,6 +153,7 @@ correlated_visits_long <-
 The long data now looks like a typical longitudinal dataset:
 
 ``` r
+
 knitr::kable(
   head(correlated_visits_long),
   caption = "Longitudinal data after reshaping to long format"
@@ -162,7 +169,7 @@ knitr::kable(
 | 1   |   0 |     4 | -0.3515110 |
 | 2   |   0 |     0 |  0.0962094 |
 
-Longitudinal data after reshaping to long format
+Longitudinal data after reshaping to long format {.table}
 
 **Step 5: Validate the intended effects and correlation**
 
@@ -171,6 +178,7 @@ and AR(1) correlation, we fit a marginal model using
 [`geeM::geem()`](https://rdrr.io/pkg/geeM/man/geem.html):
 
 ``` r
+
 ge1 <- geeM::geem(
   Measure ~ factor(visit) * trt,
   id     = ID,
@@ -184,6 +192,7 @@ Inspecting the output from the model, we observe that the simulation
 proceeded correctly:
 
 ``` r
+
 est_effects <- c(
   round(summary(ge1)$beta[7:10], 3),  # treatment effects at visits 1-4 (vs baseline)
   round(summary(ge1)$phi, 2),         # residual SD (see note below)
@@ -225,7 +234,7 @@ knitr::kable(
 | \\\rho\\                    |  0.50 |     0.510 |
 
 True vs. estimated longitudinal treatment effects and correlation
-parameters.
+parameters. {.table}
 
 (Note: \\\sigma\\ is the marginal residual SD in \\\varepsilon\_{it}
 \sim N(0,\sigma^2\mathbf{V})\\)
@@ -235,6 +244,7 @@ characteristics to use in simulation. Finally, we can visualize a small
 set of subject trajectories:
 
 ``` r
+
 set.seed(888)
 IDs = c(sample(1:4000,8)) 
 correlated_visits_long %>%
@@ -269,6 +279,7 @@ Here we assume an exchangeable within-visit correlation for simplicity,
 and specify correlations between hospitalization time and each visit.
 
 ``` r
+
 rho <- 0.15
 
 corMat_long_w_hosp <- corr_make(
@@ -290,6 +301,7 @@ We specify hospitalization as a non-fatal TTE endpoint (no censoring
 here for simplicity):
 
 ``` r
+
 hosp <- list(
   endpoint_type  = "tte",
   baseline_rate  = 1/2,        
@@ -301,6 +313,7 @@ hosp <- list(
 Simulate the data:
 
 ``` r
+
 wide_w_hosp <- makeData(
   correlation_matrix    = corMat_long_w_hosp,
   SEED                  = 123,
@@ -313,10 +326,12 @@ It is often helpful to verify the simulated marginals and (approximate)
 correlation structure before reshaping:
 
 ``` r
+
 summary(wide_w_hosp)
 ```
 
 Show summary(wide_w_hosp)
+
 
 
 
@@ -387,6 +402,7 @@ Now reshape only the longitudinal columns, leaving the TTE endpoint
 intact:
 
 ``` r
+
 long_w_hosp <- wide_w_hosp$data %>%
   rowid_to_column("ID") %>%
   pivot_longer(
@@ -490,6 +506,7 @@ We first define the correlation matrix, which encodes the dependence
 among these four subject-level quantities:
 
 ``` r
+
 cor_rf <- corr_make(num_endpoints = 4,
                     values = rbind(
                       c(1,2,.2), # ACM ~ HP
@@ -506,6 +523,7 @@ Next, we specify the two random effects as continuous endpoints centered
 at 0:
 
 ``` r
+
 random_intercept <- list(
   endpoint_type = "continuous",
   baseline_mean = 0,
@@ -522,6 +540,7 @@ random_slope <- list(
 We then define the two TTE endpoints:
 
 ``` r
+
 ACM <- list(
   endpoint_type  = "tte",
   baseline_rate  = 1/4,        
@@ -545,6 +564,7 @@ to generate the subject-level dataset, where each subjects has their
 latent random effects generated:
 
 ``` r
+
 rf_data <- makeData(
   correlation_matrix = cor_rf,
   sample_size_per_group = 1000,
@@ -577,6 +597,7 @@ To do this, we use a small helper function that:
 - optionally censors the longitudinal outcome after a fatal event.
 
 ``` r
+
 longMaker_lite <- function(data,
                            time_sequence,
                            linear_predictor,
@@ -619,6 +640,7 @@ so that we can verify the fixed and random effects separately from the
 TTE censoring mechanism.
 
 ``` r
+
 long_rf_data_test <- longMaker_lite(data = rf_data$data,
                                     time_sequence = seq(from=0,to = 2, by = 0.25),
                                     linear_predictor =
@@ -635,6 +657,7 @@ effects, random effects, and induced correlation structure are behaving
 as intended:
 
 ``` r
+
 lme4::lmer(
   response ~ trt * time + (time | ID),
   data = long_rf_data_test
@@ -673,6 +696,7 @@ Next, we regenerate the longitudinal data, this time allowing the fatal
 event (ACM:`TTE_1`) to censor future longitudinal measurements:
 
 ``` r
+
 long_rf_data_final <- longMaker_lite(data = rf_data$data,
                                      time_sequence = seq(from=0,to = 2, by = 0.25),
                                      linear_predictor =
@@ -686,27 +710,28 @@ jointly related to two TTE endpoints through the shared subject-level
 latent structure, and is additionally truncated after the fatal event.
 
 ``` r
+
 knitr::kable(head(long_rf_data_final,16))
 ```
 
-|  ID |     TTE_1 |     TTE_2 |     Cont_1 |    Cont_2 | trt | Status_1 | Status_2 | enrollTime | time |   linPred |  response |
-|----:|----------:|----------:|-----------:|----------:|----:|---------:|---------:|-----------:|-----:|----------:|----------:|
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 0.00 | 10.606900 | 11.859258 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 0.25 | 10.645208 | 11.300007 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 0.50 | 10.683515 | 12.501410 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 0.75 | 10.721823 | 11.860288 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 1.00 | 10.760131 |  9.239832 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 1.25 | 10.798438 | 11.032595 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 1.50 | 10.836746 | 11.883674 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 1.75 | 10.875054 | 10.691956 |
-|   1 | 4.0000000 | 0.3954673 |  0.6069000 | 0.6532307 |   0 |        0 |        1 |          0 | 2.00 | 10.913361 |  9.886203 |
-|   2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 |   0 |        0 |        1 |          0 | 0.00 |  9.749710 | 10.748149 |
-|   2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 |   0 |        0 |        1 |          0 | 0.25 |  9.688822 | 10.609906 |
-|   2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 |   0 |        0 |        1 |          0 | 0.50 |  9.627934 |  8.825088 |
-|   2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 |   0 |        0 |        1 |          0 | 0.75 |  9.567045 |  7.266656 |
-|   2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 |   0 |        0 |        1 |          0 | 1.00 |  9.506157 |        NA |
-|   2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 |   0 |        0 |        1 |          0 | 1.25 |  9.445269 |        NA |
-|   2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 |   0 |        0 |        1 |          0 | 1.50 |  9.384381 |        NA |
+| ID | TTE_1 | TTE_2 | Cont_1 | Cont_2 | trt | Status_1 | Status_2 | enrollTime | time | linPred | response |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 0.00 | 10.606900 | 11.859258 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 0.25 | 10.645208 | 11.300007 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 0.50 | 10.683515 | 12.501410 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 0.75 | 10.721823 | 11.860288 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 1.00 | 10.760131 | 9.239832 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 1.25 | 10.798438 | 11.032595 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 1.50 | 10.836746 | 11.883674 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 1.75 | 10.875054 | 10.691956 |
+| 1 | 4.0000000 | 0.3954673 | 0.6069000 | 0.6532307 | 0 | 0 | 1 | 0 | 2.00 | 10.913361 | 9.886203 |
+| 2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 | 0 | 0 | 1 | 0 | 0.00 | 9.749710 | 10.748149 |
+| 2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 | 0 | 0 | 1 | 0 | 0.25 | 9.688822 | 10.609906 |
+| 2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 | 0 | 0 | 1 | 0 | 0.50 | 9.627934 | 8.825088 |
+| 2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 | 0 | 0 | 1 | 0 | 0.75 | 9.567045 | 7.266656 |
+| 2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 | 0 | 0 | 1 | 0 | 1.00 | 9.506157 | NA |
+| 2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 | 0 | 0 | 1 | 0 | 1.25 | 9.445269 | NA |
+| 2 | 0.9638439 | 0.5494779 | -0.2502899 | 0.2564471 | 0 | 0 | 1 | 0 | 1.50 | 9.384381 | NA |
 
 ## Comparing the approaches
 

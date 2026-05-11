@@ -114,6 +114,7 @@ for numerical summaries of the simulated data.
 
 ``` r
 
+
 ep1 <- list(
   endpoint_type = "continuous",
   baseline_mean = 10,

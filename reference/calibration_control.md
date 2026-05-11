@@ -15,6 +15,7 @@ approximately equal to the user-supplied `correlation_matrix`.
 
 The default list is:
 
+
     list(
       n_mc = 10000,
       tol = 0.001,

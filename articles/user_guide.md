@@ -1,6 +1,7 @@
 # A User Guide for the \`endpoints\` Package
 
 ``` r
+
 library(endpoints)
 library(tidyverse)
 ```
@@ -49,6 +50,7 @@ An optional argument used in multivariate settings is:
 This is discussed in later sections.
 
 ``` r
+
 makeData(correlation_matrix = NULL,
   sample_size_per_group = 1000,
   endpoint_details = list(
@@ -70,6 +72,7 @@ time-to-event. We discuss each below.
 An example specification of a continuous endpoint is seen below:
 
 ``` r
+
 c_ep1 <- list(
       endpoint_type = "continuous",
       baseline_mean = 10,
@@ -95,6 +98,7 @@ For a two-arm study, `trt_effect = -2` implies
 `treatment mean = baseline_mean - 2`
 
 ``` r
+
 simple1 <- makeData(correlation_matrix = NULL,
   sample_size_per_group = 1000,
   SEED = 1,
@@ -106,6 +110,7 @@ A quick summary of the simulation details is displayed when printing the
 resulting object:
 
 ``` r
+
 simple1
 ```
 
@@ -132,13 +137,14 @@ To confirm the distributions have the correct parameters, we can use the
 summary function
 
 ``` r
+
 knitr::kable(summary(simple1)$continuous)
 ```
 
 | endpoint | arm | input_baseline_mean | input_sd | input_trt_effect | est_baseline_mean | est_trt_effect | est_resid_sd |
-|:---------|----:|--------------------:|---------:|-----------------:|------------------:|---------------:|-------------:|
-| Cont_1   |   0 |                  10 |        3 |                0 |          10.02815 |       0.000000 |     2.999293 |
-| Cont_1   |   1 |                  10 |        2 |               -2 |          10.02815 |      -2.102053 |     2.066130 |
+|:---|---:|---:|---:|---:|---:|---:|---:|
+| Cont_1 | 0 | 10 | 3 | 0 | 10.02815 | 0.000000 | 2.999293 |
+| Cont_1 | 1 | 10 | 2 | -2 | 10.02815 | -2.102053 | 2.066130 |
 
 From above, we see that the estimated baseline mean, treatment effect
 and standard deviation parameter are all close to the true values.
@@ -147,6 +153,7 @@ The resulting simulated data set can be accessed from the main
 `makeDataSim` object:
 
 ``` r
+
 head(simple1$data)
 ```
 
@@ -169,6 +176,7 @@ probability scale (`trt_prob`) or on the log-odds scale (`trt_effect`),
 but not both.
 
 ``` r
+
 bin_ep1 <- list(
       endpoint_type  = "binary",
       baseline_prob  = 0.30,
@@ -188,6 +196,7 @@ Once again we can confirm that the simulated data has the proper
 characteristics:
 
 ``` r
+
 simple2 <- makeData(correlation_matrix = NULL,
   sample_size_per_group = 1000,
   SEED = 2,
@@ -197,9 +206,9 @@ knitr::kable(summary(simple2)$binary)
 ```
 
 | endpoint | arm | input_baseline_prob | input_trt_logOR | input_trt_prob | est_baseline_prob | est_trt_logOR | est_prob |
-|:---------|----:|--------------------:|----------------:|---------------:|------------------:|--------------:|---------:|
-| Bin_1    |   0 |                 0.3 |       0.0000000 |           0.30 |             0.302 |      0.000000 |    0.302 |
-| Bin_1    |   1 |                 0.3 |       0.6466272 |           0.45 |             0.302 |      0.641161 |    0.451 |
+|:---|---:|---:|---:|---:|---:|---:|---:|
+| Bin_1 | 0 | 0.3 | 0.0000000 | 0.30 | 0.302 | 0.000000 | 0.302 |
+| Bin_1 | 1 | 0.3 | 0.6466272 | 0.45 | 0.302 | 0.641161 | 0.451 |
 
 #### Count
 
@@ -208,6 +217,7 @@ distribution with a log-link function. The parameterization arguments
 are as follows:
 
 ``` r
+
 int_ep1 <- list(
       endpoint_type = "count",
       baseline_mean = 8,    
@@ -231,6 +241,7 @@ int_ep1 <- list(
 An example use can be seen below:
 
 ``` r
+
 simple3 <- makeData(correlation_matrix = NULL,
   sample_size_per_group = 1000,
   SEED = 2,
@@ -240,9 +251,9 @@ knitr::kable(summary(simple3)$count)
 ```
 
 | endpoint | arm | input_baseline_mean | input_trt_logRR | input_trt_mean | input_size | input_p_zero | est_baseline_mean | est_trt_logRR | est_size | obs_mean | obs_p0 |
-|:---------|----:|--------------------:|----------------:|---------------:|-----------:|-------------:|------------------:|--------------:|---------:|---------:|-------:|
-| Int_1    |   0 |                   8 |       0.0000000 |              8 |        100 |            0 |             7.987 |     0.0000000 | 54.55504 |    7.987 |      0 |
-| Int_1    |   1 |                   8 |       0.2231436 |             10 |        100 |            0 |             7.987 |     0.2321426 | 54.55504 |   10.074 |      0 |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Int_1 | 0 | 8 | 0.0000000 | 8 | 100 | 0 | 7.987 | 0.0000000 | 54.55504 | 7.987 | 0 |
+| Int_1 | 1 | 8 | 0.2231436 | 10 | 100 | 0 | 7.987 | 0.2321426 | 54.55504 | 10.074 | 0 |
 
 *Note:* When `size` is large, the negative binomial approaches a Poisson
 distribution. In those cases, the dispersion parameter may be difficult
@@ -269,6 +280,7 @@ order.
 For example, imagine we have a 4-grp study with a binary endpoint:
 
 ``` r
+
 bin_4grp <- list(
       endpoint_type  = "binary",
       baseline_prob  = 0.30,
@@ -306,15 +318,16 @@ Once again we can ensure the distributions are being simulated correctly
 by calling `summary`:
 
 ``` r
+
 knitr::kable(summary(sim_bin4grp)$binary)
 ```
 
 | endpoint | arm | input_baseline_prob | input_trt_logOR | input_trt_prob | est_baseline_prob | est_trt_logOR | est_prob |
-|:---------|----:|--------------------:|----------------:|---------------:|------------------:|--------------:|---------:|
-| Bin_1    |   0 |                 0.3 |       0.0000000 |           0.30 |              0.29 |     0.0000000 |    0.290 |
-| Bin_1    |   1 |                 0.3 |       0.2282587 |           0.35 |              0.29 |     0.1871990 |    0.330 |
-| Bin_1    |   2 |                 0.3 |       0.4418328 |           0.40 |              0.29 |     0.4690414 |    0.395 |
-| Bin_1    |   3 |                 0.3 |       0.6466272 |           0.45 |              0.29 |     0.6744902 |    0.445 |
+|:---|---:|---:|---:|---:|---:|---:|---:|
+| Bin_1 | 0 | 0.3 | 0.0000000 | 0.30 | 0.29 | 0.0000000 | 0.290 |
+| Bin_1 | 1 | 0.3 | 0.2282587 | 0.35 | 0.29 | 0.1871990 | 0.330 |
+| Bin_1 | 2 | 0.3 | 0.4418328 | 0.40 | 0.29 | 0.4690414 | 0.395 |
+| Bin_1 | 3 | 0.3 | 0.6466272 | 0.45 | 0.29 | 0.6744902 | 0.445 |
 
 ## Correlated Endpoints with Gaussian Copula
 
@@ -359,6 +372,7 @@ function which has two arguments:
 Consider a trial with 3 endpoints with the following correlation:
 
 ``` r
+
 corMat_3 <- corr_make(
   num_endpoints =   3,
   values = rbind(
@@ -374,6 +388,7 @@ Using the endpoints defined above, we can now generate a trial with
 three correlated endpoints, one continuous, one binary and one count:
 
 ``` r
+
 sim_3eps <- makeData(
   correlation_matrix    = corMat_3,
   sample_size_per_group = 3000,
@@ -390,6 +405,7 @@ To quickly confirm that the estimated correlation between endpoints is
 close to the correlation specified, we use the `summary` function:
 
 Show summary(sim_3eps)
+
 
 
 
@@ -450,6 +466,7 @@ Here we also introduce the `plot` function, which allows users to
 quickly confirm simulation details:
 
 ``` r
+
 plot(sim_3eps)
 ```
 
@@ -459,6 +476,7 @@ Note that different experimental arms can be plotted by toggling the
 `arm` argument, and that names may also be supplied:
 
 ``` r
+
 plot(sim_3eps,arm=1,names=c("BMI","Illness Worsened","# episodes"))
 ```
 
@@ -485,6 +503,7 @@ elements in `endpoint_details` as follows:
   subsequent non-fatal TTE endpoints. See below for details.
 
 ``` r
+
 tte_ep1 <- list(
       endpoint_type  = "tte",
       baseline_rate  = 1/24,        
@@ -512,6 +531,7 @@ we want to select a censoring rate such that we observe an event rate of
 [`rate_from_prob()`](https://boehringer-ingelheim.github.io/endpoints/reference/rate_from_prob.md):
 
 ``` r
+
 lambda_c <- rate_from_prob(
   target_prob = 0.90, # target proportion of patients with events
   mode = "simple", 
@@ -534,6 +554,7 @@ this case, the output is the rate of the censoring mechanism for the
 secondary endpoint.
 
 ``` r
+
 rate_from_prob(
   target_prob = 0.20, # hypothetical example
   mode = "semi-competing",
@@ -590,6 +611,7 @@ for the censoring rate, we solve \\\frac{1/35}{0.45} - \frac{1}{35} = 1/
 We assume a correlation of .2 between the endpoints.
 
 ``` r
+
 tte_fatal <-  list(
       endpoint_type  = "tte",
       baseline_rate  = 1/50,        
@@ -608,6 +630,7 @@ tte_nonfatal <- list(
 ```
 
 ``` r
+
 small_cor <- corr_make(
   num_endpoints = 2,
   values = rbind( c(1,2, 0.20)) # correlation
@@ -645,6 +668,7 @@ tte_ex
 And we can confirm our inputs:
 
 Show summary(tte_ex)
+
 
 
 
@@ -743,6 +767,7 @@ To illustrate, we can re-run the example above, but this time setting a
 24 time-unit limit:
 
 ``` r
+
  tte_ex_admin_cens <- makeData(
   correlation_matrix    = small_cor,
   sample_size_per_group = 5000,
@@ -759,6 +784,7 @@ Comparing the datasets, we now see patient 3 is administratively
 censored at time 24:
 
 ``` r
+
 head(tte_ex$data) %>% knitr::kable(.,caption = "Data without admin censoring")
 ```
 
@@ -771,9 +797,10 @@ head(tte_ex$data) %>% knitr::kable(.,caption = "Data without admin censoring")
 |  0.7436455 |  0.7436455 |   0 |        0 |        0 |
 | 18.4536996 |  7.1912254 |   0 |        1 |        0 |
 
-Data without admin censoring
+Data without admin censoring {.table}
 
 ``` r
+
 head(tte_ex_admin_cens$data) %>% knitr::kable(.,caption = "Data with admin censoring")
 ```
 
@@ -786,7 +813,7 @@ head(tte_ex_admin_cens$data) %>% knitr::kable(.,caption = "Data with admin censo
 |  0.7436455 |  0.7436455 |   0 |        0 |        0 |          0 |
 | 18.4536996 |  7.1912254 |   0 |        1 |        0 |          0 |
 
-Data with admin censoring
+Data with admin censoring {.table}
 
 Note that an `enrollTime` column is automatically generated when using
 this feature.
@@ -803,6 +830,7 @@ Once again, we can use the helper function
 to solve this math:
 
 ``` r
+
 rate_from_prob(
   target_prob = 0.20,
   mode = "admin",
@@ -816,6 +844,7 @@ which can then be used in
 [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
 
 ``` r
+
 admin_ex2 <- makeData(
   correlation_matrix    = NULL,
   sample_size_per_group = 5000,
@@ -864,6 +893,7 @@ then maximum potential time-on-study is \\\mathcal{A} - T_E\\, where
 \\T_E\\ is time of enrollment. If we re-run the example from above,
 
 ``` r
+
  tte_admin_cens_exp_enroll <- makeData(
   correlation_matrix    = small_cor,
   sample_size_per_group = 5000,
@@ -888,13 +918,14 @@ knitr::kable(head(tte_admin_cens_exp_enroll$data),caption = "Data with admin cen
 |  0.7436455 |  0.7436455 |   0 |        0 |        0 |  1.1697326 |
 | 18.4536996 |  7.1912254 |   0 |        1 |        0 |  0.8527512 |
 
-Data with admin censoring and stochastic enrollment
+Data with admin censoring and stochastic enrollment {.table}
 
 we now see that patient 3 is now censored at time 19.72 (instead of time
 24), as their enrollment time is 4.28. From the code above, we observed
 an enrollment curve of:
 
 ``` r
+
 ggplot2::ggplot(tte_admin_cens_exp_enroll$data, aes(x = enrollTime)) +
   geom_histogram(bins = 30,fill = "steelblue", alpha = 0.35,
     color = "black",linewidth = 0.3) +
@@ -910,6 +941,7 @@ ggplot2::ggplot(tte_admin_cens_exp_enroll$data, aes(x = enrollTime)) +
 The function also supports a simple enrollment (uniform) curve:
 
 ``` r
+
 ex_unif <- makeData(
   correlation_matrix    = small_cor,
   sample_size_per_group = 5000,
@@ -947,6 +979,7 @@ period (e.g. heavy \\\rightarrow\\ light \\\rightarrow\\ medium
 For example,
 
 ``` r
+
 pw_example <- makeData(
   correlation_matrix    = NULL,
   sample_size_per_group = 5000,
@@ -970,6 +1003,7 @@ pw_example <- makeData(
 yields the following pattern:
 
 ``` r
+
 ggplot2::ggplot(pw_example$data, aes(x = enrollTime)) +
   geom_histogram(bins = 30,fill = "steelblue", alpha = 0.35,
     color = "black",linewidth = 0.3) +
@@ -1042,6 +1076,7 @@ distribution within the final bin, here we set this value to 0.25.
 Putting this together:
 
 ``` r
+
 # define rates from calculations above
 rate1 <- -log(.9)/8
 rate2 <- -log(1-.35/exp(-rate1*8))/8
@@ -1070,6 +1105,7 @@ pw_example2 <- makeData(
 And to double check enrollment scheme:
 
 ``` r
+
 pw_example2$data %>%
     dplyr::summarize(.,
   Bin1 = mean(enrollTime < 8),
@@ -1082,7 +1118,7 @@ pw_example2$data %>%
 |------:|-------:|-------:|
 | 0.107 | 0.3471 | 0.5459 |
 
-Observed enrollment proportion by time period
+Observed enrollment proportion by time period {.table}
 
 ## References
 
