@@ -185,7 +185,10 @@ This represents expected accrual of:
 }
 
 If the requested sample size is not reached by the final cutpoint, enrollment
-continues beyond the last cutpoint using the final interval's rate.
+continues beyond the last cutpoint using the final interval's rate. For
+example, with cutpoints \code{c(0, 12, 24, 52)} and rates
+\code{c(1, 5, 10)}, the rate of 10 applies from 24 to 52 and also after 52
+if additional subjects are needed.
 }
 
 \section{Interaction with follow-up and trial-end rules}{
