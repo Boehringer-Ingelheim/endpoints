@@ -1,0 +1,94 @@
+---
+title: "Stochastic Enrollment, Follow-up and Trial Calendar"
+author: "Colin Longhurst"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    mathjax: true
+vignette: >
+  %\VignetteIndexEntry{A User Guide for the `endpoints` Package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+# Introduction
+
+In many clinical trial simulations, the endpoint model is only one part of the data-generating process. Real trials also unfold over calendar time: subjects enroll gradually, follow-up differs between early and late enrollees, and final analysis may occur at a fixed calendar date, after the last randomized subject has reached a minimum amount of follow-up, or after a target number of events has accrued. This vignette introduces the stochastic enrollment, follow-up, and trial-calendar features in `{endpoints}`. We show how to simulate homogeneous Poisson-process enrollment, piecewise Poisson-process enrollment with changing accrual rates, subject-level follow-up limits, and several trial-ending rules. These tools are especially useful for time-to-event simulations, where enrollment timing and administrative censoring directly affect observed event times and censoring indicators.
+
+
+# Stochastic enrollment with `enrollment_details`
+
+The `enrollment_details` argument controls how subjects enter the trial calendar. If no stochastic enrollment is specified, all subjects are treated as enrolling at calendar time 0. When stochastic enrollment is used, `makeData()` generates an `enrollTime` column, where `enrollTime` is the subject's calendar enrollment time relative to the first randomized subject.
+
+In `{endpoints}`, stochastic enrollment is modeled using a Poisson-process accrual framework. In the simplest case, enrollment follows a homogeneous Poisson process with constant accrual rate \(\lambda\). Equivalently, the waiting times between consecutively enrolled subjects are exponentially distributed:
+
+\[
+G_i \sim \mathrm{Exponential}(\lambda),
+\]
+
+and enrollment times are generated as cumulative sums:
+
+\[
+T_{E,i} = \sum_{m=1}^{i} G_m.
+\]
+
+The first enrollment time is shifted to 0, so the trial calendar starts at the first randomized subject.
+
+A more flexible option is piecewise Poisson-process accrual. In this setting, the accrual rate changes over calendar intervals. If the current trial calendar time lies in interval \(k\), then the waiting time to the next enrolled subject is generated using that interval's rate:
+
+\[
+G \sim \mathrm{Exponential}(\lambda_k).
+\]
+
+If the proposed next enrollment crosses a cutpoint, the process advances to that cutpoint and continues using the next interval's rate. This allows users to represent common trial accrual patterns such as slow start-up, ramp-up, plateau enrollment, or temporary enrollment pauses.
+
+For this section, we use a single continuous endpoint so that we can focus entirely on enrollment behavior.
+
+
+## Homogeneous Poisson-process enrollment
+
+Here we demonstrate the simple case when `simulate_distribution = "exponential"`. In this example, we assume a two-arm trial with 300 subjects per arm and a single continuous endpoint. We set `enrollment_exponential_rate = 10` meaning that the trial enrolls, on average, 10 subjects per unit of calendar time.
+
+
+
+```{r homogeneous-poisson-sim}
+ep1 <- list(
+  endpoint_type = "continuous",
+  baseline_mean = 10,
+  sd = 5,
+  trt_effect =  -2
+)
+
+sim_exp <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 300,
+  SEED = 101,
+  endpoint_details = list(ep1),
+  enrollment_details = list(
+    enrollment_distribution     = "exponential",
+    enrollment_exponential_rate = 10
+  )
+)
+
+dat_exp <- as.data.frame(sim_exp)
+```
+
+
+
+```{r homogeneous-poisson-hist, fig.width=7, fig.height=4}
+ggplot2::ggplot(dat_exp, aes(x = enrollTime)) +
+  geom_histogram(bins = 30,fill = "steelblue", alpha = 0.35,
+    color = "black",linewidth = 0.3) +
+  labs(
+    x = "Enrollment time",
+    y ="Number enrolled",
+    title = "Homogeneous Poisson-process enrollment",) +
+  theme_bw()
+```
+
+

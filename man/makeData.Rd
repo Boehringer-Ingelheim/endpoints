@@ -3,7 +3,7 @@
 \name{makeData}
 \alias{makeData}
 \title{Simulate trial data with mixed endpoint types, optional Gaussian-copula
-dependence, and enrollment/censoring features}
+dependence, stochastic enrollment, and trial-calendar censoring}
 \usage{
 makeData(
   correlation_matrix,
@@ -11,6 +11,8 @@ makeData(
   sample_size_per_group,
   endpoint_details,
   enrollment_details = list(),
+  followup_details = list(),
+  trial_end_details = list(),
   non_fatal_censors_fatal = FALSE,
   target_correlation = TRUE,
   arm_mode = c("auto", "full", "control"),
@@ -21,309 +23,112 @@ makeData(
 \arguments{
 \item{correlation_matrix}{A numeric correlation matrix specifying the
 dependence structure across endpoints. If \code{target_correlation = FALSE},
-this is interpreted on the \emph{latent Gaussian} scale. If \code{NULL},
-\code{makeData()} enters single-endpoint mode, and exactly one endpoint
-must be supplied in \code{endpoint_details}. Typically created with
-\code{\link{corr_make}}.}
+this is interpreted on the latent Gaussian scale. If \code{NULL},
+\code{makeData()} enters single-endpoint mode.}
 
-\item{SEED}{Optional numeric scalar seed used to initialize the
-random-number generator via \code{set.seed()}. If \code{NULL}, the current
-RNG state is used.}
+\item{SEED}{Optional numeric scalar seed used to initialize the random-number
+generator via \code{set.seed()}.}
 
 \item{sample_size_per_group}{Integer scalar or integer vector giving the
-sample size per arm. If a scalar, the same sample size is used for all
-arms. If a vector, it must be of length \eqn{K}, where \eqn{K} is the
-total number of arms, including control.}
+sample size per arm.}
 
-\item{endpoint_details}{A non-empty list of endpoint specification lists,
-one per endpoint.
+\item{endpoint_details}{A non-empty list of endpoint specification lists, one
+per endpoint.}
 
-Each sub-list defines the marginal distribution and arm-specific
-parameters for one endpoint. See \code{\link{endpoint_details}} for the
-complete schema, supported endpoint types, and detailed examples.}
-
-\item{enrollment_details}{A named list controlling enrollment and
-administrative follow-up. Fields include:
+\item{enrollment_details}{A named list controlling enrollment. Fields include:
 \describe{
-\item{administrative_censoring}{
-Numeric scalar. If non-\code{NULL}, follow-up is administratively
-censored at this time.
-}
 \item{enrollment_distribution}{
-Character. One of \code{"none"}, \code{"uniform"},
-\code{"exponential"}, or \code{"piecewise"}.
+Character. One of \code{"none"}, \code{"exponential"}, or
+\code{"piecewise"}. The value \code{"exponential"} denotes homogeneous
+Poisson-process accrual, with exponentially distributed inter-arrival
+times. The value \code{"piecewise"} denotes piecewise homogeneous
+Poisson-process accrual.
 }
 \item{enrollment_exponential_rate}{
-Numeric scalar rate for exponential enrollment when
+Numeric scalar accrual rate per unit time when
 \code{enrollment_distribution = "exponential"}.
 }
 \item{piecewise_enrollment_cutpoints}{
-Numeric vector of cutpoints defining intervals for piecewise
-enrollment.
+Numeric vector of cutpoints defining calendar intervals for piecewise
+enrollment. Should start at 0.
 }
 \item{piecewise_enrollment_rates}{
-Numeric vector of rates, one per interval, for piecewise exponential
-enrollment.
+Numeric vector of accrual rates, one per interval, for piecewise
+Poisson-process enrollment.
 }
-}
+}}
 
-See \code{\link{enrollment_details}} for full details and recommended
-parameterization.}
+\item{followup_details}{A named list controlling subject-level follow-up
+limits. Fields include:
+\describe{
+\item{min_followup}{
+Planned minimum follow-up used by trial-ending rules such as
+\code{"last_patient_min_followup"}.
+}
+\item{max_followup}{
+Maximum observable follow-up for any individual subject.
+}
+}}
+
+\item{trial_end_details}{A named list controlling the calendar time of final
+analysis or database cutoff. Fields include:
+\describe{
+\item{type}{
+Character. One of \code{"none"}, \code{"fixed_calendar"},
+\code{"last_patient_min_followup"}, or \code{"event_driven"}.
+}
+\item{trial_end_time}{
+Numeric scalar calendar time for \code{type = "fixed_calendar"}.
+}
+\item{event_endpoint}{
+TTE endpoint used for event-driven stopping. May be a TTE ordinal such
+as \code{1}, or a character value such as \code{"TTE_1"}.
+}
+\item{target_events}{
+Positive integer number of events required for
+\code{type = "event_driven"}.
+}
+\item{require_min_followup}{
+Logical. For event-driven trials, if \code{TRUE}, the trial cannot end
+before the last randomized subject has \code{min_followup}.
+}
+\item{max_trial_duration}{
+Optional positive scalar maximum calendar trial duration.
+}
+\item{target_not_reached}{
+Character. One of \code{"error"}, \code{"max_trial_duration"}, or
+\code{"last_patient_min_followup"}.
+}
+}}
 
 \item{non_fatal_censors_fatal}{Logical. Controls semi-competing risks
-behavior when multiple TTE endpoints are present. If \code{TRUE}, censoring
-of a non-fatal endpoint can censor subsequent TTE endpoints according to
-the package's semi-competing-risk rules. If \code{FALSE}, non-fatal
-censoring does not censor other TTE endpoints.}
+behavior when multiple TTE endpoints are present.}
 
-\item{target_correlation}{Logical scalar.
+\item{target_correlation}{Logical scalar. If \code{TRUE}, numerical
+calibration is used to approximately match the requested observed Pearson
+correlation matrix.}
 
-If \code{TRUE} and \code{correlation_matrix} is not \code{NULL}, a
-numerical calibration step is used to search for a latent Gaussian
-correlation matrix whose transformed endpoints approximately match the
-requested observed Pearson correlation matrix.
-
-If \code{FALSE}, the supplied \code{correlation_matrix} is used directly
-as the latent Gaussian correlation matrix.
-
-This value should generally be set to \code{TRUE}, unless there is a
-compelling reason otherwise.}
-
-\item{arm_mode}{Character string controlling how the number of treatment
-arms is determined. Must be one of:
-\describe{
-\item{auto}{
-Infer the number of arms from the endpoint specifications. If no
-treatment-specific quantities are supplied, control-only mode is used.
-}
-\item{full}{
-Force a full multi-arm interpretation, even if some endpoint
-specifications omit treatment-specific effects.
-}
-\item{control}{
-Force control-only mode. In this case, treatment-specific arguments
-such as \code{trt_effect}, \code{trt_prob}, and \code{trt_count} are
-not allowed.
-}
-}
-
-This value should generally be set to \code{"auto"}.}
+\item{arm_mode}{Character string controlling how the number of treatment arms
+is determined. Must be one of \code{"auto"}, \code{"full"}, or
+\code{"control"}.}
 
 \item{calibration_control}{Named list of controls for the correlation
-calibration routine used when \code{target_correlation = TRUE}. Common
-controls include Monte Carlo size, tolerance, iteration caps, and
-constraints to ensure a valid correlation matrix. See
-\code{\link{calibration_control}} for more detail.}
+calibration routine.}
 }
 \value{
 An object of class \code{"makeDataSim"}.
-
-Internally, this is a list with at least:
-\describe{
-\item{data}{
-A \code{data.frame} containing the simulated dataset.
-}
-\item{meta}{
-A metadata list storing endpoint types, endpoint names, arm counts,
-and input settings.
-}
-}
-
-The \code{data} component may include:
-\describe{
-\item{trt}{
-Treatment arm indicator, omitted in control-only mode.
-}
-\item{Cont_1, Cont_2, \dots}{
-Continuous endpoints.
-}
-\item{Bin_1, Bin_2, \dots}{
-Binary endpoints.
-}
-\item{Int_1, Int_2, \dots}{
-Count endpoints.
-}
-\item{TTE_1, TTE_2, \dots}{
-Observed time-to-event variables.
-}
-\item{Status_1, Status_2, \dots}{
-TTE event indicators, with \code{1 = event} and
-\code{0 = censored}.
-}
-\item{enrollTime}{
-Enrollment times, when stochastic enrollment is used.
-}
-}
 }
 \description{
 \code{makeData()} simulates subject-level trial data with one or more
 endpoints. Supported endpoint types include continuous, binary, count, and
 time-to-event outcomes. When multiple endpoints are supplied, dependence may
-be induced through a Gaussian copula (NORTA-style construction), with
-optional numerical calibration to approximately match a target Pearson
-correlation matrix on the observed endpoint scale.
+be induced through a Gaussian copula, with optional numerical calibration to
+approximately match a target Pearson correlation matrix on the observed
+endpoint scale.
 }
 \details{
-The function also supports:
-\itemize{
-\item multiple treatment arms,
-\item independent censoring for time-to-event outcomes,
-\item fatal and non-fatal time-to-event logic (including semi-competing
-risks),
-\item administrative censoring,
-\item stochastic enrollment (uniform, exponential, or piecewise
-exponential), and
-\item generation of longitudinal data.
+The function supports multiple treatment arms, independent censoring for
+time-to-event outcomes, fatal and non-fatal time-to-event logic, stochastic
+enrollment, maximum follow-up caps, variable-duration trial endings, fixed
+calendar trial endings, and event-driven trial endings.
 }
-}
-\section{Overview}{
-
-When multiple endpoints are simulated, \code{makeData()} uses a Gaussian
-copula construction. If \eqn{\mathbf{Z} \sim N(\mathbf{0}, \Sigma_Z)} is a
-latent multivariate normal vector, then each endpoint is generated as
-\deqn{
-X_j = F_j^{-1}\{\Phi(Z_j)\},
-}
-where \eqn{\Phi} is the standard normal CDF and \eqn{F_j^{-1}} is the
-endpoint-specific quantile function.
-
-For continuous endpoints this yields Gaussian margins; for binary, count,
-and time-to-event endpoints, the corresponding marginal quantile functions
-are applied to the copula uniforms.
-}
-
-\section{Treatment arms}{
-
-The total number of study arms is generally determined from the lengths of
-treatment-specific inputs in \code{endpoint_details}, for example the length
-of \code{trt_effect}. When treatment arms are present, the output includes a
-\code{trt} column coded as \code{0, 1, 2, \dots}. This can also be
-controlled via \code{arm_mode}.
-}
-
-\section{Administrative censoring and enrollment}{
-
-If \code{administrative_censoring} is supplied, all TTE outcomes are
-truncated at the maximum available follow-up. If stochastic enrollment is
-enabled, each subject receives an \code{enrollTime}, and maximum observable
-follow-up is reduced to \eqn{\mathcal{A} - T_E}, where \eqn{\mathcal{A}} is
-the administrative censoring time and \eqn{T_E} is the enrollment time.
-}
-
-\section{Output object}{
-
-The returned object has class \code{"makeDataSim"} and is intended to be
-used with:
-\itemize{
-\item \code{print()} for a compact overview,
-\item \code{summary()} for marginal and correlation diagnostics, and
-\item \code{plot()} for quick visualization of endpoint relationships.
-}
-}
-
-\examples{
-library(endpoints)
-
-## One continuous endpoint, two-arm trial
-ep1 <- list(
-  endpoint_type = "continuous",
-  baseline_mean = 10,
-  sd            = 2,
-  trt_effect    = -1
-)
-
-sim1 <- makeData(
-  correlation_matrix    = NULL,
-  sample_size_per_group = 200,
-  SEED                  = 1,
-  endpoint_details      = list(ep1)
-)
-
-sim1
-summary(sim1)
-
-## Three correlated endpoints
-R3 <- corr_make(
-  num_endpoints = 3,
-  values = rbind(
-    c(1, 2, 0.20),
-    c(1, 3, 0.10),
-    c(2, 3, 0.15)
-  )
-)
-
-ep_cont <- list(
-  endpoint_type = "continuous",
-  baseline_mean = 10,
-  sd            = 2,
-  trt_effect    = -1
-)
-
-ep_bin <- list(
-  endpoint_type = "binary",
-  baseline_prob = 0.30,
-  trt_prob      = 0.45
-)
-
-ep_cnt <- list(
-  endpoint_type = "count",
-  baseline_mean = 8,
-  trt_count     = 10,
-  size          = 20,
-  p_zero        = 0
-)
-
-sim3 <- makeData(
-  correlation_matrix    = R3,
-  sample_size_per_group = 1000,
-  SEED                  = 123,
-  endpoint_details      = list(ep_cont, ep_bin, ep_cnt),
-  target_correlation    = TRUE
-)
-
-summary(sim3)
-
-## One TTE endpoint with administrative censoring and exponential enrollment
-ep_tte <- list(
-  endpoint_type  = "tte",
-  baseline_rate  = 1 / 24,
-  trt_effect     = log(0.8),
-  fatal_event    = TRUE
-)
-
-sim_tte <- makeData(
-  correlation_matrix    = NULL,
-  sample_size_per_group = 500,
-  endpoint_details      = list(ep_tte),
-  enrollment_details    = list(
-    administrative_censoring    = 24,
-    enrollment_distribution     = "exponential",
-    enrollment_exponential_rate = 1 / 4
-  )
-)
-
-summary(sim_tte)
-
-}
-\references{
-Cario, M. C., & Nelson, B. L. (1997). \emph{Modeling and generating random
-vectors with arbitrary marginal distributions and correlation matrix} (pp.
-1-19). Technical Report, Department of Industrial Engineering and Management
-Sciences, Northwestern University, Evanston, Illinois.
-}
-\seealso{
-\code{\link{endpoint_details}} for endpoint specification details.
-
-\code{\link{enrollment_details}} for administrative censoring and stochastic
-enrollment options.
-
-\code{\link{calibration_control}} for calibration tuning parameters.
-
-\code{\link{corr_make}} for creating correlation matrices.
-
-See the \code{vignette("user_guide", package = "endpoints")} vignette for
-introductory examples, and the
-\code{vignette("longitudinal_data", package = "endpoints")} vignette for
-simulating longitudinal data.
-}
-\keyword{simulation}
