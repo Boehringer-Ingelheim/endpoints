@@ -28,13 +28,12 @@ endpoints. This affects only the displayed labels in the plot and does not
 modify the underlying data.}
 
 \item{\dots}{Additional arguments passed directly to
-\code{GGally::ggpairs()}. This can be used to customize panels, labels,
-sizing, or other plot options.}
+\code{\link[graphics]{pairs}()}. This can be used to customize panels,
+labels, sizing, or other plot options.}
 }
 \value{
-A \code{GGally::ggpairs} object, which is also a
-\code{ggplot}-compatible object and can be printed or further modified using
-standard \pkg{ggplot2} syntax.
+Called for its side effect (a base-graphics plot). Returns
+\code{invisible(NULL)}.
 }
 \description{
 \code{plot.makeDataSim()} produces a pairwise plot matrix for the simulated
@@ -42,10 +41,11 @@ endpoints stored in a \code{"makeDataSim"} object returned by
 \code{\link{makeData}}.
 }
 \details{
-The method uses \code{GGally::ggpairs()} to display scatterplots in the
-upper triangle and pairwise correlations in the lower triangle for the
-selected study arm. This is intended as a quick diagnostic tool for
-inspecting the joint structure of simulated endpoints.
+The method uses \code{\link[graphics]{pairs}()} to display scatterplots
+(with a loess smoother) in the upper triangle and Pearson correlation
+coefficients in the lower triangle for the selected study arm. This is
+intended as a quick diagnostic tool for inspecting the joint structure of
+simulated endpoints.
 }
 \section{Displayed data}{
 
@@ -61,17 +61,11 @@ in the pair plot.
 }
 
 \section{Panel layout}{
- The returned \code{ggpairs} object is configured as
-follows: \itemize{ \item upper triangle: scatterplots for continuous-style
-panels, \item lower triangle: pairwise correlations, \item title: \code{"Arm
-<k>"} for the selected arm. } A \code{ggplot2::theme_bw()} theme is applied
-by default.
-}
-
-\section{Dependencies}{
- This method requires both \pkg{GGally} and
-\pkg{ggplot2}. If either package is not installed, the method throws an
-error with an installation message.
+ The plot matrix is configured as follows: \itemize{
+\item upper triangle: scatterplots, \item diagonal: histograms showing
+the marginal distribution of each endpoint, \item lower triangle: Pearson
+correlation coefficients, \item title: \code{"Arm <k>"} for the selected
+arm. }
 }
 
 \examples{
