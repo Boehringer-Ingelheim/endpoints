@@ -12,7 +12,8 @@ vignette: >
 ---
 
 
-```{r}
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+pkgload::load_all(".")
 library(tidyverse)
 ```
 
@@ -203,7 +204,8 @@ enroll_curve_piece <- dat_piece %>%
 
 The table below shows the realized number of enrolled subjects in each calendar
 interval. Because enrollment is stochastic, the observed counts will vary from
-run to run even when the target piecewise rates are fixed. The final row represents the remaining subjects enrolled after the last user-specified cutpoint.
+run to run even when the target piecewise rates are fixed. The final row represents
+the remaining subjects enrolled after the last user-specified cutpoint. **Please note that the last piecewise enrollment rate continues beyond the final cutpoint until all planned subjects have enrolled.**
 
 ```{r piecewise-poisson-table}
 interval_summary_piece %>%
@@ -334,14 +336,118 @@ respected (`require_min_followup`), and what should happen if the event target
 is not reached (`target_not_reached` together with an optional
 `max_trial_duration`).
 
+In particular, `require_min_followup = TRUE` is useful when the trial should
+not stop immediately at the moment the event target is reached. Instead, the
+final analysis is delayed until both conditions are satisfied: the required
+number of events has occurred and the last randomized subject has reached
+`min_followup`. This is a common way to combine an event-driven stopping rule
+with a design requirement that late enrollees still contribute a minimum amount
+of follow-up.
+
 In other words, `followup_details` determines how much follow-up each subject
 can contribute, while `trial_end_details` determines when the trial is allowed
 to stop. These two settings work together to define the final
 `availableFollowup` for each enrolled subject.
 
+## Example: fixed calendar trial end
+
+The simplest trial-ending rule is a fixed calendar cutoff. In this setting, the
+user directly specifies the final analysis time through
+`trial_end_details$trial_end_time`, and each subject's follow-up is then
+determined by how early or late they entered the study.
+
+To illustrate, consider a two-arm time-to-event trial with 100 subjects per
+arm. Suppose the annual event rate in the control group is 30%, the treatment
+hazard ratio is 0.6, and there is also 15% random censoring. We measure
+time in months, so we convert the annual event probability into a monthly
+exponential hazard and use `rate_from_prob()` to obtain an approximate random
+censoring rate.
+
+```{r tte-fixed-setup}
+baseline_rate_fixed <- rate_from_prob(
+  target_prob = 0.30,
+  mode = "admin",
+  admin_time = 12
+)
+
+censor_rate_fixed <- rate_from_prob(
+  target_prob = 0.85,
+  mode = "simple",
+  event_rate = baseline_rate_fixed
+)
+
+ep_tte_fixed <- list(
+  endpoint_type = "tte",
+  baseline_rate = baseline_rate_fixed,
+  trt_effect = log(0.6),
+  censoring_rate = censor_rate_fixed,
+  fatal_event = TRUE
+)
+```
+
+In the example below, we assume moderate exponential enrollment and set a fixed
+calendar trial end at 30 months. 
+
+```{r tte-fixed-calendar}
+sim_tte_fixed <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 100,
+  SEED = 41,
+  endpoint_details = list(ep_tte_fixed),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 12
+  ),
+  trial_end_details = list(
+    type = "fixed_calendar",
+    trial_end_time = 30
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+
+dat_tte_fixed <- as.data.frame(sim_tte_fixed)
+tc_tte_fixed <- sim_tte_fixed$meta$trial_calendar
+
+tte_fixed_summary <- tibble(
+  trial_end_time = tc_tte_fixed$trial_end_time,
+  max_enroll_time = max(dat_tte_fixed$enrollTime),
+  mean_available_followup = mean(dat_tte_fixed$availableFollowup),
+  observed_events = sum(dat_tte_fixed$Status_1)
+)
+
+tte_fixed_summary %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Fixed calendar trial end"
+  )
+```
+
+Because the trial always ends at calendar time 30, earlier enrollees have more
+potential follow-up than later enrollees. In this design, the resulting
+follow-up is approximately
+\[
+\mathrm{availableFollowup}_i =
+\min( 30 - T_{E,i}),
+\]
+truncated at 0 if a subject enrolls after the fixed calendar cutoff.
+
+```{r tte-fixed-head}
+dat_tte_fixed %>%
+  select(trt, TTE_1, Status_1, enrollTime, availableFollowup) %>%
+  arrange(enrollTime) %>% 
+  head() %>%
+  knitr::kable(
+    digits = 2,
+    caption = "First six patients enrolled showing demonstrating fixed follow-up time"
+  )
+```
+
 ## Example: last-patient-minimum-follow-up design
 
-To illustrate these ideas, consider a two-arm time-to-event trial with 100
+We now move to a slightly more design-driven rule, where the trial stays open
+until the last randomized subject has reached a minimum amount of follow-up. To
+illustrate these ideas, consider a two-arm time-to-event trial with 100
 subjects per arm. Suppose the annual event rate in the control group is 30%,
 the treatment hazard ratio is 0.6, and there is also 15% random censoring. We
 measure time in months, so we first convert the annual event rate into a
@@ -574,6 +680,10 @@ event_exp_summary %>%
   )
 ```
 
+The realized calendar quantities are stored in `sim_event_exp$meta$trial_calendar`,
+which includes the trial end time, the stopping reason, whether the event target
+was reached, and the number of events observed at the realized trial end.
+
 Now we hold the endpoint and stopping-rule settings fixed, but replace the
 simple exponential accrual model with a piecewise enrollment pattern that
 starts more slowly and accelerates later in the trial.
@@ -638,9 +748,231 @@ which gives more time for secondary non-fatal events to accrue before the
 fatal endpoint reaches its target. This is one of the main reasons it can be
 important to model enrollment explicitly when simulating event-driven designs.
 
+## Event-driven stopping with `require_min_followup = TRUE`
 
+In some event-driven trials, reaching the target number of events is not
+sufficient by itself. Investigators may also want the last randomized subject
+to contribute a minimum amount of follow-up before the final analysis. This can
+be enforced by setting `require_min_followup = TRUE` together with
+`followup_details$min_followup`.
 
+```{r event-driven-min-followup}
+sim_event_no_min <- makeData(
+  correlation_matrix = cor_tte2,
+  sample_size_per_group = 150,
+  SEED = 77,
+  endpoint_details = list(ep_fatal, ep_nonfatal),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 12
+  ),
+  followup_details = list(
+    min_followup = 12,
+    max_followup = 48
+  ),
+  trial_end_details = list(
+    type = "event_driven",
+    event_endpoint = "TTE_1",
+    target_events = 70,
+    require_min_followup = FALSE
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
 
+sim_event_with_min <- makeData(
+  correlation_matrix = cor_tte2,
+  sample_size_per_group = 150,
+  SEED = 77,
+  endpoint_details = list(ep_fatal, ep_nonfatal),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 12
+  ),
+  followup_details = list(
+    min_followup = 12,
+    max_followup = 48
+  ),
+  trial_end_details = list(
+    type = "event_driven",
+    event_endpoint = "TTE_1",
+    target_events = 70,
+    require_min_followup = TRUE
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+
+dat_event_no_min <- as.data.frame(sim_event_no_min)
+dat_event_with_min <- as.data.frame(sim_event_with_min)
+
+tc_event_no_min <- sim_event_no_min$meta$trial_calendar
+tc_event_with_min <- sim_event_with_min$meta$trial_calendar
+
+event_min_compare <- tibble(
+  scenario = c("No minimum follow-up", "Require minimum follow-up"),
+  trial_end_time = c(
+    tc_event_no_min$trial_end_time,
+    tc_event_with_min$trial_end_time
+  ),
+  trial_end_reason = c(
+    tc_event_no_min$trial_end_reason,
+    tc_event_with_min$trial_end_reason
+  ),
+  n_events_at_end = c(
+    tc_event_no_min$n_events_at_end,
+    tc_event_with_min$n_events_at_end
+  ),
+  mean_available_followup = c(
+    mean(dat_event_no_min$availableFollowup),
+    mean(dat_event_with_min$availableFollowup)
+  )
+)
+
+event_min_compare %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Minimum follow-up can delay an event-driven final analysis"
+  )
+```
+
+When `require_min_followup = TRUE`, the trial does not stop immediately when
+the fatal endpoint first reaches its event target. Instead, the final analysis
+is delayed until the last randomized subject has also reached the required
+minimum follow-up.
+
+## If the event target is not reached
+
+By default, an event-driven trial errors if the requested event target cannot
+be reached under the simulated design. The `target_not_reached` argument allows
+the user to choose a fallback rule instead. In the example below, we request an
+intentionally unattainable fatal event target and ask the simulation to fall
+back to `"last_patient_min_followup"`.
+
+```{r event-driven-target-not-reached}
+sim_event_fallback <- suppressWarnings(
+  makeData(
+    correlation_matrix = cor_tte2,
+    sample_size_per_group = 80,
+    SEED = 90,
+    endpoint_details = list(ep_fatal, ep_nonfatal),
+    enrollment_details = list(
+      enrollment_distribution = "exponential",
+      enrollment_exponential_rate = 12
+    ),
+    followup_details = list(
+      min_followup = 12,
+      max_followup = 24
+    ),
+    trial_end_details = list(
+      type = "event_driven",
+      event_endpoint = "TTE_1",
+      target_events = 1000,
+      target_not_reached = "last_patient_min_followup"
+    ),
+    non_fatal_censors_fatal = FALSE,
+    target_correlation = FALSE
+  )
+)
+
+dat_event_fallback <- as.data.frame(sim_event_fallback)
+tc_event_fallback <- sim_event_fallback$meta$trial_calendar
+
+event_fallback_summary <- tibble(
+  trial_end_time = tc_event_fallback$trial_end_time,
+  trial_end_reason = tc_event_fallback$trial_end_reason,
+  event_target_reached = tc_event_fallback$event_target_reached,
+  n_events_at_end = tc_event_fallback$n_events_at_end
+)
+
+event_fallback_summary %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Fallback behavior when the event target is not reached"
+  )
+```
+
+Here the fatal event target is not reached, so the realized trial end is driven
+by the fallback rule rather than by the event target itself. A similar approach
+can be used with `target_not_reached = "max_trial_duration"` together with
+`max_trial_duration`.
+
+```{r event-driven-max-duration-snippet, eval=FALSE}
+sim_event_max_duration <- makeData(
+  correlation_matrix = cor_tte2,
+  sample_size_per_group = 80,
+  SEED = 90,
+  endpoint_details = list(ep_fatal, ep_nonfatal),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 12
+  ),
+  followup_details = list(
+    max_followup = 24
+  ),
+  trial_end_details = list(
+    type = "event_driven",
+    event_endpoint = "TTE_1",
+    target_events = 1000,
+    target_not_reached = "max_trial_duration",
+    max_trial_duration = 30
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+```
+
+## Subjects enrolled after the realized trial end
+
+In an event-driven design, the realized trial end time is not known in advance.
+As a result, some planned subjects may be generated with enrollment times after
+the final trial cutoff. These rows remain in the simulated dataset, but they
+have `availableFollowup = 0` and therefore contribute no analyzable follow-up.
+
+```{r event-driven-zero-followup}
+sim_event_zero_fu <- makeData(
+  correlation_matrix = cor_tte2,
+  sample_size_per_group = 150,
+  SEED = 77,
+  endpoint_details = list(ep_fatal, ep_nonfatal),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 4
+  ),
+  followup_details = list(
+    max_followup = 48
+  ),
+  trial_end_details = list(
+    type = "event_driven",
+    event_endpoint = "TTE_1",
+    target_events = 30
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+
+dat_event_zero_fu <- as.data.frame(sim_event_zero_fu)
+
+dat_event_zero_fu %>%
+  filter(availableFollowup == 0) %>%
+  select(trt, TTE_1, Status_1, TTE_2, Status_2, enrollTime, availableFollowup) %>%
+  head() %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Subjects enrolled after the realized event-driven trial end"
+  )
+```
+
+These rows are usually excluded from the analysis population. In practice, the
+event-driven analysis set is often defined as:
+
+```{r event-driven-analysis-pop}
+dat_event_analysis <- dat_event_zero_fu %>%
+  filter(availableFollowup > 0)
+```
+
+That is, subjects with `availableFollowup == 0` should typically be filtered
+out before summarizing or analyzing the realized event-driven dataset.
 
 
 

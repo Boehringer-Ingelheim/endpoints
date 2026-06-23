@@ -36,8 +36,9 @@ The trial calendar is generally constructed in three conceptual steps:
 }
 
 For a subject \eqn{i}, \code{enrollTime_i} is measured on the trial calendar
-scale. Time-to-event variables such as \code{TTE_1} are measured from that
-subject's own enrollment or randomization time.
+scale. These enrollment times can be used with any endpoint type. For
+time-to-event endpoints, variables such as \code{TTE_1} are measured from
+that subject's own enrollment or randomization time.
 
 If the trial ends at calendar time \eqn{\mathcal{T}}, the subject's
 available administrative follow-up is generally:
@@ -194,7 +195,9 @@ if additional subjects are needed.
 \section{Interaction with follow-up and trial-end rules}{
 
 \code{enrollment_details} only determines when subjects enter the trial. It
-does not by itself censor time-to-event endpoints.
+can be used with continuous, binary, count, or TTE endpoints. By itself, it
+does not alter endpoint values, and it does not by itself censor
+time-to-event endpoints.
 
 Administrative follow-up is determined by combining enrollment times with
 \code{trial_end_details} and \code{followup_details}. For example:
@@ -220,6 +223,10 @@ Subject-level available follow-up is then:
   \min\{M, \max(0, \mathcal{T} - T_{E,i})\},
 }
 where \eqn{M} denotes \code{max_followup}.
+
+For non-TTE endpoints, this same calendar logic still determines the
+returned \code{enrollTime}, \code{availableFollowup}, and trial-calendar
+metadata, even though no event time is administratively censored.
 
 For a fixed-calendar trial:
 \preformatted{
