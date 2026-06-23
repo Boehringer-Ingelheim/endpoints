@@ -23,7 +23,7 @@ In many clinical trial simulations, the endpoint model is only one part of the d
 
 # Stochastic enrollment with `enrollment_details`
 
-The `enrollment_details` argument controls how subjects enter the trial calendar. If no stochastic enrollment is specified, all subjects are treated as enrolling at calendar time 0. When stochastic enrollment is used, `makeData()` generates an `enrollTime` column, where `enrollTime` is the subject's calendar enrollment time relative to the first randomized subject.
+The `enrollment_details` argument controls how subjects enter the trial calendar. If no stochastic enrollment is specified, all subjects are treated as enrolling at calendar time 0. When stochastic enrollment is used, `makeData()` generates an `enrollTime` column, where `enrollTime` is the subject's calendar enrollment time **relative** to the first randomized subject.
 
 In `{endpoints}`, stochastic enrollment is modeled using a Poisson-process accrual framework. In the simplest case, enrollment follows a homogeneous Poisson process with constant accrual rate \(\lambda\). Equivalently, the waiting times between consecutively enrolled subjects are exponentially distributed:
 
@@ -70,19 +70,25 @@ sim_exp <- makeData(
   SEED = 101,
   endpoint_details = list(ep1),
   enrollment_details = list(
-    enrollment_distribution     = "exponential",
+    enrollment_distribution = "exponential",
     enrollment_exponential_rate = 10
   )
-)
+  )
 
 dat_exp <- as.data.frame(sim_exp)
 ```
 
+When enrollment_details() is included, the resulting dataframe includes a `enrollTime` column:
 
+```{r}
+dat_exp %>% head() %>% knitr::kable(.)
+```
+
+The constant enrollment rate can be visualized using a histogram or density plot: 
 
 ```{r homogeneous-poisson-hist, fig.width=7, fig.height=4}
 ggplot2::ggplot(dat_exp, aes(x = enrollTime)) +
-  geom_histogram(bins = 30,fill = "steelblue", alpha = 0.35,
+  geom_histogram(bins = 35,fill = "steelblue", alpha = 0.35,
     color = "black",linewidth = 0.3) +
   labs(
     x = "Enrollment time",
@@ -90,5 +96,551 @@ ggplot2::ggplot(dat_exp, aes(x = enrollTime)) +
     title = "Homogeneous Poisson-process enrollment",) +
   theme_bw()
 ```
+
+Because the rate is constant, the slope of the cumulative enrollment curve is also constant: 
+```{r}
+enroll_curve_exp <- dat_exp %>%
+  arrange(enrollTime) %>%
+  mutate(cumulative_n = row_number())
+
+ggplot2::ggplot(enroll_curve_exp, aes(x = enrollTime, y = cumulative_n)) +
+  geom_step(color = "steelblue", linewidth = 0.7) +
+  #geom_vline(
+  #  xintercept = cutpoints_piece[-c(1, length(cutpoints_piece))],
+  #  linetype = "dashed",
+  #  color = "firebrick"
+  #) +
+  labs(
+    x = "Enrollment time",
+    y = "Cumulative number enrolled",
+    title = "Cumulative enrollment under exponential accrual"
+  ) +
+  theme_bw()
+
+```
+
+
+## Piecewise Poisson-process enrollment
+
+The `piecewise` option allows the accrual rate to change across pre-specified
+calendar intervals. This is useful when the expected enrollment pattern is not
+constant over time, for example if recruitment starts slowly, accelerates as
+sites open, and then levels off once the trial is fully active.
+
+In the example below, we simulate a two-arm trial with 200 subjects per arm
+and the same continuous endpoint as above. We specify four enrollment
+intervals:
+
+- calendar times 0 to 12 with rate 5 subjects per unit time,
+- calendar times 12 to 24 with rate 10 subjects per unit time,
+- calendar times 24 to 36 with rate 15 subjects per unit time, and
+- calendar times 36 to 52 with rate 20 subjects per unit time.
+
+```{r piecewise-poisson-sim}
+sim_piece <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 500,
+  SEED = 203,
+  endpoint_details = list(ep1),
+  enrollment_details = list(
+    enrollment_distribution        = "piecewise",
+    piecewise_enrollment_cutpoints = c(0, 12, 24, 36, 52),
+    piecewise_enrollment_rates     = c(5, 10, 15, 20)
+  )
+)
+
+dat_piece <- as.data.frame(sim_piece)
+
+cutpoints_piece <- c(0, 12, 24, 36, 52)
+rates_piece <- c(5, 10, 15, 20)
+interval_labels_piece <- c("[0,12)", "[12,24)", "[24,36)", "[36,52)", "[52,Inf)")
+tail_length_piece <- max(dat_piece$enrollTime) - tail(cutpoints_piece, 1)
+
+interval_summary_piece <- tibble(
+  enroll_interval = factor(interval_labels_piece, levels = interval_labels_piece),
+  interval_length = c(diff(cutpoints_piece), NA_real_),
+  rate_expected = c(rates_piece, tail(rates_piece, 1))
+) %>%
+  left_join(
+    dat_piece %>%
+      mutate(
+        enroll_interval = cut(
+          enrollTime,
+          breaks = c(cutpoints_piece, Inf),
+          right = FALSE,
+          include.lowest = TRUE,
+          labels = interval_labels_piece
+        )
+      ) %>%
+      count(enroll_interval, name = "n_enrolled", .drop = FALSE),
+    by = "enroll_interval"
+  ) %>%
+  mutate(
+    n_expected = interval_length * rate_expected,
+    n_expected = if_else(
+      is.na(interval_length),
+      nrow(dat_piece) - sum(n_expected, na.rm = TRUE),
+      n_expected
+    ),
+    rate_observed = case_when(
+      is.na(interval_length) & n_enrolled == 0 ~ 0,
+      is.na(interval_length) ~ n_enrolled / tail_length_piece,
+      TRUE ~ n_enrolled / interval_length
+    )
+  ) %>%
+  select(
+    enroll_interval,
+    n_enrolled,
+    n_expected,
+    rate_observed,
+    rate_expected
+  )
+
+enroll_curve_piece <- dat_piece %>%
+  arrange(enrollTime) %>%
+  mutate(cumulative_n = row_number())
+```
+
+The table below shows the realized number of enrolled subjects in each calendar
+interval. Because enrollment is stochastic, the observed counts will vary from
+run to run even when the target piecewise rates are fixed. The final row represents the remaining subjects enrolled after the last user-specified cutpoint.
+
+```{r piecewise-poisson-table}
+interval_summary_piece %>%
+  knitr::kable(
+    caption = "Observed enrollment by calendar interval"
+  )
+```
+
+<!-- If users want to choose piecewise accrual rates to target specific enrollment -->
+<!-- proportions by interval, the rates can be obtained by simple algebra. Suppose -->
+<!-- the interval widths are \(d_1, d_2, d_3, d_4\), and the desired proportions are -->
+<!-- \(p_1 = 0.15\), \(p_2 = 0.35\), \(p_3 = 0.25\), and \(p_4 = 0.25\). Then the -->
+<!-- first three rates can be solved sequentially as -->
+<!-- \[ -->
+<!-- \lambda_1 = -\frac{\log(1-p_1)}{d_1}, \qquad -->
+<!-- \lambda_2 = -\frac{\log\left(1-\frac{p_2}{1-p_1}\right)}{d_2}, \qquad -->
+<!-- \lambda_3 = -\frac{\log\left(1-\frac{p_3}{1-p_1-p_2}\right)}{d_3}. -->
+<!-- \] -->
+<!-- These formulas come from writing each interval probability as the probability -->
+<!-- of still being unenrolled at the start of the interval times the probability of -->
+<!-- enrolling inside that interval. For the final interval, note that the current -->
+<!-- implementation continues enrollment beyond the last cutpoint using the final -->
+<!-- rate. Therefore, if the target proportions sum to 100% by the end of the last -->
+<!-- finite interval, the last rate would formally need to be infinite to force all -->
+<!-- remaining subjects to enroll before that cutpoint. In practice, a common -->
+<!-- approach is to solve the early-interval rates exactly, then choose a suitably -->
+<!-- large final rate so that most of the remaining subjects accrue in the last -->
+<!-- interval. -->
+
+The histogram below shows how the distribution of enrollment times changes as
+the accrual rate increases across intervals.
+
+```{r piecewise-poisson-hist, fig.width=7, fig.height=4}
+ggplot2::ggplot(dat_piece, aes(x = enrollTime)) +
+  geom_histogram(
+    binwidth = 2,
+    boundary = 0,
+    fill = "steelblue",
+    alpha = 0.35,
+    color = "black",
+    linewidth = 0.3
+  ) +
+  geom_vline(
+    xintercept = cutpoints_piece[-c(1, length(cutpoints_piece))],
+    linetype = "dashed",
+    color = "firebrick"
+  ) +
+  labs(
+    x = "Enrollment time",
+    y = "Number enrolled",
+    title = "Piecewise Poisson-process enrollment"
+  ) +
+  theme_bw()
+```
+
+Finally, the cumulative enrollment curve makes the changing accrual pattern
+especially clear. The slope becomes steeper in later intervals because the
+piecewise enrollment rate is larger.
+
+```{r piecewise-poisson-cumulative, fig.width=7, fig.height=4}
+ggplot2::ggplot(enroll_curve_piece, aes(x = enrollTime, y = cumulative_n)) +
+  geom_step(color = "steelblue", linewidth = 0.7) +
+  geom_vline(
+    xintercept = cutpoints_piece[-c(1, length(cutpoints_piece))],
+    linetype = "dashed",
+    color = "firebrick"
+  ) +
+  labs(
+    x = "Enrollment time",
+    y = "Cumulative number enrolled",
+    title = "Cumulative enrollment under piecewise accrual"
+  ) +
+  theme_bw()
+```
+
+# Patient Follow-Up and Trial Duration with `followup_details` and `trial_end_details`
+
+The `followup_details` argument controls subject-level follow-up limits after
+enrollment. It has two fields:
+
+- `min_followup`: a planned minimum follow-up time, mainly used by
+  trial-ending rules such as `"last_patient_min_followup"` or
+  `require_min_followup = TRUE` in event-driven trials.
+- `max_followup`: a hard cap on how much follow-up any one subject can
+  contribute.
+
+Conceptually, `{endpoints}` first determines each subject's calendar
+enrollment time, then determines the overall trial end time, and finally
+computes each subject's available follow-up as:
+
+\[
+\mathrm{availableFollowup}_i =
+\min\left(\mathrm{max\_followup}, \, \mathrm{trial\_end\_time} - T_{E,i}\right),
+\]
+
+with truncation at 0 if a subject enrolls after the effective trial end. If
+`max_followup` is omitted, follow-up is limited only by the trial end. If
+`min_followup` is omitted, it does not constrain when the trial is allowed to
+end.
+
+A simple example is:
+
+```{r}
+followup_details <- list(
+  min_followup = 6,
+  max_followup = 18
+)
+```
+
+This means the design aims for the last randomized subject to have at least 6
+time units of follow-up before final analysis, while no individual subject can
+contribute more than 18 time units of follow-up.
+
+The `trial_end_details` argument controls when the trial stops on the calendar
+time scale. In `{endpoints}`, this can be handled in several ways:
+
+- `type = "none"`: no calendar-based trial end is imposed.
+- `type = "fixed_calendar"`: the trial ends at a user-specified calendar time.
+- `type = "last_patient_min_followup"`: the trial ends once the last
+  randomized subject has reached `min_followup`.
+- `type = "event_driven"`: the trial ends when a target number of events is
+  observed for a specified time-to-event endpoint.
+
+For event-driven designs, `trial_end_details` also allows the user to specify
+which endpoint drives stopping (`event_endpoint`), how many events are required
+(`target_events`), whether a minimum follow-up constraint must also be
+respected (`require_min_followup`), and what should happen if the event target
+is not reached (`target_not_reached` together with an optional
+`max_trial_duration`).
+
+In other words, `followup_details` determines how much follow-up each subject
+can contribute, while `trial_end_details` determines when the trial is allowed
+to stop. These two settings work together to define the final
+`availableFollowup` for each enrolled subject.
+
+## Example: last-patient-minimum-follow-up design
+
+To illustrate these ideas, consider a two-arm time-to-event trial with 100
+subjects per arm. Suppose the annual event rate in the control group is 30%,
+the treatment hazard ratio is 0.6, and there is also 15% random censoring. We
+measure time in months, so we first convert the annual event rate into a
+monthly exponential hazard. We then use `followup_details` to require at least
+24 months of follow-up for the last randomized subject, while capping any one
+subject's follow-up at 36 months.
+
+```{r tte-followup-setup}
+baseline_rate_monthly <- rate_from_prob(
+  target_prob = 0.30,
+  mode = "admin",
+  admin_time = 12
+)
+
+censor_rate_monthly <- rate_from_prob(
+  target_prob = 0.85,
+  mode = "simple",
+  event_rate = baseline_rate_monthly
+)
+
+ep_tte_followup <- list(
+  endpoint_type = "tte",
+  baseline_rate = baseline_rate_monthly,
+  trt_effect = log(0.6),
+  censoring_rate = censor_rate_monthly,
+  fatal_event = TRUE
+)
+```
+
+In the first version, we assume a moderate exponential enrollment rate of 15
+subjects per month across the trial.
+
+```{r tte-followup-moderate}
+sim_tte_mod <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 100,
+  SEED = 42,
+  endpoint_details = list(ep_tte_followup),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 15
+  ),
+  followup_details = list(
+    min_followup = 24,
+    max_followup = 36
+  ),
+  trial_end_details = list(
+    type = "last_patient_min_followup"
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+
+dat_tte_mod <- as.data.frame(sim_tte_mod)
+tc_tte_mod <- sim_tte_mod$meta$trial_calendar
+
+tte_mod_summary <- tibble(
+  scenario = "Moderate enrollment",
+  enrollment_rate = 15,
+  trial_end_time = tc_tte_mod$trial_end_time,
+  max_enroll_time = max(dat_tte_mod$enrollTime),
+  mean_available_followup = mean(dat_tte_mod$availableFollowup),
+  observed_events = sum(dat_tte_mod$Status_1)
+)
+
+tte_mod_summary %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Moderate enrollment with last-patient minimum follow-up"
+  )
+```
+
+Because the trial ends when the last randomized subject has 24 months of
+follow-up, earlier enrollees contribute more than 24 months, up to the maximum
+cap of 36 months. The resulting dataset includes both `enrollTime` and
+`availableFollowup`:
+
+```{r tte-followup-head}
+dat_tte_mod %>%
+  select(trt, TTE_1, Status_1, enrollTime, availableFollowup) %>%
+  head() %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Example rows from the moderate-enrollment simulation"
+  )
+```
+
+Now suppose we change only the enrollment speed, making accrual slower at 8
+subjects per month while keeping all endpoint and follow-up settings fixed.
+
+```{r tte-followup-slower}
+sim_tte_slow <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 100,
+  SEED = 42,
+  endpoint_details = list(ep_tte_followup),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 8
+  ),
+  followup_details = list(
+    min_followup = 24,
+    max_followup = 36
+  ),
+  trial_end_details = list(
+    type = "last_patient_min_followup"
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+
+dat_tte_slow <- as.data.frame(sim_tte_slow)
+tc_tte_slow <- sim_tte_slow$meta$trial_calendar
+
+tte_compare <- tibble(
+  scenario = c("Moderate enrollment", "Slower enrollment"),
+  enrollment_rate = c(15, 8),
+  trial_end_time = c(tc_tte_mod$trial_end_time, tc_tte_slow$trial_end_time),
+  max_enroll_time = c(max(dat_tte_mod$enrollTime), max(dat_tte_slow$enrollTime)),
+  mean_available_followup = c(
+    mean(dat_tte_mod$availableFollowup),
+    mean(dat_tte_slow$availableFollowup)
+  ),
+  observed_events = c(sum(dat_tte_mod$Status_1), sum(dat_tte_slow$Status_1))
+)
+
+tte_compare %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Slower enrollment produces more observed follow-up and events"
+  )
+```
+
+In this paired comparison, the slower enrollment scenario has a later last
+patient in, so the overall trial lasts longer on the calendar scale. That
+gives earlier subjects more opportunity to reach the 36-month follow-up cap,
+which in turn increases the average available follow-up and the observed number
+of events.
+
+## Example: event-driven trial with a fatal stopping endpoint
+
+We next consider an event-driven design with two time-to-event endpoints. The
+first endpoint is fatal and is used to trigger the stopping rule. The second
+endpoint is non-fatal and is included to illustrate how the overall trial
+duration can affect the number of secondary events observed by the time the
+fatal endpoint reaches its event target.
+
+For this example, we use a modest positive dependence between the two TTE
+endpoints, an annual fatal event rate of 20% in the control group, and an
+annual non-fatal event rate of 40%. We use hazard ratios of 0.75 for the fatal
+endpoint and 0.85 for the non-fatal endpoint. To keep the example realistic,
+we also include independent random censoring for both endpoints.
+
+```{r event-driven-setup}
+cor_tte2 <- corr_make(
+  num_endpoints = 2,
+  values = rbind(c(1, 2, 0.25))
+)
+
+fatal_rate_monthly <- rate_from_prob(
+  target_prob = 0.20,
+  mode = "admin",
+  admin_time = 12
+)
+
+nonfatal_rate_monthly <- rate_from_prob(
+  target_prob = 0.40,
+  mode = "admin",
+  admin_time = 12
+)
+
+ep_fatal <- list(
+  endpoint_type = "tte",
+  baseline_rate = fatal_rate_monthly,
+  trt_effect = log(0.75),
+  censoring_rate = 0.01,
+  fatal_event = TRUE
+)
+
+ep_nonfatal <- list(
+  endpoint_type = "tte",
+  baseline_rate = nonfatal_rate_monthly,
+  trt_effect = log(0.85),
+  censoring_rate = 0.015,
+  fatal_event = FALSE
+)
+```
+
+In the first scenario, enrollment follows a simple homogeneous Poisson process
+with exponential inter-arrival times. We stop the trial once 70 fatal events
+have been observed on `TTE_1`, and we cap individual follow-up at 48 months.
+
+```{r event-driven-exponential}
+sim_event_exp <- makeData(
+  correlation_matrix = cor_tte2,
+  sample_size_per_group = 150,
+  SEED = 77,
+  endpoint_details = list(ep_fatal, ep_nonfatal),
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 12
+  ),
+  followup_details = list(
+    max_followup = 48
+  ),
+  trial_end_details = list(
+    type = "event_driven",
+    event_endpoint = "TTE_1",
+    target_events = 70
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+
+dat_event_exp <- as.data.frame(sim_event_exp)
+tc_event_exp <- sim_event_exp$meta$trial_calendar
+
+event_exp_summary <- tibble(
+  scenario = "Exponential enrollment",
+  trial_end_time = tc_event_exp$trial_end_time,
+  fatal_events = sum(dat_event_exp$Status_1),
+  nonfatal_events = sum(dat_event_exp$Status_2),
+  mean_available_followup = mean(dat_event_exp$availableFollowup)
+)
+
+event_exp_summary %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Event-driven trial with exponential enrollment"
+  )
+```
+
+Now we hold the endpoint and stopping-rule settings fixed, but replace the
+simple exponential accrual model with a piecewise enrollment pattern that
+starts more slowly and accelerates later in the trial.
+
+```{r event-driven-piecewise}
+sim_event_piece <- makeData(
+  correlation_matrix = cor_tte2,
+  sample_size_per_group = 150,
+  SEED = 77,
+  endpoint_details = list(ep_fatal, ep_nonfatal),
+  enrollment_details = list(
+    enrollment_distribution = "piecewise",
+    piecewise_enrollment_cutpoints = c(0, 12, 24, 36),
+    piecewise_enrollment_rates = c(3, 8, 15)
+  ),
+  followup_details = list(
+    max_followup = 48
+  ),
+  trial_end_details = list(
+    type = "event_driven",
+    event_endpoint = "TTE_1",
+    target_events = 70
+  ),
+  non_fatal_censors_fatal = FALSE,
+  target_correlation = FALSE
+)
+
+dat_event_piece <- as.data.frame(sim_event_piece)
+tc_event_piece <- sim_event_piece$meta$trial_calendar
+
+event_compare <- tibble(
+  scenario = c("Exponential enrollment", "Piecewise enrollment"),
+  trial_end_time = c(
+    tc_event_exp$trial_end_time,
+    tc_event_piece$trial_end_time
+  ),
+  fatal_events = c(
+    sum(dat_event_exp$Status_1),
+    sum(dat_event_piece$Status_1)
+  ),
+  nonfatal_events = c(
+    sum(dat_event_exp$Status_2),
+    sum(dat_event_piece$Status_2)
+  ),
+  mean_available_followup = c(
+    mean(dat_event_exp$availableFollowup),
+    mean(dat_event_piece$availableFollowup)
+  )
+)
+
+event_compare %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Recruitment pattern affects event-driven trial duration and secondary events"
+  )
+```
+
+In both scenarios, the stopping rule is driven by the fatal endpoint, so the
+number of observed fatal events is similar by construction. However, the
+piecewise accrual pattern stretches the trial over a longer calendar duration,
+which gives more time for secondary non-fatal events to accrue before the
+fatal endpoint reaches its target. This is one of the main reasons it can be
+important to model enrollment explicitly when simulating event-driven designs.
+
+
+
+
+
 
 
