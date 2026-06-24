@@ -425,266 +425,129 @@ Because censoring, administrative censoring, and fatal-event truncation modify t
 
 In this example, the arm-specific exp_rate values are close to the data-generating exponential event rates (approximately $1 / 50,1 / 60,1 / 35$, and $1 / 45$ ), which is expected here because the sample size is large and censoring is independent; even though censoring changes the observed event proportion, the exponential MLE $\sum \delta_i / \sum X_i$ remains a consistent estimator of the event hazard under the exponential model.
 
-# Administrative Censoring & Stochastic Enrollment
 
-## Administrative Censoring
+# Stochastic enrollment, Follow-Up, and Trial Duration Rules
 
-Administrative censoring (which we denote as $\mathcal{A}$) is controlled via `enrollment_details` argument, which is a list of settings. Within `enrollment_details` administrative censoring is toggled using `administrative_censoring = NULL`. If it is set to a positive value, then any TTE event that occurs (or is censored) after $\mathcal{A}$, is set to $\mathcal{A}$ as that is the limit of follow-up.
+`endpoints` also allows for a detailed trial-calendar interface through the `enrollment_details`, `followup_details`, and `trial_end_details` arguments. These features allow users to simulate more realistic trials, including staggered enrollment/recruitment, calendar-based follow-up limits, and event-driven final analyses.
 
-To illustrate, we can re-run the example above, but this time setting a 24 time-unit limit:
+For a full tutorial, see:
 
+```{r,eval=FALSE}
+vignette("enrollment_guide", package = "endpoints")
+```
+
+Briefly, these arguments support:
+
+- stochastic enrollment with `enrollment_distribution = "none"`, `"exponential"`, or `"piecewise"`
+- trial-ending rules through `trial_end_details`, including fixed calendar end, last-patient-minimum-follow-up end, or event-driven end
+- subject-level follow-up limits through `followup_details`, where `min_followup` defines a required minimum follow-up window for late enrollees and `max_followup` caps how long any subject can be observed
+- realized calendar outputs through the returned `enrollTime`, `availableFollowup`, and `sim$meta$trial_calendar`
+
+Below we show two compact TTE examples. The first uses a
+last-patient-minimum-follow-up design, while the second uses an event-driven
+stopping rule.
+
+## Example: last-patient-minimum-follow-up design
+
+In this example, subjects enroll gradually, each subject can contribute at
+most 36 months of follow-up, and the final analysis occurs only after the last
+randomized subject has at least 24 months of follow-up.
 
 ```{r}
- tte_ex_admin_cens <- makeData(
-  correlation_matrix    = small_cor,
-  sample_size_per_group = 5000,
-  SEED = 321,
-  endpoint_details = list( tte_fatal, tte_nonfatal),
-  enrollment_details = list(
-    administrative_censoring = 24
+tte_calendar_ep <- list(
+  endpoint_type = "tte",
+  baseline_rate = rate_from_prob(
+    target_prob = 0.30,
+    mode = "admin",
+    admin_time = 12
   ),
-  non_fatal_censors_fatal = FALSE
+  trt_effect = log(0.70),
+  censoring_rate = 0.015
 )
-```
 
-Comparing the datasets, we now see patient 3 is administratively censored at time 24:
-
-```{r}
-head(tte_ex$data) %>% knitr::kable(.,caption = "Data without admin censoring")
-head(tte_ex_admin_cens$data) %>% knitr::kable(.,caption = "Data with admin censoring")
-```
-
-Note that an `enrollTime` column is automatically generated when using this feature.
-
-If there is no non-administrative censoring (e.g. no random drop-out), we can solve for expected event rates by evaluating $\int_{0}^{\mathcal{A}} \lambda e^{-\lambda x} dx = 1 - e^{-\lambda x}$. To solve for $\lambda$, we calculate $\frac{\ln(1-r)}{-\mathcal{A}}$ where r is the desired event rate. For example, if we want to simulate a 4-year trial with a 20% fatal event rate, we need to set the baseline hazard to `log(1-.2)/(-4) = .0558.` Once again, we can use the helper function `rate_from_prob()` to solve this math:
-
-```{r}
-rate_from_prob(
-  target_prob = 0.20,
-  mode = "admin",
-  admin_time = 4
-)
-```
-
-which can then be used in `makeData()`
-
-```{r}
-admin_ex2 <- makeData(
-  correlation_matrix    = NULL,
-  sample_size_per_group = 5000,
-  SEED = 12,
-  endpoint_details = list( 
-    list(
-      endpoint_type  = "tte",
-      baseline_rate  = .0558,        
-      trt_effect     = 0,   
-      fatal_event    = TRUE ) ),
+sim_lpmf <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 100,
+  SEED = 42,
+  endpoint_details = list(tte_calendar_ep),
   enrollment_details = list(
-    administrative_censoring = 4
+    enrollment_distribution = "exponential",
+    enrollment_exponential_rate = 8
   ),
-  non_fatal_censors_fatal = FALSE
+  followup_details = list(
+    min_followup = 24,
+    max_followup = 36
+  ),
+  trial_end_details = list(
+    type = "last_patient_min_followup"
+  )
 )
-obs_rates <- summary(admin_ex2)$tte$obs_event_rate
-print(paste0("Observed event rate for control group is: ", round(obs_rates[1],2)))
+
+dat_lpmf <- as.data.frame(sim_lpmf)
+tc_lpmf <- sim_lpmf$meta$trial_calendar
+
+tibble(
+  trial_end_time = tc_lpmf$trial_end_time,
+  trial_end_reason = tc_lpmf$trial_end_reason,
+  mean_available_followup = mean(dat_lpmf$availableFollowup),
+  observed_events = sum(dat_lpmf$Status_1)
+) %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Last-patient-minimum-follow-up example"
+  )
 ```
 
-## Stochastic Enrollment
+Here the analysis time depends on when the final subject enrolls. Earlier
+subjects may contribute more follow-up, but each subject remains capped at
+`max_followup = 36`.
 
-By default, all patients are enrolled on day 0 of the trial. To simulate a more realistic trial, probabilistic enrollment is controlled via the following arguments:
+## Example: event-driven trial end
 
-- `enrollment_distribution = c("none","uniform","exponential","piecewise")`: This specifies the enrollment-time distribution (default is `"none"`). If `"uniform"`, enrollment time is $\mathbf{U}[0,\mathcal{A}]$, where $\mathcal{A}$ is the time of administrative censoring. If `"exponential"`, enrollment time is based on an exponential distribution (see `enrollment_exponential_rate`). If `"piecewise"`, enrollment follows a piecewise exponential distribution. This option requires specifying `piecewise_enrollment_cutpoints` and `piecewise_enrollment_rates` (see examples below). 
-- `enrollment_exponential_rate = NULL`: The rate for the exponential distribution if  `enrollment_distribution = "exponential"`. 
-- `piecewise_enrollment_cutpoints = NULL`: The time points defining the bins for the piecewise enrollment pattern. 
-- `piecewise_enrollment_rates = NULL`: The rates for each exponential distribution within each time bin.
-
-If a user specifies stochastic enrollment and administrative censoring, then maximum potential time-on-study is $\mathcal{A} - T_E$, where $T_E$ is time of enrollment. If we re-run the example from above,
+We now switch to an event-driven design. In this case, enrollment is still
+stochastic, but the trial ends once the chosen TTE endpoint reaches a target
+number of observed events.
 
 ```{r}
- tte_admin_cens_exp_enroll <- makeData(
-  correlation_matrix    = small_cor,
-  sample_size_per_group = 5000,
-  SEED = 321,
-  endpoint_details = list( tte_fatal, tte_nonfatal),
+sim_event_driven <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 120,
+  SEED = 99,
+  endpoint_details = list(tte_calendar_ep),
   enrollment_details = list(
-    administrative_censoring = 24,
-     enrollment_distribution = "exponential",
-    enrollment_exponential_rate = 1/4
+    enrollment_distribution = "piecewise",
+    piecewise_enrollment_cutpoints = c(0, 6, 12, 24),
+    piecewise_enrollment_rates = c(4, 8, 12)
   ),
-  non_fatal_censors_fatal = FALSE
-)
-knitr::kable(head(tte_admin_cens_exp_enroll$data),caption = "Data with admin censoring and stochastic enrollment")
-```
-
-we now see that patient 3 is now censored at time 19.72 (instead of time 24), as their enrollment time is 4.28. From the code above, we observed an enrollment curve of:
-
-```{r}
-ggplot2::ggplot(tte_admin_cens_exp_enroll$data, aes(x = enrollTime)) +
-  geom_histogram(bins = 30,fill = "steelblue", alpha = 0.35,
-    color = "black",linewidth = 0.3) +
-  labs(
-    x = "Enrollment time",
-    y = "Count",
-    title = "Histogram of enrollment times (Exponential)") +
-  theme_bw()
-```
-
-The function also supports a simple enrollment (uniform) curve:
-
-```{r}
-ex_unif <- makeData(
-  correlation_matrix    = small_cor,
-  sample_size_per_group = 5000,
-  SEED = 321321,
-  endpoint_details = list( tte_fatal, tte_nonfatal),
-  enrollment_details = list(
-    administrative_censoring = 24,
-     enrollment_distribution = "uniform"
+  followup_details = list(
+    max_followup = 30
   ),
-  non_fatal_censors_fatal = FALSE
+  trial_end_details = list(
+    type = "event_driven",
+    event_endpoint = "TTE_1",
+    target_events = 70
+  )
 )
 
-ggplot2::ggplot(ex_unif$data, aes(x = enrollTime)) +
-  geom_histogram(bins = 30,fill = "steelblue", alpha = 0.35,
-    color = "black",linewidth = 0.3) +
-  labs(
-    x = "Enrollment time",
-    y = "Count",
-    title = "Histogram of enrollment times (Uniform)") +
-  theme_bw()
+dat_event_driven <- as.data.frame(sim_event_driven)
+tc_event_driven <- sim_event_driven$meta$trial_calendar
+
+tibble(
+  trial_end_time = tc_event_driven$trial_end_time,
+  trial_end_reason = tc_event_driven$trial_end_reason,
+  event_target_reached = tc_event_driven$event_target_reached,
+  n_events_at_end = tc_event_driven$n_events_at_end,
+  mean_available_followup = mean(dat_event_driven$availableFollowup)
+) %>%
+  knitr::kable(
+    digits = 2,
+    caption = "Event-driven example"
+  )
 ```
 
-
-Stochastic enrollment does not change the underlying event-time generation mechanism (i.e., the event hazard parameters), but it can materially change observed follow-up time and observed event proportions when administrative censoring is present.
-
-
-**Piecewise Enrollment**
-
-In some trials, we may expect varied enrollment throughout the study period (e.g. heavy $\rightarrow$ light $\rightarrow$ medium $\rightarrow$ heavy) due to seasonal trends or logistic constraints. For example,
-
-```{r}
-
-pw_example <- makeData(
-  correlation_matrix    = NULL,
-  sample_size_per_group = 5000,
-  SEED = 321,
-  endpoint_details = list( 
-    list(
-      endpoint_type  = "tte",
-      baseline_rate  = .0558,        
-      trt_effect     = 0,   
-      fatal_event    = TRUE )),
-  enrollment_details = list(
-    administrative_censoring = 4,
-     enrollment_distribution = "piecewise",
-      piecewise_enrollment_cutpoints = c(0, .5, 1, 2, 2.5),
-                piecewise_enrollment_rates  = c(4, .5, 4, .5)
-  ),
-  non_fatal_censors_fatal = FALSE
-)
-```
-
-yields the following pattern:
-
-```{r}
-ggplot2::ggplot(pw_example$data, aes(x = enrollTime)) +
-  geom_histogram(bins = 30,fill = "steelblue", alpha = 0.35,
-    color = "black",linewidth = 0.3) +
-  labs(
-    x = "Enrollment time",
-    y = "Count",
-    title = "Histogram of enrollment times (Piecewise Exponential)") +
-  theme_bw()
-```
-
-For transparency, the sampler proceeds as follows:
-
-- For each subject, it simulates the waiting time until enrollment, starting from time 0.
-- It checks interval by interval: If a randomly drawn exponential waiting time (using the interval's rate) falls within that interval, the subject enrolls at that time.
-- If not, the process moves to the next interval (with its potentially different rate), adding the completed interval's duration to the subject's time.
-- This repeats until enrollment occurs or the final cutpoint is reached.
-- After the loop finishes (either by an enrollment event occurring or by reaching the end of all intervals), it ensures the subject's enrollment time does not exceed the final defined cutpoint.
-
-**Piecewise Enrollment with Proportions**
-
-
-Assume a 24-month trial with a target enrollment of $N = 1{,}100$ patients. Suppose we want the enrollment pattern to be:
-
-- 10% enrolled during months 0–8,
-- 35% enrolled during months 8–16, and
-- 55% enrolled during months 16–24.
-
-To achieve this piecewise exponential enrollment pattern, we solve for the exponential rates in each interval using basic probability.
-
-First, set the cutpoints to define the three enrollment windows `piecewise_enrollment_cutpoints = c(0, 8, 16, 24)`. This creates three time bins: $[0,8),[8,16)$, and $[16,24]$. Next, solve for $\lambda_1$ so that $10 \%$ of patients enroll before month 8. For an exponential waiting time in the first interval,
-
-$$
-P(T<8)=1-e^{-8 \lambda_1}=0.10 .
-$$
-
-Rearranging,
-
-\begin{align*}
-1 - e^{-8\lambda_1} &= 0.10 \\
-e^{-8\lambda_1} &= 0.90 \\
--8\lambda_1 &= \log(0.90) \\
-\lambda_1 &= -\frac{\log(0.90)}{8}.
-\end{align*}
-
-Second, solve for $\lambda_2$ so that $35 \%$ of patients enroll in the second bin (months $8-16$ ). This probability is
-
-$$
-P(8 \leq T<16)=P(T \geq 8) P(T-8<8 \mid T \geq 8)=e^{-8 \lambda_1}\left(1-e^{-8 \lambda_2}\right)=0.35 .
-$$
-
-
-Using $e^{-8 \lambda_1}=0.90$, we get 
-\begin{align*}
-0.90\left(1 - e^{-8\lambda_2}\right) &= 0.35 \\
-1 - e^{-8\lambda_2} &= \frac{0.35}{0.90} \\
-e^{-8\lambda_2} &= 1 - \frac{0.35}{0.90} \\
-\lambda_2 &= -\frac{1}{8}\log\left(1 - \frac{0.35}{0.90}\right).
-\end{align*}
-The third rate, $\boldsymbol{\lambda}_3$, does not affect the overall proportion enrolled in months 16-24 (that remaining $55 \%$ is already determined by $\lambda_1$ and $\lambda_2$ ). However, $\lambda_3$ does affect the shape of the enrollment-time distribution within the final bin, here we set this value to 0.25.
-
-Putting this together:
-
-```{r}
-# define rates from calculations above
-rate1 <- -log(.9)/8
-rate2 <- -log(1-.35/exp(-rate1*8))/8
-  
-
-pw_example2 <- makeData(
-  correlation_matrix    = NULL,
-  sample_size_per_group = 5000,
-  SEED = 321,
-  endpoint_details = list( 
-    list(
-      endpoint_type  = "tte",
-      baseline_rate  = .0558,        
-      trt_effect     = 0,   
-      fatal_event    = TRUE)),
-  enrollment_details = list(
-    administrative_censoring = 24,
-     enrollment_distribution = "piecewise",
-    piecewise_enrollment_cutpoints = c(0, 8, 16, 24),
-  piecewise_enrollment_rates  = c(rate1, rate2, .25)
-  ),
-  non_fatal_censors_fatal = FALSE
-)
-```
-
-And to double check enrollment scheme:
-
-```{r}
-pw_example2$data %>%
-    dplyr::summarize(.,
-  Bin1 = mean(enrollTime < 8),
-  Bin2 = mean(enrollTime >= 8 & enrollTime < 16),
-  Bin3 = mean(enrollTime >= 16)
-) %>% knitr::kable(.,caption="Observed enrollment proportion by time period")
-```
-
+The realized calendar information is stored in `sim_event_driven$meta$trial_calendar`.
+This metadata records why the trial stopped, when it stopped, and how many
+events were observed at the realized analysis time.
 
 # References
 
@@ -697,4 +560,3 @@ Cario, M. C., & Nelson, B. L. (1997). *Modeling and generating random vectors wi
 ```{r,echo=FALSE}
 knitr::knit_exit()
 ```
-
