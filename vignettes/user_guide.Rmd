@@ -173,7 +173,7 @@ knitr::kable(summary(simple3)$count)
 
 ### Time-to-Event Endpoints
 
-Time-to-event endpoints are supported through exponential event-time models with optional independent censoring, fatal/non-fatal event logic, administrative censoring, and stochastic enrollment. We defer details to the dedicated section below.
+Time-to-event endpoints are supported through exponential event-time models with optional independent censoring, fatal/non-fatal event logic, and the trial-calendar interface built from `enrollment_details`, `followup_details`, and `trial_end_details`. We return to these features later in this vignette and in the dedicated `enrollment_guide` vignette.
 
 # Multiple Treatment Arms
 

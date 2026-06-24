@@ -7,6 +7,9 @@ articles:
 - title: Getting Started
   contents:
   - user_guide
+- title: Enrollment and Trial Duration
+  contents:
+  - enrollment_guide
 - title: Advanced
   contents:
   - longitudinal_data

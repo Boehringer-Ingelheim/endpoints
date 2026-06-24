@@ -193,7 +193,15 @@ TTE event indicators, with \code{1 = event} and
 \item{enrollTime}{
 Enrollment times, when stochastic enrollment is used.
 }
+\item{availableFollowup}{
+Realized administrative follow-up available to each subject when
+trial-calendar features are active.
 }
+}
+
+The \code{meta} component also stores realized trial-calendar metadata in
+\code{meta$trial_calendar} when enrollment, follow-up, or trial-ending
+features are used.
 }
 \description{
 \code{makeData()} simulates subject-level trial data with one or more
@@ -210,9 +218,8 @@ The function also supports:
 \item independent censoring for time-to-event outcomes,
 \item fatal and non-fatal time-to-event logic (including semi-competing
 risks),
-\item administrative censoring,
-\item stochastic enrollment (uniform, exponential, or piecewise
-exponential), and
+\item trial-calendar features including stochastic enrollment,
+subject-level follow-up limits, and trial-ending rules, and
 \item generation of longitudinal data.
 }
 }
@@ -241,13 +248,21 @@ of \code{trt_effect}. When treatment arms are present, the output includes a
 controlled via \code{arm_mode}.
 }
 
-\section{Administrative censoring and enrollment}{
+\section{Enrollment, follow-up, and trial calendar}{
 
-If \code{administrative_censoring} is supplied, all TTE outcomes are
-truncated at the maximum available follow-up. If stochastic enrollment is
-enabled, each subject receives an \code{enrollTime}, and maximum observable
-follow-up is reduced to \eqn{\mathcal{A} - T_E}, where \eqn{\mathcal{A}} is
-the administrative censoring time and \eqn{T_E} is the enrollment time.
+Trial-calendar behavior is controlled through
+\code{enrollment_details}, \code{followup_details}, and
+\code{trial_end_details}.
+
+These arguments allow users to simulate staggered enrollment, subject-level
+follow-up limits, and trial-ending rules such as fixed calendar end,
+last-patient-minimum-follow-up, or event-driven final analysis.
+
+When these features are active, \code{makeData()} may return
+\code{enrollTime}, \code{availableFollowup}, and realized trial-calendar
+metadata in \code{meta$trial_calendar}. For TTE endpoints, this calendar
+structure also determines administrative censoring of observed event times
+and statuses.
 }
 
 \section{Output object}{
@@ -334,11 +349,18 @@ ep_tte <- list(
 sim_tte <- makeData(
   correlation_matrix    = NULL,
   sample_size_per_group = 500,
+  SEED                  = 1,
   endpoint_details      = list(ep_tte),
-  enrollment_details    = list(
-    administrative_censoring    = 24,
-    enrollment_distribution     = "exponential",
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
     enrollment_exponential_rate = 1 / 4
+  ),
+  followup_details = list(
+    min_followup = 12,
+    max_followup = 24
+  ),
+  trial_end_details = list(
+    type = "last_patient_min_followup"
   )
 )
 
@@ -354,15 +376,17 @@ Sciences, Northwestern University, Evanston, Illinois.
 \seealso{
 \code{\link{endpoint_details}} for endpoint specification details.
 
-\code{\link{enrollment_details}} for administrative censoring and stochastic
-enrollment options.
+\code{\link{enrollment_details}}, \code{\link{followup_details}}, and
+\code{\link{trial_end_details}} for trial-calendar settings.
 
 \code{\link{calibration_control}} for calibration tuning parameters.
 
 \code{\link{corr_make}} for creating correlation matrices.
 
 See the \code{vignette("user_guide", package = "endpoints")} vignette for
-introductory examples, and the
+introductory examples, the
+\code{vignette("enrollment_guide", package = "endpoints")} vignette for
+enrollment and trial-calendar features, and the
 \code{vignette("longitudinal_data", package = "endpoints")} vignette for
 simulating longitudinal data.
 }

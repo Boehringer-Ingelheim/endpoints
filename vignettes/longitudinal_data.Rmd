@@ -421,7 +421,9 @@ HP <- list(
 )
 ```
 
-Now we use `makeData()` to generate the subject-level dataset, where each subjects has their latent random effects generated:
+Now we use `makeData()` to generate the subject-level dataset, where each
+subject has their latent random effects generated. In this example, we cap
+subject-level follow-up at 4 time units:
 
 ```{r}
 rf_data <- makeData(
@@ -430,8 +432,8 @@ rf_data <- makeData(
   SEED = 888,
   endpoint_details = list(ACM,HP,random_intercept,random_slope),
   non_fatal_censors_fatal = TRUE,
-  enrollment_details = list(
-    administrative_censoring = 4
+  followup_details = list(
+    max_followup = 4
   )
 )
 ```
@@ -541,7 +543,6 @@ knitr::kable(head(long_rf_data_final,16))
 |---|---|---|
 | **Correlated endpoints** | - No separate data generating process<br>- Only requires correlation parameters (no random effects)<br>- Allows for complicated correlation patterns | - Must specify $K \times t$ correlation parameters in addition to the sub-longitudinal correlation matrix ($K$ is number of additional endpoints) |
 | **Random effects** | - Far fewer correlation parameters to specify<br>- MMRM/mixed models are common in industry<br>- Flexible data generating process<br>- More explicit generative assumptions | - Requires a second data generating process |
-
 
 
 
