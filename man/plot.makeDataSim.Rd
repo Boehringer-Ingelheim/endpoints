@@ -5,7 +5,7 @@
 \title{Pairwise visualization of simulated endpoints from a \code{makeDataSim}
 object}
 \usage{
-\method{plot}{makeDataSim}(x, arm = 0, names = NULL, ...)
+\method{plot}{makeDataSim}(x, arm = 0, names = NULL, show_y_axis = FALSE, ...)
 }
 \arguments{
 \item{x}{An object of class \code{"makeDataSim"}, created by
@@ -27,12 +27,14 @@ If supplied, \code{names} must have length equal to the number of simulated
 endpoints. This affects only the displayed labels in the plot and does not
 modify the underlying data.}
 
-\item{\dots}{Additional arguments passed directly to
-\code{\link[graphics]{pairs}()}. This can be used to customize panels,
-labels, sizing, or other plot options.}
+\item{show_y_axis}{Logical scalar. If \code{TRUE}, show y-axis tick marks
+and labels on the left side of the plot matrix. Defaults to \code{FALSE}.}
+
+\item{\dots}{Additional arguments reserved for future extensions of the
+plotting method. These are currently ignored.}
 }
 \value{
-Called for its side effect (a base-graphics plot). Returns
+Called for its side effect (drawing the plot). Returns
 \code{invisible(NULL)}.
 }
 \description{
@@ -41,11 +43,11 @@ endpoints stored in a \code{"makeDataSim"} object returned by
 \code{\link{makeData}}.
 }
 \details{
-The method uses \code{\link[graphics]{pairs}()} to display scatterplots
-(with a loess smoother) in the upper triangle and Pearson correlation
-coefficients in the lower triangle for the selected study arm. This is
-intended as a quick diagnostic tool for inspecting the joint structure of
-simulated endpoints.
+The method uses a local grid-based plot-matrix layout to display
+scatterplots in the upper triangle, marginal summaries on the diagonal, and
+Pearson correlation coefficients in the lower triangle for the selected
+study arm. This is intended as a quick diagnostic tool for inspecting the
+joint structure of simulated endpoints.
 }
 \section{Displayed data}{
 
@@ -62,10 +64,12 @@ in the pair plot.
 
 \section{Panel layout}{
  The plot matrix is configured as follows: \itemize{
-\item upper triangle: scatterplots, \item diagonal: histograms showing
-the marginal distribution of each endpoint, \item lower triangle: Pearson
-correlation coefficients, \item title: \code{"Arm <k>"} for the selected
-arm. }
+\item upper triangle: scatterplots, \item diagonal: density plots for
+continuous-style endpoints and percentage bar plots for binary endpoints,
+\item lower triangle: Pearson
+correlation coefficients without significance stars, \item strip labels:
+endpoint names shown across the top and right side of the matrix, \item
+title: \code{"Arm <k>"} for the selected arm. }
 }
 
 \examples{
