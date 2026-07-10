@@ -5,7 +5,7 @@
 \title{Pairwise visualization of simulated endpoints from a \code{makeDataSim}
 object}
 \usage{
-\method{plot}{makeDataSim}(x, arm = 0, names = NULL, show_y_axis = FALSE, ...)
+\method{plot}{makeDataSim}(x, arm = 0, names = NULL, show_y_axis = FALSE, title = NULL, ...)
 }
 \arguments{
 \item{x}{An object of class \code{"makeDataSim"}, created by
@@ -29,6 +29,9 @@ modify the underlying data.}
 
 \item{show_y_axis}{Logical scalar. If \code{TRUE}, show y-axis tick marks
 and labels on the left side of the plot matrix. Defaults to \code{FALSE}.}
+
+\item{title}{Optional character scalar used as the plot title. If
+\code{NULL}, the title defaults to \code{"Arm <k>"} for the selected arm.}
 
 \item{\dots}{Additional arguments reserved for future extensions of the
 plotting method. These are currently ignored.}
@@ -95,27 +98,42 @@ ep3 <- list(
   size          = 20
 )
 
-R3 <- corr_make(
-  num_endpoints = 3,
+ep4 <- list(
+  endpoint_type  = "time-to-event",
+  baseline_rate  = 0.08,
+  censoring_rate = 0.02,
+  trt_effect     = 0.70
+)
+
+R4 <- corr_make(
+  num_endpoints = 4,
   values = rbind(
     c(1, 2, 0.20),
     c(1, 3, 0.10),
-    c(2, 3, 0.15)
+    c(1, 4, 0.10),
+    c(2, 3, 0.15),
+    c(2, 4, 0.05),
+    c(3, 4, 0.20)
   )
 )
 
 sim_obj <- makeData(
-  correlation_matrix    = R3,
+  correlation_matrix    = R4,
   sample_size_per_group = 500,
   SEED                  = 1,
-  endpoint_details      = list(ep1, ep2, ep3)
+  endpoint_details      = list(ep1, ep2, ep3, ep4)
 )
 
 ## Plot control arm
 plot(sim_obj)
 
 ## Plot treatment arm with custom labels
-plot(sim_obj, arm = 1, names = c("Biomarker", "Responder", "Hospitalizations"))
+plot(
+  sim_obj,
+  arm = 1,
+  names = c("Biomarker", "Responder", "Hospitalizations", "Event"),
+  title = "Treatment arm"
+)
 
 }
 \seealso{
