@@ -1,10 +1,10 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   longitudinal_data: longitudinal_data.html
   user_guide: user_guide.html
-last_built: 2026-05-11T17:20Z
+last_built: 2026-07-13T15:54Z
 urls:
   reference: https://boehringer-ingelheim.github.io/endpoints/reference
   article: https://boehringer-ingelheim.github.io/endpoints/articles

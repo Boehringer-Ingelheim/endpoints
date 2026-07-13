@@ -4,26 +4,28 @@
 censoring and stochastic enrollment in
 [`makeData`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md).
 
+## Details
+
 If omitted,
 [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
 fills in defaults internally:
 
 
     list(
-      administrative_censoring       = NULL,
-      enrollment_distribution        = "none",
-      enrollment_exponential_rate    = NULL,
+      administrative_censoring = NULL,
+      enrollment_distribution = "none",
+      enrollment_exponential_rate = NULL,
       piecewise_enrollment_cutpoints = NULL,
-      piecewise_enrollment_rates     = NULL
+      piecewise_enrollment_rates = NULL
     )
 
 ## Purpose
 
 Administrative censoring and stochastic enrollment affect *observed
 follow-up*. This primarily affects time-to-event endpoints, but may also
-be of use for possible interim analyses.
+be useful for interim-analysis settings.
 
-If no enrollment model is supplied (`enrollment_distribution = "none"`),
+If no enrollment model is supplied, `enrollment_distribution = "none"`,
 all subjects are treated as enrolling at time 0.
 
 If enrollment is stochastic and administrative censoring is enabled,
@@ -34,50 +36,50 @@ subject's enrollment time.
 
 ## Arguments
 
-- `administrative_censoring`:
+- administrative_censoring:
 
   Numeric scalar or `NULL`. If non-`NULL` and positive, this defines the
   administrative end of follow-up. Any TTE outcome occurring after this
   limit is administratively censored.
 
-- `enrollment_distribution`:
+- enrollment_distribution:
 
   Character string giving the enrollment-time distribution. Must be one
   of:
 
-  `"none"`
+  none
 
   :   All subjects enroll at time 0.
 
-  `"uniform"`
+  uniform
 
   :   Enrollment times are drawn from \\U(0,\mathcal{A})\\.
 
-  `"exponential"`
+  exponential
 
   :   Enrollment times are drawn from an exponential distribution,
       truncated at \\\mathcal{A}\\. Requires
       `enrollment_exponential_rate`.
 
-  `"piecewise"`
+  piecewise
 
   :   Enrollment times are generated from a piecewise exponential model
       over user-specified intervals. Requires
       `piecewise_enrollment_cutpoints` and `piecewise_enrollment_rates`.
 
-- `enrollment_exponential_rate`:
+- enrollment_exponential_rate:
 
   Numeric scalar (\> 0). Used only when
   `enrollment_distribution = "exponential"`. Gives the exponential rate
   governing enrollment times.
 
-- `piecewise_enrollment_cutpoints`:
+- piecewise_enrollment_cutpoints:
 
   Numeric vector of strictly increasing cutpoints defining the intervals
   for piecewise enrollment. For example, `c(0, 8, 16, 24)` defines three
-  intervals: \[0,8), \[8,16), and \[16,24\].
+  intervals: `[0,8)`, `[8,16)`, and `[16,24]`.
 
-- `piecewise_enrollment_rates`:
+- piecewise_enrollment_rates:
 
   Numeric vector of positive exponential rates, one for each interval
   defined by `piecewise_enrollment_cutpoints`. Its length must be
@@ -88,8 +90,8 @@ subject's enrollment time.
 If `administrative_censoring` is supplied and
 `enrollment_distribution = "none"`, all subjects are assumed to enter at
 time 0 and remain under observation until the administrative end of
-follow-up (unless they experience an event or are independently censored
-earlier).
+follow-up, unless they experience an event or are independently censored
+earlier.
 
 ## Uniform enrollment
 
@@ -108,7 +110,7 @@ tapering accrual pattern.
 ## Piecewise exponential enrollment
 
 Under piecewise enrollment, the waiting time to enrollment is simulated
-interval-by-interval. Within each interval, an exponential waiting time
+interval by interval. Within each interval, an exponential waiting time
 is drawn using that interval's rate. If the draw exceeds the remaining
 interval width, the process moves to the next interval.
 
@@ -133,8 +135,6 @@ enrollment_details <- list(
   enrollment_distribution     = "exponential",
   enrollment_exponential_rate = 1 / 4
 )
-head(enrollment_details$data)
-#> NULL
 
 ## Piecewise exponential enrollment
 enrollment_details <- list(

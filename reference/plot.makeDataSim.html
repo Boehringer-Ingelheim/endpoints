@@ -5,7 +5,7 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Pairwise visualization of simulated endpoints from a makeDataSim object — plot.makeDataSim"><meta name="description" content='plot.makeDataSim() produces a pairwise plot matrix for the simulated
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Pairwise visualization of simulated endpoints from a makeDataSim object — plot.makeDataSim"><meta name="description" content='plot.makeDataSim() produces a pairwise plot matrix for the simulated
 endpoints stored in a "makeDataSim" object returned by
 makeData.'><meta property="og:description" content='plot.makeDataSim() produces a pairwise plot matrix for the simulated
 endpoints stored in a "makeDataSim" object returned by
@@ -17,7 +17,7 @@ makeData.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">endpoints</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,7 @@ makeData.'></head><body>
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/Boehringer-Ingelheim/endpoints/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -52,7 +53,7 @@ endpoints stored in a <code>"makeDataSim"</code> object returned by
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'makeDataSim'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">x</span>, arm <span class="op">=</span> <span class="fl">0</span>, names <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">x</span>, arm <span class="op">=</span> <span class="fl">0</span>, names <span class="op">=</span> <span class="cn">NULL</span>, show_y_axis <span class="op">=</span> <span class="cn">FALSE</span>, title <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -81,24 +82,33 @@ endpoints. This affects only the displayed labels in the plot and does not
 modify the underlying data.</p></dd>
 
 
+<dt id="arg-show-y-axis">show_y_axis<a class="anchor" aria-label="anchor" href="#arg-show-y-axis"></a></dt>
+<dd><p>Logical scalar. If <code>TRUE</code>, show y-axis tick marks
+and labels on the left side of the plot matrix. Defaults to <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
+<dd><p>Optional character scalar used as the plot title. If
+<code>NULL</code>, the title defaults to <code>"Arm &lt;k&gt;"</code> for the selected arm.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed directly to
-<code><a href="https://ggobi.github.io/ggally/reference/ggpairs.html" class="external-link">GGally::ggpairs()</a></code>. This can be used to customize panels, labels,
-sizing, or other plot options.</p></dd>
+<dd><p>Additional arguments reserved for future extensions of the
+plotting method. These are currently ignored.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code><a href="https://ggobi.github.io/ggally/reference/ggpairs.html" class="external-link">GGally::ggpairs</a></code> object, which is also a
-<code>ggplot</code>-compatible object and can be printed or further modified using
-standard <span class="pkg">ggplot2</span> syntax.</p>
+    <p>Called for its side effect (drawing the plot). Returns
+<code>invisible(NULL)</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The method uses <code><a href="https://ggobi.github.io/ggally/reference/ggpairs.html" class="external-link">GGally::ggpairs()</a></code> to display scatterplots in the
-upper triangle and pairwise correlations in the lower triangle for the
-selected study arm. This is intended as a quick diagnostic tool for
-inspecting the joint structure of simulated endpoints.</p>
+    <p>The method uses a local grid-based plot-matrix layout to display
+scatterplots in the upper triangle, marginal summaries on the diagonal, and
+Pearson correlation coefficients in the lower triangle for the selected
+study arm. This is intended as a quick diagnostic tool for inspecting the
+joint structure of simulated endpoints.</p>
     </div>
     <div class="section level2">
     <h2 id="displayed-data">Displayed data<a class="anchor" aria-label="anchor" href="#displayed-data"></a></h2>
@@ -125,21 +135,15 @@ in the pair plot.</p>
     </div>
     <div class="section level2">
     <h2 id="panel-layout">Panel layout<a class="anchor" aria-label="anchor" href="#panel-layout"></a></h2>
-    <p>The returned <code>ggpairs</code> object is configured as
-follows:</p><ul><li><p>upper triangle: scatterplots for continuous-style
-panels,</p></li>
-<li><p>lower triangle: pairwise correlations,</p></li>
-<li><p>title: <code>"Arm
-&lt;k&gt;"</code> for the selected arm.</p></li>
-</ul><p>A <code><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">ggplot2::theme_bw()</a></code> theme is applied
-by default.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a></h2>
-    <p>This method requires both <span class="pkg">GGally</span> and
-<span class="pkg">ggplot2</span>. If either package is not installed, the method throws an
-error with an installation message.</p>
-    </div>
+    <p>The plot matrix is configured as follows:</p><ul><li><p>upper triangle: scatterplots,</p></li>
+<li><p>diagonal: density plots for
+continuous-style endpoints and percentage bar plots for binary endpoints,</p></li>
+<li><p>lower triangle: Pearson
+correlation coefficients without significance stars,</p></li>
+<li><p>strip labels:
+endpoint names shown across the top and right side of the matrix,</p></li>
+<li><p>title: <code>"Arm &lt;k&gt;"</code> for the selected arm.</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="summary.makeDataSim.html">summary.makeDataSim</a></code> for
@@ -170,20 +174,30 @@ numerical summaries of the simulated data.</p></div>
 <span class="r-in"><span>  size          <span class="op">=</span> <span class="fl">20</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">R3</span> <span class="op">&lt;-</span> <span class="fu"><a href="corr_make.html">corr_make</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  num_endpoints <span class="op">=</span> <span class="fl">3</span>,</span></span>
+<span class="r-in"><span><span class="va">ep4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  endpoint_type  <span class="op">=</span> <span class="st">"time-to-event"</span>,</span></span>
+<span class="r-in"><span>  baseline_rate  <span class="op">=</span> <span class="fl">0.08</span>,</span></span>
+<span class="r-in"><span>  censoring_rate <span class="op">=</span> <span class="fl">0.02</span>,</span></span>
+<span class="r-in"><span>  trt_effect     <span class="op">=</span> <span class="fl">0.70</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">R4</span> <span class="op">&lt;-</span> <span class="fu"><a href="corr_make.html">corr_make</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  num_endpoints <span class="op">=</span> <span class="fl">4</span>,</span></span>
 <span class="r-in"><span>  values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">0.20</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span>, <span class="fl">0.10</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">0.15</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span>, <span class="fl">0.10</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">0.15</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">0.05</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">0.20</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">sim_obj</span> <span class="op">&lt;-</span> <span class="fu"><a href="makeData.html">makeData</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  correlation_matrix    <span class="op">=</span> <span class="va">R3</span>,</span></span>
+<span class="r-in"><span>  correlation_matrix    <span class="op">=</span> <span class="va">R4</span>,</span></span>
 <span class="r-in"><span>  sample_size_per_group <span class="op">=</span> <span class="fl">500</span>,</span></span>
 <span class="r-in"><span>  SEED                  <span class="op">=</span> <span class="fl">1</span>,</span></span>
-<span class="r-in"><span>  endpoint_details      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">ep1</span>, <span class="va">ep2</span>, <span class="va">ep3</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  endpoint_details      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">ep1</span>, <span class="va">ep2</span>, <span class="va">ep3</span>, <span class="va">ep4</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Plot control arm</span></span></span>
@@ -191,7 +205,12 @@ numerical summaries of the simulated data.</p></div>
 <span class="r-plt img"><img src="plot.makeDataSim-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Plot treatment arm with custom labels</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">sim_obj</span>, arm <span class="op">=</span> <span class="fl">1</span>, names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Biomarker"</span>, <span class="st">"Responder"</span>, <span class="st">"Hospitalizations"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">sim_obj</span>,</span></span>
+<span class="r-in"><span>  arm <span class="op">=</span> <span class="fl">1</span>,</span></span>
+<span class="r-in"><span>  names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Biomarker"</span>, <span class="st">"Responder"</span>, <span class="st">"Hospitalizations"</span>, <span class="st">"Event"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  title <span class="op">=</span> <span class="st">"Treatment arm"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot.makeDataSim-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
@@ -205,7 +224,7 @@ numerical summaries of the simulated data.</p></div>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

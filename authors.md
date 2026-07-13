@@ -17,13 +17,13 @@ Source:
 [`DESCRIPTION`](https://github.com/Boehringer-Ingelheim/endpoints/blob/main/DESCRIPTION)
 
 Longhurst C, Yang M, Thomann M (2026). *endpoints: Simulate Correlated
-Multi-Endpoint Clinical Trial Data*. R package version 0.1.1,
+Multi-Endpoint Clinical Trial Data*. R package version 0.1.2,
 <https://github.com/Boehringer-Ingelheim/endpoints>.
 
     @Manual{,
       title = {endpoints: Simulate Correlated Multi-Endpoint Clinical Trial Data},
       author = {Colin Longhurst and Ming Yang and Mitchell Thomann},
       year = {2026},
-      note = {R package version 0.1.1},
+      note = {R package version 0.1.2},
       url = {https://github.com/Boehringer-Ingelheim/endpoints},
     }
