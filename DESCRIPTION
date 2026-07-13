@@ -1,6 +1,6 @@
 Package: endpoints
 Title: Simulate Correlated Multi-Endpoint Clinical Trial Data
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: 
     c(person(given = "Colin",
              family = "Longhurst",
@@ -28,13 +28,12 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports: 
-    ggplot2,
-    GGally,
     Matrix,
     MASS,
     stats,
     survival
 Suggests:
+    ggplot2,
     tidyr,
     geeM,
     lme4,
