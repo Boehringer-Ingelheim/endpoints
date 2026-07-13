@@ -1409,6 +1409,320 @@ print.summary.makeDataSim <- function(x, ...) {
 
   invisible(x)
 }
+#############################################################
+# internal utility functions called in main plotting function
+#############################################################
+.plot_makeDataSim_range_pad <- function(z) {
+  z <- z[is.finite(z)]
+  if (length(z) == 0L) return(c(0, 1))
+
+  r <- range(z)
+  if (r[1L] == r[2L]) {
+    pad <- max(abs(r[1L]) * 0.05, 0.5)
+    return(c(r[1L] - pad, r[2L] + pad))
+  }
+
+  pad <- diff(r) * 0.04
+  c(r[1L] - pad, r[2L] + pad)
+}
+
+.plot_makeDataSim_axis_ticks <- function(r) {
+  ticks <- grDevices::axisTicks(usr = r, log = FALSE, axp = NULL)
+  ticks[ticks >= r[1L] & ticks <= r[2L]]
+}
+
+.plot_makeDataSim_axis_labels <- function(ticks) {
+  format(ticks, trim = TRUE)
+}
+
+.plot_makeDataSim_midpoint <- function(r) {
+  (r[1L] + r[2L]) / 2
+}
+
+.plot_makeDataSim_density_xy <- function(z) {
+  z <- z[is.finite(z)]
+  if (length(unique(z)) < 2L) return(NULL)
+  stats::density(z, na.rm = TRUE)
+}
+
+.plot_makeDataSim_is_binary <- function(z) {
+  z <- z[is.finite(z)]
+  vals <- unique(z)
+  length(vals) > 0L && all(vals %in% c(0, 1))
+}
+
+.plot_makeDataSim_binary_percent_labels <- function(prop) {
+  label <- sprintf("%.1f%%", 100 * prop)
+  sub("\\.0%", "%", label)
+}
+
+.plot_makeDataSim_panel_ranges <- function(i,
+                                           j,
+                                           binary_endpoint,
+                                           x_ranges,
+                                           density_ranges,
+                                           binary_ranges) {
+  if (i == j) {
+    y_range <- if (isTRUE(binary_endpoint[j])) {
+      binary_ranges[[j]]
+    } else {
+      density_ranges[[j]]
+    }
+    list(x = x_ranges[[j]], y = y_range)
+  } else {
+    list(x = x_ranges[[j]], y = x_ranges[[i]])
+  }
+}
+
+.plot_makeDataSim_draw_strip <- function(label, rotate = FALSE) {
+  grid::grobTree(
+    grid::rectGrob(gp = grid::gpar(fill = "grey85", col = "grey35", lwd = 1)),
+    grid::textGrob(
+      label,
+      rot = if (rotate) 270 else 0,
+      gp = grid::gpar(col = "grey15", fontsize = 10)
+    )
+  )
+}
+
+.plot_makeDataSim_push_cell_viewport <- function(row,
+                                                 col,
+                                                 width = 0.985,
+                                                 height = 0.985) {
+  grid::pushViewport(grid::viewport(layout.pos.row = row, layout.pos.col = col))
+  grid::pushViewport(grid::viewport(width = width, height = height))
+}
+
+.plot_makeDataSim_draw_grid <- function(x_range, y_range) {
+  grid::grid.rect(gp = grid::gpar(fill = "white", col = NA))
+
+  x_major <- .plot_makeDataSim_axis_ticks(x_range)
+  y_major <- .plot_makeDataSim_axis_ticks(y_range)
+  x_minor <- utils::head(x_major, -1L) + diff(x_major) / 2
+  y_minor <- utils::head(y_major, -1L) + diff(y_major) / 2
+
+  if (length(x_minor) > 0L) {
+    grid::grid.segments(
+      x0 = grid::unit(x_minor, "native"),
+      x1 = grid::unit(x_minor, "native"),
+      y0 = grid::unit(y_range[1L], "native"),
+      y1 = grid::unit(y_range[2L], "native"),
+      gp = grid::gpar(col = "grey93", lwd = 0.7)
+    )
+  }
+
+  if (length(y_minor) > 0L) {
+    grid::grid.segments(
+      x0 = grid::unit(x_range[1L], "native"),
+      x1 = grid::unit(x_range[2L], "native"),
+      y0 = grid::unit(y_minor, "native"),
+      y1 = grid::unit(y_minor, "native"),
+      gp = grid::gpar(col = "grey93", lwd = 0.7)
+    )
+  }
+
+  if (length(x_major) > 0L) {
+    grid::grid.segments(
+      x0 = grid::unit(x_major, "native"),
+      x1 = grid::unit(x_major, "native"),
+      y0 = grid::unit(y_range[1L], "native"),
+      y1 = grid::unit(y_range[2L], "native"),
+      gp = grid::gpar(col = "grey88", lwd = 1)
+    )
+  }
+
+  if (length(y_major) > 0L) {
+    grid::grid.segments(
+      x0 = grid::unit(x_range[1L], "native"),
+      x1 = grid::unit(x_range[2L], "native"),
+      y0 = grid::unit(y_major, "native"),
+      y1 = grid::unit(y_major, "native"),
+      gp = grid::gpar(col = "grey88", lwd = 1)
+    )
+  }
+
+  grid::grid.rect(gp = grid::gpar(fill = NA, col = "grey35", lwd = 1))
+}
+
+.plot_makeDataSim_draw_blank_panel <- function() {
+  grid::grid.rect(gp = grid::gpar(fill = "white", col = "grey35", lwd = 1))
+}
+
+.plot_makeDataSim_draw_binary_panel <- function(z, y_range) {
+  z <- z[is.finite(z)]
+  counts <- tabulate(match(z, c(0, 1)), nbins = 2L)
+  prop <- if (sum(counts) == 0L) c(0, 0) else counts / sum(counts)
+  x <- c(0, 1)
+  bar_width <- 0.56
+
+  grid::grid.rect(
+    x = grid::unit(x, "native"),
+    y = grid::unit(prop / 2, "native"),
+    width = grid::unit(rep(bar_width, 2L), "native"),
+    height = grid::unit(prop, "native"),
+    just = "center",
+    gp = grid::gpar(fill = "grey75", col = "grey35", lwd = 0.8)
+  )
+
+  grid::grid.text(
+    .plot_makeDataSim_binary_percent_labels(prop),
+    x = grid::unit(x, "native"),
+    y = grid::unit(pmin(y_range[2L] * 0.96, prop + y_range[2L] * 0.06), "native"),
+    gp = grid::gpar(col = "grey25", fontsize = 9)
+  )
+}
+
+.plot_makeDataSim_draw_panel <- function(i,
+                                         j,
+                                         dat_sub,
+                                         binary_endpoint,
+                                         x_ranges,
+                                         density_ranges,
+                                         binary_ranges) {
+  ranges <- .plot_makeDataSim_panel_ranges(
+    i = i,
+    j = j,
+    binary_endpoint = binary_endpoint,
+    x_ranges = x_ranges,
+    density_ranges = density_ranges,
+    binary_ranges = binary_ranges
+  )
+
+  grid::pushViewport(grid::viewport(
+    xscale = ranges$x,
+    yscale = ranges$y,
+    clip = "on"
+  ))
+  .plot_makeDataSim_draw_grid(ranges$x, ranges$y)
+
+  if (i == j) {
+    if (isTRUE(binary_endpoint[j])) {
+      .plot_makeDataSim_draw_binary_panel(dat_sub[[j]], ranges$y)
+    } else {
+      d <- .plot_makeDataSim_density_xy(dat_sub[[j]])
+      if (!is.null(d)) {
+        grid::grid.lines(
+          x = grid::unit(d$x, "native"),
+          y = grid::unit(d$y, "native"),
+          gp = grid::gpar(col = "black", lwd = 1.2)
+        )
+      } else {
+        z <- dat_sub[[j]]
+        z <- z[is.finite(z)]
+        if (length(z) > 0L) {
+          grid::grid.segments(
+            x0 = grid::unit(z[1L], "native"),
+            x1 = grid::unit(z[1L], "native"),
+            y0 = grid::unit(ranges$y[1L], "native"),
+            y1 = grid::unit(ranges$y[2L], "native"),
+            gp = grid::gpar(col = "black", lwd = 1.2)
+          )
+        }
+      }
+    }
+  } else if (i < j) {
+    ok <- is.finite(dat_sub[[j]]) & is.finite(dat_sub[[i]])
+    if (any(ok)) {
+      grid::grid.points(
+        x = grid::unit(dat_sub[[j]][ok], "native"),
+        y = grid::unit(dat_sub[[i]][ok], "native"),
+        pch = 16,
+        size = grid::unit(1.5, "mm"),
+        gp = grid::gpar(col = grDevices::rgb(0, 0, 0, 0.85))
+      )
+    }
+  } else {
+    .plot_makeDataSim_draw_blank_panel()
+    r <- suppressWarnings(stats::cor(
+      dat_sub[[j]],
+      dat_sub[[i]],
+      use = "pairwise.complete.obs"
+    ))
+    label <- if (is.na(r)) "NA" else format(round(r, 3), nsmall = 3)
+    grid::grid.text(
+      paste("Corr:", label),
+      x = grid::unit(.plot_makeDataSim_midpoint(ranges$x), "native"),
+      y = grid::unit(.plot_makeDataSim_midpoint(ranges$y), "native"),
+      gp = grid::gpar(col = "grey45", fontsize = 12)
+    )
+  }
+
+  grid::popViewport()
+}
+
+.plot_makeDataSim_draw_x_axis <- function(j,
+                                          p,
+                                          binary_endpoint,
+                                          x_ranges,
+                                          density_ranges,
+                                          binary_ranges) {
+  ranges <- .plot_makeDataSim_panel_ranges(
+    i = p,
+    j = j,
+    binary_endpoint = binary_endpoint,
+    x_ranges = x_ranges,
+    density_ranges = density_ranges,
+    binary_ranges = binary_ranges
+  )
+  ticks <- if (isTRUE(binary_endpoint[j])) {
+    c(0, 1)
+  } else {
+    .plot_makeDataSim_axis_ticks(ranges$x)
+  }
+
+  grid::pushViewport(grid::viewport(xscale = ranges$x, yscale = c(0, 1)))
+  if (length(ticks) > 0L) {
+    grid::grid.segments(
+      x0 = grid::unit(ticks, "native"),
+      x1 = grid::unit(ticks, "native"),
+      y0 = grid::unit(1, "native"),
+      y1 = grid::unit(0.82, "native"),
+      gp = grid::gpar(col = "grey35", lwd = 0.8)
+    )
+    grid::grid.text(
+      .plot_makeDataSim_axis_labels(ticks),
+      x = grid::unit(ticks, "native"),
+      y = grid::unit(0.45, "native"),
+      gp = grid::gpar(col = "grey35", fontsize = 9)
+    )
+  }
+  grid::popViewport()
+}
+
+.plot_makeDataSim_draw_y_axis <- function(i,
+                                          binary_endpoint,
+                                          x_ranges,
+                                          density_ranges,
+                                          binary_ranges) {
+  ranges <- .plot_makeDataSim_panel_ranges(
+    i = i,
+    j = 1L,
+    binary_endpoint = binary_endpoint,
+    x_ranges = x_ranges,
+    density_ranges = density_ranges,
+    binary_ranges = binary_ranges
+  )
+  ticks <- .plot_makeDataSim_axis_ticks(ranges$y)
+
+  grid::pushViewport(grid::viewport(xscale = c(0, 1), yscale = ranges$y))
+  if (length(ticks) > 0L) {
+    grid::grid.segments(
+      x0 = grid::unit(0.82, "native"),
+      x1 = grid::unit(1, "native"),
+      y0 = grid::unit(ticks, "native"),
+      y1 = grid::unit(ticks, "native"),
+      gp = grid::gpar(col = "grey35", lwd = 0.8)
+    )
+    grid::grid.text(
+      .plot_makeDataSim_axis_labels(ticks),
+      x = grid::unit(0.76, "native"),
+      y = grid::unit(ticks, "native"),
+      just = "right",
+      gp = grid::gpar(col = "grey35", fontsize = 9)
+    )
+  }
+  grid::popViewport()
+}
 
 
 #' Pairwise visualization of simulated endpoints from a \code{makeDataSim}
@@ -1418,10 +1732,11 @@ print.summary.makeDataSim <- function(x, ...) {
 #' endpoints stored in a \code{"makeDataSim"} object returned by
 #' \code{\link{makeData}}.
 #'
-#' The method uses \code{GGally::ggpairs()} to display scatterplots in the
-#' upper triangle and pairwise correlations in the lower triangle for the
-#' selected study arm. This is intended as a quick diagnostic tool for
-#' inspecting the joint structure of simulated endpoints.
+#' The method uses a local grid-based plot-matrix layout to display
+#' scatterplots in the upper triangle, marginal summaries on the diagonal, and
+#' Pearson correlation coefficients in the lower triangle for the selected
+#' study arm. This is intended as a quick diagnostic tool for inspecting the
+#' joint structure of simulated endpoints.
 #'
 #'
 #' @param x An object of class \code{"makeDataSim"}, created by
@@ -1440,12 +1755,14 @@ print.summary.makeDataSim <- function(x, ...) {
 #' If supplied, \code{names} must have length equal to the number of simulated
 #' endpoints. This affects only the displayed labels in the plot and does not
 #' modify the underlying data.
-#' @param \dots Additional arguments passed directly to
-#' \code{GGally::ggpairs()}. This can be used to customize panels, labels,
-#' sizing, or other plot options.
-#' @return A \code{GGally::ggpairs} object, which is also a
-#' \code{ggplot}-compatible object and can be printed or further modified using
-#' standard \pkg{ggplot2} syntax.
+#' @param show_y_axis Logical scalar. If \code{TRUE}, show y-axis tick marks
+#' and labels on the left side of the plot matrix. Defaults to \code{FALSE}.
+#' @param title Optional character scalar used as the plot title. If
+#' \code{NULL}, the title defaults to \code{"Arm <k>"} for the selected arm.
+#' @param \dots Additional arguments reserved for future extensions of the
+#' plotting method. These are currently ignored.
+#' @return Called for its side effect (drawing the plot). Returns
+#' \code{invisible(NULL)}.
 #' @section Displayed data:
 #'
 #' The plotting method extracts the simulated endpoint columns recorded in
@@ -1456,14 +1773,13 @@ print.summary.makeDataSim <- function(x, ...) {
 #' \item{Time-to-event endpoints}{\code{TTE_1}, \code{TTE_2}, \dots} } Columns
 #' such as \code{trt}, \code{Status_*}, and \code{enrollTime} are not included
 #' in the pair plot.
-#' @section Panel layout: The returned \code{ggpairs} object is configured as
-#' follows: \itemize{ \item upper triangle: scatterplots for continuous-style
-#' panels, \item lower triangle: pairwise correlations, \item title: \code{"Arm
-#' <k>"} for the selected arm. } A \code{ggplot2::theme_bw()} theme is applied
-#' by default.
-#' @section Dependencies: This method requires both \pkg{GGally} and
-#' \pkg{ggplot2}. If either package is not installed, the method throws an
-#' error with an installation message.
+#' @section Panel layout: The plot matrix is configured as follows: \itemize{
+#' \item upper triangle: scatterplots, \item diagonal: density plots for
+#' continuous-style endpoints and percentage bar plots for binary endpoints,
+#' \item lower triangle: Pearson
+#' correlation coefficients without significance stars, \item strip labels:
+#' endpoint names shown across the top and right side of the matrix, \item
+#' title: \code{"Arm <k>"} for the selected arm. }
 #' @seealso \code{\link[=summary.makeDataSim]{summary.makeDataSim}} for
 #' numerical summaries of the simulated data.
 #' @examples
@@ -1489,40 +1805,50 @@ print.summary.makeDataSim <- function(x, ...) {
 #'   size          = 20
 #' )
 #'
-#' R3 <- corr_make(
-#'   num_endpoints = 3,
+#' ep4 <- list(
+#'   endpoint_type  = "time-to-event",
+#'   baseline_rate  = 0.08,
+#'   censoring_rate = 0.02,
+#'   trt_effect     = 0.70
+#' )
+#'
+#' R4 <- corr_make(
+#'   num_endpoints = 4,
 #'   values = rbind(
 #'     c(1, 2, 0.20),
 #'     c(1, 3, 0.10),
-#'     c(2, 3, 0.15)
+#'     c(1, 4, 0.10),
+#'     c(2, 3, 0.15),
+#'     c(2, 4, 0.05),
+#'     c(3, 4, 0.20)
 #'   )
 #' )
 #'
 #' sim_obj <- makeData(
-#'   correlation_matrix    = R3,
+#'   correlation_matrix    = R4,
 #'   sample_size_per_group = 500,
 #'   SEED                  = 1,
-#'   endpoint_details      = list(ep1, ep2, ep3)
+#'   endpoint_details      = list(ep1, ep2, ep3, ep4)
 #' )
 #'
 #' ## Plot control arm
 #' plot(sim_obj)
 #'
 #' ## Plot treatment arm with custom labels
-#' plot(sim_obj, arm = 1, names = c("Biomarker", "Responder", "Hospitalizations"))
+#' plot(
+#'   sim_obj,
+#'   arm = 1,
+#'   names = c("Biomarker", "Responder", "Hospitalizations", "Event"),
+#'   title = "Treatment arm"
+#' )
 #'
 #' @exportS3Method
 plot.makeDataSim <- function(x,
                              arm = 0,
                              names = NULL,
+                             show_y_axis = FALSE,
+                             title = NULL,
                              ...) {
-
-  if (!requireNamespace("GGally", quietly = TRUE)) {
-    stop("Package 'GGally' is required for plot.makeDataSim(). Please install it.")
-  }
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    stop("Package 'ggplot2' is required for plot.makeDataSim(). Please install it.")
-  }
 
   dat  <- x$data
   meta <- x$meta
@@ -1553,17 +1879,128 @@ plot.makeDataSim <- function(x,
     colnames(dat_sub) <- names
   }
 
-  p <- GGally::ggpairs(
-    dat_sub,
-    upper = list(continuous = "points"),
-    lower = list(continuous = "cor"),
-    progress = FALSE,
-    ...
-  ) +
-    ggplot2::theme_bw() +
-    ggplot2::ggtitle(paste0("Arm ", arm_lbl))
+  if (!is.logical(show_y_axis) || length(show_y_axis) != 1L || is.na(show_y_axis)) {
+    stop("`show_y_axis` must be TRUE or FALSE.")
+  }
 
-  p
+  if (!is.null(title)) {
+    if (!is.character(title) || length(title) != 1L || is.na(title)) {
+      stop("`title` must be NULL or a non-missing character scalar.")
+    }
+  }
+  plot_title <- title %||% paste0("Arm ", arm_lbl)
+
+  extra_args <- list(...)
+  if (length(extra_args) > 0L) {
+    warning("Additional arguments in `...` are currently ignored by plot.makeDataSim().")
+  }
+
+  p <- ncol(dat_sub)
+
+  binary_endpoint <- vapply(dat_sub, .plot_makeDataSim_is_binary, logical(1))
+
+  x_ranges <- lapply(dat_sub, .plot_makeDataSim_range_pad)
+  x_ranges[binary_endpoint] <- replicate(
+    sum(binary_endpoint),
+    c(-0.5, 1.5),
+    simplify = FALSE
+  )
+  density_ranges <- lapply(dat_sub, function(z) {
+    d <- .plot_makeDataSim_density_xy(z)
+    if (is.null(d)) return(c(0, 1))
+    c(0, max(d$y, na.rm = TRUE) * 1.05)
+  })
+  binary_ranges <- lapply(dat_sub, function(z) {
+    z <- z[is.finite(z)]
+    if (length(z) == 0L) return(c(0, 1))
+    prop <- tabulate(match(z, c(0, 1)), nbins = 2L) / length(z)
+    c(0, max(0.12, max(prop, na.rm = TRUE) * 1.18))
+  })
+
+  grid::grid.newpage()
+  layout <- grid::grid.layout(
+    nrow = p + 3L,
+    ncol = p + 2L,
+    heights = grid::unit.c(
+      grid::unit(0.34, "in"),
+      grid::unit(0.28, "in"),
+      rep(grid::unit(1, "null"), p),
+      grid::unit(0.34, "in")
+    ),
+    widths = grid::unit.c(
+      grid::unit(if (isTRUE(show_y_axis)) 0.46 else 0.08, "in"),
+      rep(grid::unit(1, "null"), p),
+      grid::unit(0.28, "in")
+    )
+  )
+  grid::pushViewport(grid::viewport(layout = layout))
+
+  grid::pushViewport(grid::viewport(layout.pos.row = 1L, layout.pos.col = 2L))
+  grid::grid.text(
+    plot_title,
+    x = grid::unit(0, "npc"),
+    just = "left",
+    gp = grid::gpar(col = "black", fontsize = 13)
+  )
+  grid::popViewport()
+
+  for (j in seq_len(p)) {
+    .plot_makeDataSim_push_cell_viewport(row = 2L, col = j + 1L, height = 0.92)
+    grid::grid.draw(.plot_makeDataSim_draw_strip(colnames(dat_sub)[j], rotate = FALSE))
+    grid::popViewport(2L)
+  }
+
+  for (i in seq_len(p)) {
+    .plot_makeDataSim_push_cell_viewport(row = i + 2L, col = p + 2L, width = 0.92)
+    grid::grid.draw(.plot_makeDataSim_draw_strip(colnames(dat_sub)[i], rotate = TRUE))
+    grid::popViewport(2L)
+  }
+
+  for (i in seq_len(p)) {
+    for (j in seq_len(p)) {
+      .plot_makeDataSim_push_cell_viewport(row = i + 2L, col = j + 1L, height = 0.96)
+      .plot_makeDataSim_draw_panel(
+        i = i,
+        j = j,
+        dat_sub = dat_sub,
+        binary_endpoint = binary_endpoint,
+        x_ranges = x_ranges,
+        density_ranges = density_ranges,
+        binary_ranges = binary_ranges
+      )
+      grid::popViewport(2L)
+    }
+  }
+
+  if (isTRUE(show_y_axis)) {
+    for (i in seq_len(p)) {
+      .plot_makeDataSim_push_cell_viewport(row = i + 2L, col = 1L, height = 0.96)
+      .plot_makeDataSim_draw_y_axis(
+        i = i,
+        binary_endpoint = binary_endpoint,
+        x_ranges = x_ranges,
+        density_ranges = density_ranges,
+        binary_ranges = binary_ranges
+      )
+      grid::popViewport(2L)
+    }
+  }
+
+  for (j in seq_len(p)) {
+    .plot_makeDataSim_push_cell_viewport(row = p + 3L, col = j + 1L, width = 0.985)
+    .plot_makeDataSim_draw_x_axis(
+      j = j,
+      p = p,
+      binary_endpoint = binary_endpoint,
+      x_ranges = x_ranges,
+      density_ranges = density_ranges,
+      binary_ranges = binary_ranges
+    )
+    grid::popViewport(2L)
+  }
+
+  grid::popViewport()
+  invisible(NULL)
 }
 
 

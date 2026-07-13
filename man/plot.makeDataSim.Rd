@@ -5,7 +5,7 @@
 \title{Pairwise visualization of simulated endpoints from a \code{makeDataSim}
 object}
 \usage{
-\method{plot}{makeDataSim}(x, arm = 0, names = NULL, ...)
+\method{plot}{makeDataSim}(x, arm = 0, names = NULL, show_y_axis = FALSE, title = NULL, ...)
 }
 \arguments{
 \item{x}{An object of class \code{"makeDataSim"}, created by
@@ -27,14 +27,18 @@ If supplied, \code{names} must have length equal to the number of simulated
 endpoints. This affects only the displayed labels in the plot and does not
 modify the underlying data.}
 
-\item{\dots}{Additional arguments passed directly to
-\code{GGally::ggpairs()}. This can be used to customize panels, labels,
-sizing, or other plot options.}
+\item{show_y_axis}{Logical scalar. If \code{TRUE}, show y-axis tick marks
+and labels on the left side of the plot matrix. Defaults to \code{FALSE}.}
+
+\item{title}{Optional character scalar used as the plot title. If
+\code{NULL}, the title defaults to \code{"Arm <k>"} for the selected arm.}
+
+\item{\dots}{Additional arguments reserved for future extensions of the
+plotting method. These are currently ignored.}
 }
 \value{
-A \code{GGally::ggpairs} object, which is also a
-\code{ggplot}-compatible object and can be printed or further modified using
-standard \pkg{ggplot2} syntax.
+Called for its side effect (drawing the plot). Returns
+\code{invisible(NULL)}.
 }
 \description{
 \code{plot.makeDataSim()} produces a pairwise plot matrix for the simulated
@@ -42,10 +46,11 @@ endpoints stored in a \code{"makeDataSim"} object returned by
 \code{\link{makeData}}.
 }
 \details{
-The method uses \code{GGally::ggpairs()} to display scatterplots in the
-upper triangle and pairwise correlations in the lower triangle for the
-selected study arm. This is intended as a quick diagnostic tool for
-inspecting the joint structure of simulated endpoints.
+The method uses a local grid-based plot-matrix layout to display
+scatterplots in the upper triangle, marginal summaries on the diagonal, and
+Pearson correlation coefficients in the lower triangle for the selected
+study arm. This is intended as a quick diagnostic tool for inspecting the
+joint structure of simulated endpoints.
 }
 \section{Displayed data}{
 
@@ -61,17 +66,13 @@ in the pair plot.
 }
 
 \section{Panel layout}{
- The returned \code{ggpairs} object is configured as
-follows: \itemize{ \item upper triangle: scatterplots for continuous-style
-panels, \item lower triangle: pairwise correlations, \item title: \code{"Arm
-<k>"} for the selected arm. } A \code{ggplot2::theme_bw()} theme is applied
-by default.
-}
-
-\section{Dependencies}{
- This method requires both \pkg{GGally} and
-\pkg{ggplot2}. If either package is not installed, the method throws an
-error with an installation message.
+ The plot matrix is configured as follows: \itemize{
+\item upper triangle: scatterplots, \item diagonal: density plots for
+continuous-style endpoints and percentage bar plots for binary endpoints,
+\item lower triangle: Pearson
+correlation coefficients without significance stars, \item strip labels:
+endpoint names shown across the top and right side of the matrix, \item
+title: \code{"Arm <k>"} for the selected arm. }
 }
 
 \examples{
@@ -97,27 +98,42 @@ ep3 <- list(
   size          = 20
 )
 
-R3 <- corr_make(
-  num_endpoints = 3,
+ep4 <- list(
+  endpoint_type  = "time-to-event",
+  baseline_rate  = 0.08,
+  censoring_rate = 0.02,
+  trt_effect     = 0.70
+)
+
+R4 <- corr_make(
+  num_endpoints = 4,
   values = rbind(
     c(1, 2, 0.20),
     c(1, 3, 0.10),
-    c(2, 3, 0.15)
+    c(1, 4, 0.10),
+    c(2, 3, 0.15),
+    c(2, 4, 0.05),
+    c(3, 4, 0.20)
   )
 )
 
 sim_obj <- makeData(
-  correlation_matrix    = R3,
+  correlation_matrix    = R4,
   sample_size_per_group = 500,
   SEED                  = 1,
-  endpoint_details      = list(ep1, ep2, ep3)
+  endpoint_details      = list(ep1, ep2, ep3, ep4)
 )
 
 ## Plot control arm
 plot(sim_obj)
 
 ## Plot treatment arm with custom labels
-plot(sim_obj, arm = 1, names = c("Biomarker", "Responder", "Hospitalizations"))
+plot(
+  sim_obj,
+  arm = 1,
+  names = c("Biomarker", "Responder", "Hospitalizations", "Event"),
+  title = "Treatment arm"
+)
 
 }
 \seealso{
