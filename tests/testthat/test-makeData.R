@@ -673,6 +673,25 @@ testthat::test_that("trial calendar: last_patient_min_followup rule is applied",
 testthat::test_that("enrollment and trial-calendar argument dependencies are enforced", {
   cor_mat <- diag(1)
 
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
+      ),
+      enrollment_details = list(
+        administrative_censoring = 12
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "administrative_censoring|no longer supported|followup_details|trial_end_details",
+    ignore.case = TRUE
+  )
+
   # uniform no longer supported
   testthat::expect_error(
     makeData(
@@ -1136,4 +1155,3 @@ testthat::test_that("single-endpoint mode: correlation_matrix=NULL generates one
   testthat::expect_true(abs(mean(d$Int_1) - mean_target) < 0.35)
   testthat::expect_true(mean(d$Int_1 == 0) > 0.05)
 })
-

@@ -8,3 +8,8 @@
   `+` syntax.
 - `plot.makeDataSim()` gains a `title` argument for overriding the default
   `"Arm <k>"` plot title.
+- `enrollment_details$administrative_censoring` is no longer supported. Use
+  `followup_details` and `trial_end_details` to express administrative
+  follow-up instead.
+- `enrollment_distribution = "uniform"` is no longer supported. Use `"none"`,
+  `"exponential"`, or `"piecewise"` enrollment instead.

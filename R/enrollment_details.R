@@ -273,13 +273,15 @@
 #' \code{enrollment_details$administrative_censoring} and
 #' \code{enrollment_distribution = "uniform"}.
 #'
-#' These are no longer part of the recommended trial-calendar interface.
+#' These are no longer supported as part of the trial-calendar interface.
 #' Administrative censoring is now represented through the combination of
 #' \code{followup_details} and \code{trial_end_details}. Uniform enrollment has
 #' been removed in favor of Poisson-process based accrual models.
 #'
 #' If \code{administrative_censoring} is supplied in
-#' \code{enrollment_details}, it is ignored and a warning may be issued.
+#' \code{enrollment_details}, \code{makeData()} now errors and asks users to
+#' express administrative follow-up through \code{followup_details} and
+#' \code{trial_end_details}.
 #'
 #' @seealso
 #' \code{\link{makeData}} for the main simulation function.

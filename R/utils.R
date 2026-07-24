@@ -2724,12 +2724,10 @@ normalize_enrollment_details <- function(enrollment_details = list()) {
   }
 
   if ("administrative_censoring" %in% names(enrollment_details)) {
-    warning(
-      "`enrollment_details$administrative_censoring` is deprecated and ignored. ",
+    stop(
+      "`enrollment_details$administrative_censoring` is no longer supported. ",
       "Use `followup_details` and `trial_end_details` instead."
     )
-
-    enrollment_details$administrative_censoring <- NULL
   }
 
   enrollment_details <- utils::modifyList(
