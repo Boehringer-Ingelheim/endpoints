@@ -11,6 +11,8 @@ makeData(
   sample_size_per_group,
   endpoint_details,
   enrollment_details = list(),
+  followup_details = list(),
+  trial_end_details = list(),
   non_fatal_censors_fatal = FALSE,
   target_correlation = TRUE,
   arm_mode = c("auto", "full", "control"),
@@ -42,33 +44,71 @@ Each sub-list defines the marginal distribution and arm-specific
 parameters for one endpoint. See \code{\link{endpoint_details}} for the
 complete schema, supported endpoint types, and detailed examples.}
 
-\item{enrollment_details}{A named list controlling enrollment and
-administrative follow-up. Fields include:
+\item{enrollment_details}{A named list controlling enrollment. Fields include:
 \describe{
-\item{administrative_censoring}{
-Numeric scalar. If non-\code{NULL}, follow-up is administratively
-censored at this time.
-}
 \item{enrollment_distribution}{
-Character. One of \code{"none"}, \code{"uniform"},
-\code{"exponential"}, or \code{"piecewise"}.
+Character. One of \code{"none"}, \code{"exponential"}, or
+\code{"piecewise"}. The value \code{"exponential"} denotes homogeneous
+Poisson-process accrual, with exponentially distributed inter-arrival
+times. The value \code{"piecewise"} denotes piecewise homogeneous
+Poisson-process accrual.
 }
 \item{enrollment_exponential_rate}{
-Numeric scalar rate for exponential enrollment when
+Numeric scalar accrual rate per unit time when
 \code{enrollment_distribution = "exponential"}.
 }
 \item{piecewise_enrollment_cutpoints}{
-Numeric vector of cutpoints defining intervals for piecewise
-enrollment.
+Numeric vector of cutpoints defining calendar intervals for piecewise
+enrollment. Should start at 0.
 }
 \item{piecewise_enrollment_rates}{
-Numeric vector of rates, one per interval, for piecewise exponential
-enrollment.
+Numeric vector of accrual rates, one per interval, for piecewise
+Poisson-process enrollment.
 }
-}
+}}
 
-See \code{\link{enrollment_details}} for full details and recommended
-parameterization.}
+\item{followup_details}{A named list controlling subject-level follow-up
+limits. Fields include:
+\describe{
+\item{min_followup}{
+Planned minimum follow-up used by trial-ending rules such as
+\code{"last_patient_min_followup"}.
+}
+\item{max_followup}{
+Maximum observable follow-up for any individual subject.
+}
+}}
+
+\item{trial_end_details}{A named list controlling the calendar time of final
+analysis or database cutoff. Fields include:
+\describe{
+\item{type}{
+Character. One of \code{"none"}, \code{"fixed_calendar"},
+\code{"last_patient_min_followup"}, or \code{"event_driven"}.
+}
+\item{trial_end_time}{
+Numeric scalar calendar time for \code{type = "fixed_calendar"}.
+}
+\item{event_endpoint}{
+TTE endpoint used for event-driven stopping. May be a TTE ordinal such
+as \code{1}, or a character value such as \code{"TTE_1"}.
+}
+\item{target_events}{
+Positive integer number of events required for
+\code{type = "event_driven"}.
+}
+\item{require_min_followup}{
+Logical. For event-driven trials, if \code{TRUE}, the trial cannot end
+before the last randomized subject has \code{min_followup}.
+}
+\item{max_trial_duration}{
+Optional positive scalar maximum calendar trial duration.
+}
+\item{target_not_reached}{
+Character. One of \code{"error"}, \code{"max_trial_duration"}, or
+\code{"last_patient_min_followup"}.
+}
+}}
 
 \item{non_fatal_censors_fatal}{Logical. Controls semi-competing risks
 behavior when multiple TTE endpoints are present. If \code{TRUE}, censoring
@@ -153,7 +193,15 @@ TTE event indicators, with \code{1 = event} and
 \item{enrollTime}{
 Enrollment times, when stochastic enrollment is used.
 }
+\item{availableFollowup}{
+Realized administrative follow-up available to each subject when
+trial-calendar features are active.
 }
+}
+
+The \code{meta} component also stores realized trial-calendar metadata in
+\code{meta$trial_calendar} when enrollment, follow-up, or trial-ending
+features are used.
 }
 \description{
 \code{makeData()} simulates subject-level trial data with one or more
@@ -170,9 +218,8 @@ The function also supports:
 \item independent censoring for time-to-event outcomes,
 \item fatal and non-fatal time-to-event logic (including semi-competing
 risks),
-\item administrative censoring,
-\item stochastic enrollment (uniform, exponential, or piecewise
-exponential), and
+\item trial-calendar features including stochastic enrollment,
+subject-level follow-up limits, and trial-ending rules, and
 \item generation of longitudinal data.
 }
 }
@@ -201,13 +248,21 @@ of \code{trt_effect}. When treatment arms are present, the output includes a
 controlled via \code{arm_mode}.
 }
 
-\section{Administrative censoring and enrollment}{
+\section{Enrollment, follow-up, and trial calendar}{
 
-If \code{administrative_censoring} is supplied, all TTE outcomes are
-truncated at the maximum available follow-up. If stochastic enrollment is
-enabled, each subject receives an \code{enrollTime}, and maximum observable
-follow-up is reduced to \eqn{\mathcal{A} - T_E}, where \eqn{\mathcal{A}} is
-the administrative censoring time and \eqn{T_E} is the enrollment time.
+Trial-calendar behavior is controlled through
+\code{enrollment_details}, \code{followup_details}, and
+\code{trial_end_details}.
+
+These arguments allow users to simulate staggered enrollment, subject-level
+follow-up limits, and trial-ending rules such as fixed calendar end,
+last-patient-minimum-follow-up, or event-driven final analysis.
+
+When these features are active, \code{makeData()} may return
+\code{enrollTime}, \code{availableFollowup}, and realized trial-calendar
+metadata in \code{meta$trial_calendar}. For TTE endpoints, this calendar
+structure also determines administrative censoring of observed event times
+and statuses.
 }
 
 \section{Output object}{
@@ -294,11 +349,18 @@ ep_tte <- list(
 sim_tte <- makeData(
   correlation_matrix    = NULL,
   sample_size_per_group = 500,
+  SEED                  = 1,
   endpoint_details      = list(ep_tte),
-  enrollment_details    = list(
-    administrative_censoring    = 24,
-    enrollment_distribution     = "exponential",
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
     enrollment_exponential_rate = 1 / 4
+  ),
+  followup_details = list(
+    min_followup = 12,
+    max_followup = 24
+  ),
+  trial_end_details = list(
+    type = "last_patient_min_followup"
   )
 )
 
@@ -314,15 +376,17 @@ Sciences, Northwestern University, Evanston, Illinois.
 \seealso{
 \code{\link{endpoint_details}} for endpoint specification details.
 
-\code{\link{enrollment_details}} for administrative censoring and stochastic
-enrollment options.
+\code{\link{enrollment_details}}, \code{\link{followup_details}}, and
+\code{\link{trial_end_details}} for trial-calendar settings.
 
 \code{\link{calibration_control}} for calibration tuning parameters.
 
 \code{\link{corr_make}} for creating correlation matrices.
 
 See the \code{vignette("user_guide", package = "endpoints")} vignette for
-introductory examples, and the
+introductory examples, the
+\code{vignette("enrollment_guide", package = "endpoints")} vignette for
+enrollment and trial-calendar features, and the
 \code{vignette("longitudinal_data", package = "endpoints")} vignette for
 simulating longitudinal data.
 }

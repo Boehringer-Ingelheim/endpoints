@@ -6,7 +6,7 @@
 \alias{endpoints-package}
 \title{endpoints: Simulate Correlated Multi-Endpoint Clinical Trial Data}
 \description{
-Simulate correlated multi-endpoint clinical trial data using a Gaussian copula approach. This package provides tools to generate realistic patient-level datasets with configurable treatment effects and covariance structures. It supports multiple endpoint types (continuous, binary, count, and time-to-event) across multiple treatment arms.
+Simulate correlated multi-endpoint clinical trial data using a Gaussian copula approach. This package provides tools to generate realistic patient-level datasets with configurable treatment effects and covariance structures. It supports multiple endpoint types (continuous, binary, count, and time-to-event) across multiple treatment arms, together with stochastic enrollment, subject-level follow-up limits, and trial-ending rules such as fixed calendar end, last-patient-minimum-follow-up, and event-driven designs.
 }
 \seealso{
 Useful links:

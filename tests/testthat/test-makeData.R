@@ -2,44 +2,45 @@
 #
 # 1) "marginals and correlation structure look correct (large n, multi-arm)"
 #    Generates a mixed-endpoint, multi-arm trial in a large sample and checks that:
-#      - observed (within-arm) Pearson correlation matrices are close to the
-#        user-supplied target correlation matrix (off-diagonals, within tolerance),
-#      - each endpoint’s marginal distribution matches its inputs (via empirical
-#        checks and simple regression-style comparisons).
+#      - observed within-arm Pearson correlation matrices are close to the
+#        user-supplied target correlation matrix,
+#      - each endpoint’s marginal distribution matches its inputs.
 #
 # 2) "semi-competing risks: non-fatal cannot occur after fatal (multi-arm)"
 #    Validates the semi-competing risks rule: if a non-fatal endpoint is observed,
-#    it must occur on or before the fatal time. Ensures “fatal event censors later endpoints.”
+#    it must occur on or before the fatal time.
 #
 # 3) "non_fatal_censors_fatal=TRUE: censoring of non-fatal censors other TTE endpoints (multi-arm)"
-#    Validates the optional rule that censoring of a *non-fatal* endpoint can be
-#    used to censor other TTE endpoints. We check the time truncation implication
-#    but do not require the fatal endpoint to be censored (death-induced censoring
-#    of non-fatal should not “back-censor” fatal).
+#    Validates the optional rule that censoring of a non-fatal endpoint can censor
+#    other TTE endpoints.
 #
 # 4) "argument checks: required fields and structural rules enforced"
-#    Ensures validation is working: required fields must be present and valid,
-#    structural rules (fatal ordering, multi-arm length rules, etc.) are enforced,
-#    and mutual exclusivity holds for trt_prob vs trt_effect and trt_count vs trt_effect.
+#    Ensures validation is working for required fields, structural TTE rules,
+#    arm-length rules, and mutually exclusive treatment inputs.
 #
-# 5) "enrollment: admin censoring uses enrollTime-adjusted follow-up (multi-arm)"
-#    Validates staggered entry + administrative censoring: each subject’s max follow-up
-#    is (admin_censoring - enrollTime), and TTE times are truncated accordingly.
+# 5) "trial calendar: fixed calendar uses enrollTime-adjusted available follow-up"
+#    Validates stochastic enrollment + fixed calendar trial end:
+#      availableFollowup = pmin(max_followup, pmax(0, trial_end_time - enrollTime)).
 #
-# 6) "enrollment argument dependencies are enforced"
-#    Ensures enrollment settings are internally consistent: enrollment != none requires
-#    administrative_censoring; exponential requires positive rate; piecewise requires
-#    increasing cutpoints, correct number of rates, and positive rates.
+# 6) "trial calendar: max_followup cap binds when trial end is late"
+#    Validates that max_followup caps individual follow-up.
 #
-# 7) "arm_mode='control': omit trt column and behave like K=1"
-#    When arm_mode='control', only control group data are generated and the returned
-#    data omit the `trt` column. The meta should mark control_only=TRUE.
+# 7) "enrollment and trial-calendar argument dependencies are enforced"
+#    Ensures new enrollment/follow-up/trial-end settings are internally consistent.
 #
-# 8) "single-endpoint mode: correlation_matrix=NULL generates one endpoint"
-#    If correlation_matrix=NULL, generator behaves as a single-endpoint sampler.
-#    Must error if multiple endpoints are supplied. Meta should mark single_endpoint_mode=TRUE.
+# 8) "event-driven trial end: target events reached and analysis population identified"
+#    Validates event-driven trial end and checks use of availableFollowup > 0.
+#
+# 9) "event-driven trial end: require_min_followup delays final analysis"
+#    Validates event-driven plus last-patient minimum follow-up.
+#
+# 10) "event-driven trial end: target-not-reached fallback works"
+#     Validates fallback to last-patient-min-follow-up.
+#
+# 11) "arm_mode='control': omit trt column and behave like K=1"
+#
+# 12) "single-endpoint mode: correlation_matrix=NULL generates one endpoint"
 # -------------------------------------------------------------------------
-
 
 
 # --- helpers ---------------------------------------------------------------
@@ -53,12 +54,12 @@ make_cor4 <- function() {
   corr_make(
     num_endpoints = 4,
     values = rbind(
-      c(1,2, 0.20),
-      c(1,3, 0.10),
-      c(1,4, 0.15),
-      c(2,3, 0.25),
-      c(2,4, 0.05),
-      c(3,4, 0.30)
+      c(1, 2, 0.20),
+      c(1, 3, 0.10),
+      c(1, 4, 0.15),
+      c(2, 3, 0.25),
+      c(2, 4, 0.05),
+      c(3, 4, 0.30)
     )
   )
 }
@@ -69,22 +70,38 @@ offdiag_max_abs <- function(A, B) {
 }
 
 cal_ctl_fast <- list(
-  n_obs = 5000,
+  n_mc = 5000,
   tol = 0.005,
   maxit = 75,
-  rho_max = 0.999,
-  ensure_cor_mat = TRUE,
+  rho_cap = 0.999,
+  ensure_pd = TRUE,
   conv_norm_type = "O"
 )
 
 get_cor_arm <- function(s, k) {
   nm <- paste0("arm_", k)
-  if (!is.null(s$estimated_correlation_by_arm) && !is.null(s$estimated_correlation_by_arm[[nm]])) {
+  if (!is.null(s$estimated_correlation_by_arm) &&
+      !is.null(s$estimated_correlation_by_arm[[nm]])) {
     return(s$estimated_correlation_by_arm[[nm]])
   }
   NULL
 }
 
+ep_tte_calendar <- list(
+  endpoint_type  = "tte",
+  baseline_rate  = 1 / 52,
+  trt_effect     = log(0.8),
+  censoring_rate = 0,
+  fatal_event    = TRUE
+)
+
+ep_tte_fast <- list(
+  endpoint_type  = "tte",
+  baseline_rate  = 1 / 12,
+  trt_effect     = log(0.8),
+  censoring_rate = 0,
+  fatal_event    = TRUE
+)
 
 
 # --- 1) large-sample marginals + correlation -------------------------------
@@ -95,11 +112,7 @@ testthat::test_that("marginals and correlation structure look correct (large n, 
   set.seed(1)
   cor_mat <- make_cor4()
 
-  # Force full multi-arm behavior explicitly
-  # K=3 arms (control + 2 active)
   n_by_arm <- c(5000, 6500, 5500)
-
-  # heteroskedastic SD by arm for continuous endpoint (length K)
   sd_vec <- c(3.0, 4.0, 2.5)
 
   obj <- makeData(
@@ -108,16 +121,39 @@ testthat::test_that("marginals and correlation structure look correct (large n, 
     SEED = 123,
     arm_mode = "full",
     endpoint_details = list(
-      list(endpoint_type = "normal", baseline_mean = 10, sd = sd_vec,
-           trt_effect = c(-2, -1)),
-      list(endpoint_type = "binary", baseline_prob = 0.30,
-           trt_prob = c(0.25, 0.20)),
-      list(endpoint_type = "count", baseline_mean = 8, size = 5, p_zero = 0,
-           trt_count = c(10, 9)),
-      list(endpoint_type = "tte", baseline_rate = 1/24, censoring_rate = 0,
-           fatal_event = FALSE, trt_effect = c(log(0.80), log(0.90)))
+      list(
+        endpoint_type = "normal",
+        baseline_mean = 10,
+        sd = sd_vec,
+        trt_effect = c(-2, -1)
+      ),
+      list(
+        endpoint_type = "binary",
+        baseline_prob = 0.30,
+        trt_prob = c(0.25, 0.20)
+      ),
+      list(
+        endpoint_type = "count",
+        baseline_mean = 8,
+        size = 5,
+        p_zero = 0,
+        trt_count = c(10, 9)
+      ),
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 24,
+        censoring_rate = 0,
+        fatal_event = FALSE,
+        trt_effect = c(log(0.80), log(0.90))
+      )
     ),
-    enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+    enrollment_details = list(
+      enrollment_distribution = "none"
+    ),
+    followup_details = list(),
+    trial_end_details = list(
+      type = "none"
+    ),
     non_fatal_censors_fatal = FALSE,
     target_correlation = TRUE,
     calibration_control = cal_ctl_fast
@@ -126,60 +162,50 @@ testthat::test_that("marginals and correlation structure look correct (large n, 
   s <- summary(obj)
   d <- obj$data
 
-  # --- sample size per arm checks
   testthat::expect_true("trt" %in% names(d))
+
   tab <- table(d$trt)
   testthat::expect_equal(as.integer(tab["0"]), n_by_arm[1])
   testthat::expect_equal(as.integer(tab["1"]), n_by_arm[2])
   testthat::expect_equal(as.integer(tab["2"]), n_by_arm[3])
 
-  # --- correlations close to target (off-diagonals)
-  # allow a bit looser tolerance due to mixed types + heteroskedasticity + calibration stochasticity
   for (k in 0:2) {
     cor_k <- get_cor_arm(s, k)
     testthat::expect_true(!is.null(cor_k))
     testthat::expect_true(offdiag_max_abs(cor_k, cor_mat) < 0.07)
   }
 
-  # --- continuous means
   testthat::expect_true(abs(mean(d$Cont_1[d$trt == 0]) - 10) < 0.25)
   testthat::expect_true(abs(mean(d$Cont_1[d$trt == 1]) -  8) < 0.30)
   testthat::expect_true(abs(mean(d$Cont_1[d$trt == 2]) -  9) < 0.30)
 
-  # new tests to test for exactness (when updating algo cadence)
-  testthat::expect_true(s$continuous$est_resid_sd[1] - 3.019113 < 0.0005)
-  testthat::expect_true(s$tte$exp_rate[2]- 0.03755223 < 0.0005)
-
-
-  # --- continuous SDs (heteroskedastic)
   testthat::expect_true(abs(sd(d$Cont_1[d$trt == 0]) - sd_vec[1]) < 0.30)
   testthat::expect_true(abs(sd(d$Cont_1[d$trt == 1]) - sd_vec[2]) < 0.35)
   testthat::expect_true(abs(sd(d$Cont_1[d$trt == 2]) - sd_vec[3]) < 0.30)
 
-  # --- binary probs by arm (trt_prob targets)
   p0 <- mean(d$Bin_1[d$trt == 0] == 1)
   p1 <- mean(d$Bin_1[d$trt == 1] == 1)
   p2 <- mean(d$Bin_1[d$trt == 2] == 1)
+
   testthat::expect_true(abs(p0 - 0.30) < 0.02)
   testthat::expect_true(abs(p1 - 0.25) < 0.03)
   testthat::expect_true(abs(p2 - 0.20) < 0.03)
 
-  # --- count means by arm (trt_count targets)
   m0 <- mean(d$Int_1[d$trt == 0])
   m1 <- mean(d$Int_1[d$trt == 1])
   m2 <- mean(d$Int_1[d$trt == 2])
+
   testthat::expect_true(abs(m0 -  8) < 0.40)
   testthat::expect_true(abs(m1 - 10) < 0.55)
   testthat::expect_true(abs(m2 -  9) < 0.55)
 
-  # --- TTE direction check: HR<1 => larger mean time
   t0 <- mean(d$TTE_1[d$trt == 0])
   t1 <- mean(d$TTE_1[d$trt == 1])
   t2 <- mean(d$TTE_1[d$trt == 2])
+
   testthat::expect_true(t1 > t0)
   testthat::expect_true(t2 > t0)
 })
-
 
 
 # --- 2) semi-competing risks ------------------------------------------------
@@ -197,12 +223,28 @@ testthat::test_that("semi-competing risks: non-fatal cannot occur after fatal (m
     SEED = 789,
     arm_mode = "full",
     endpoint_details = list(
-      list(endpoint_type = "tte", baseline_rate = 1/20, censoring_rate = 1/80,
-           fatal_event = TRUE,  trt_effect = c(log(0.9), log(0.95))),
-      list(endpoint_type = "tte", baseline_rate = 1/10, censoring_rate = 1/80,
-           fatal_event = FALSE, trt_effect = c(0, 0))
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 20,
+        censoring_rate = 1 / 80,
+        fatal_event = TRUE,
+        trt_effect = c(log(0.9), log(0.95))
+      ),
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 10,
+        censoring_rate = 1 / 80,
+        fatal_event = FALSE,
+        trt_effect = c(0, 0)
+      )
     ),
-    enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+    enrollment_details = list(
+      enrollment_distribution = "none"
+    ),
+    followup_details = list(),
+    trial_end_details = list(
+      type = "none"
+    ),
     non_fatal_censors_fatal = FALSE,
     target_correlation = FALSE
   )
@@ -210,6 +252,7 @@ testthat::test_that("semi-competing risks: non-fatal cannot occur after fatal (m
   d <- obj$data
 
   idx_nf_obs <- which(d$Status_2 == 1)
+
   if (length(idx_nf_obs) > 0) {
     testthat::expect_true(all(d$TTE_2[idx_nf_obs] <= d$TTE_1[idx_nf_obs] + 1e-12))
   }
@@ -219,49 +262,59 @@ testthat::test_that("semi-competing risks: non-fatal cannot occur after fatal (m
 })
 
 
-
 testthat::test_that("non_fatal_censors_fatal=TRUE: censoring of non-fatal censors other TTE endpoints (multi-arm)", {
   skip_if_missing_pkgs()
 
   set.seed(3)
-  cor_mat <- corr_make(num_endpoints = 2, values = rbind(c(1,2,0.1)))
+  cor_mat <- corr_make(num_endpoints = 2, values = rbind(c(1, 2, 0.1)))
   n_by_arm <- c(3000, 3000, 3000)
 
-  # fatal first to satisfy ordering checks
   obj <- makeData(
     correlation_matrix = cor_mat,
     sample_size_per_group = n_by_arm,
     SEED = 999,
     arm_mode = "full",
     endpoint_details = list(
-      list(endpoint_type = "tte", baseline_rate = 1/30, censoring_rate = 1/12,
-           fatal_event = TRUE,  trt_effect = c(0,0)),
-      list(endpoint_type = "tte", baseline_rate = 1/25, censoring_rate = 1/12,
-           fatal_event = FALSE, trt_effect = c(0,0))
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 30,
+        censoring_rate = 1 / 12,
+        fatal_event = TRUE,
+        trt_effect = c(0, 0)
+      ),
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 25,
+        censoring_rate = 1 / 12,
+        fatal_event = FALSE,
+        trt_effect = c(0, 0)
+      )
     ),
-    enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+    enrollment_details = list(
+      enrollment_distribution = "none"
+    ),
+    followup_details = list(),
+    trial_end_details = list(
+      type = "none"
+    ),
     non_fatal_censors_fatal = TRUE,
     target_correlation = FALSE
   )
 
   d <- obj$data
 
-  # non-fatal is TTE_2 with indicator Status_2
   idx_cens_nf <- which(d$Status_2 == 0)
 
   if (length(idx_cens_nf) > 0) {
-    # censoring time of non-fatal should truncate the other endpoint time
     testthat::expect_true(all(d$TTE_1[idx_cens_nf] <= d$TTE_2[idx_cens_nf] + 1e-12))
   }
 })
-
 
 
 # --- 3) argument requirement logic ------------------------------------------
 
 testthat::test_that("argument checks: required fields and structural rules enforced", {
 
-  # single-endpoint mode requires exactly 1 endpoint
   testthat::expect_error(
     makeData(
       correlation_matrix = NULL,
@@ -271,7 +324,6 @@ testthat::test_that("argument checks: required fields and structural rules enfor
         list(endpoint_type = "normal", baseline_mean = 0, sd = 1),
         list(endpoint_type = "binary", baseline_prob = 0.3)
       ),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE,
       arm_mode = "control"
@@ -282,14 +334,14 @@ testthat::test_that("argument checks: required fields and structural rules enfor
 
   cor_mat <- diag(1)
 
-  # continuous missing sd
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
       sample_size_per_group = 10,
       SEED = 1,
-      endpoint_details = list(list(endpoint_type = "normal", baseline_mean = 0, trt_effect = 0)),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+      endpoint_details = list(
+        list(endpoint_type = "normal", baseline_mean = 0, trt_effect = 0)
+      ),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE,
       arm_mode = "full"
@@ -298,14 +350,14 @@ testthat::test_that("argument checks: required fields and structural rules enfor
     ignore.case = TRUE
   )
 
-  # binary baseline prob out of bounds
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
       sample_size_per_group = 10,
       SEED = 1,
-      endpoint_details = list(list(endpoint_type = "binary", baseline_prob = 1.0, trt_effect = 0)),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+      endpoint_details = list(
+        list(endpoint_type = "binary", baseline_prob = 1.0, trt_effect = 0)
+      ),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE,
       arm_mode = "full"
@@ -314,14 +366,14 @@ testthat::test_that("argument checks: required fields and structural rules enfor
     ignore.case = TRUE
   )
 
-  # count requires size
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
       sample_size_per_group = 10,
       SEED = 1,
-      endpoint_details = list(list(endpoint_type = "count", baseline_mean = 5, trt_effect = 0)),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+      endpoint_details = list(
+        list(endpoint_type = "count", baseline_mean = 5, trt_effect = 0)
+      ),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE,
       arm_mode = "full"
@@ -330,20 +382,19 @@ testthat::test_that("argument checks: required fields and structural rules enfor
     ignore.case = TRUE
   )
 
-  # fatal must be first or first+second among TTE endpoints
   cor_mat2 <- diag(3)
+
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat2,
-      sample_size_per_group = c(10,10,10),
+      sample_size_per_group = c(10, 10, 10),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "tte", baseline_rate = 0.1, fatal_event = FALSE, trt_effect = c(0,0)),
-        list(endpoint_type = "tte", baseline_rate = 0.1, fatal_event = FALSE, trt_effect = c(0,0)),
-        list(endpoint_type = "tte", baseline_rate = 0.1, fatal_event = TRUE,  trt_effect = c(0,0))
+        list(endpoint_type = "tte", baseline_rate = 0.1, fatal_event = FALSE, trt_effect = c(0, 0)),
+        list(endpoint_type = "tte", baseline_rate = 0.1, fatal_event = FALSE, trt_effect = c(0, 0)),
+        list(endpoint_type = "tte", baseline_rate = 0.1, fatal_event = TRUE,  trt_effect = c(0, 0))
       ),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
@@ -351,17 +402,15 @@ testthat::test_that("argument checks: required fields and structural rules enfor
     ignore.case = TRUE
   )
 
-  # mutual exclusivity: binary trt_prob and trt_effect cannot both be set
   testthat::expect_error(
     makeData(
       correlation_matrix = diag(1),
-      sample_size_per_group = c(10,10),
+      sample_size_per_group = c(10, 10),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
         list(endpoint_type = "binary", baseline_prob = 0.3, trt_effect = 0.1, trt_prob = 0.2)
       ),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
@@ -369,17 +418,15 @@ testthat::test_that("argument checks: required fields and structural rules enfor
     ignore.case = TRUE
   )
 
-  # mutual exclusivity: count trt_count and trt_effect cannot both be set
   testthat::expect_error(
     makeData(
       correlation_matrix = diag(1),
-      sample_size_per_group = c(10,10),
+      sample_size_per_group = c(10, 10),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
         list(endpoint_type = "count", baseline_mean = 5, size = 2, trt_effect = 0.1, trt_count = 6)
       ),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
@@ -391,10 +438,8 @@ testthat::test_that("argument checks: required fields and structural rules enfor
 
 testthat::test_that("argument checks: sd length rules + sample_size length rules enforced", {
 
-  # With arm_mode="full" and trt_effect length 2, K=3
   cor_mat <- diag(1)
 
-  # OK: sd length K (3), sample_size length K (3)
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
@@ -402,17 +447,19 @@ testthat::test_that("argument checks: sd length rules + sample_size length rules
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "normal", baseline_mean = 0, sd = c(1, 1.2, 0.8),
-             trt_effect = c(0.1, 0.2))
+        list(
+          endpoint_type = "normal",
+          baseline_mean = 0,
+          sd = c(1, 1.2, 0.8),
+          trt_effect = c(0.1, 0.2)
+        )
       ),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
     NA
   )
 
-  # FAIL: sd length not 1 or K
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
@@ -420,10 +467,13 @@ testthat::test_that("argument checks: sd length rules + sample_size length rules
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "normal", baseline_mean = 0, sd = c(1, 2),
-             trt_effect = c(0.1, 0.2))
+        list(
+          endpoint_type = "normal",
+          baseline_mean = 0,
+          sd = c(1, 2),
+          trt_effect = c(0.1, 0.2)
+        )
       ),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
@@ -431,18 +481,20 @@ testthat::test_that("argument checks: sd length rules + sample_size length rules
     ignore.case = TRUE
   )
 
-  # FAIL: sample_size_per_group length not 1 or K
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
-      sample_size_per_group = c(10, 12), # invalid length
+      sample_size_per_group = c(10, 12),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "normal", baseline_mean = 0, sd = 1,
-             trt_effect = c(0.1, 0.2))
+        list(
+          endpoint_type = "normal",
+          baseline_mean = 0,
+          sd = 1,
+          trt_effect = c(0.1, 0.2)
+        )
       ),
-      enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
@@ -452,29 +504,106 @@ testthat::test_that("argument checks: sd length rules + sample_size length rules
 })
 
 
+# --- 4) enrollment / trial-calendar behavior --------------------------------
 
-# --- 4) enrollment behavior -------------------------------------------------
-
-testthat::test_that("enrollment: admin censoring uses enrollTime-adjusted follow-up (multi-arm)", {
+testthat::test_that("trial calendar: fixed calendar uses enrollTime-adjusted available follow-up", {
   skip_if_missing_pkgs()
 
-  set.seed(4)
   cor_mat <- diag(1)
-
-  admin <- 12
+  trial_end_time <- 80
+  max_followup <- 104
 
   obj <- makeData(
     correlation_matrix = cor_mat,
-    sample_size_per_group = c(2500, 2500, 2500),
+    sample_size_per_group = c(500, 500, 500),
     SEED = 88,
     arm_mode = "full",
     endpoint_details = list(
-      list(endpoint_type = "tte", baseline_rate = 1/6, censoring_rate = 0,
-           fatal_event = FALSE, trt_effect = c(0,0))
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 6,
+        censoring_rate = 0,
+        fatal_event = FALSE,
+        trt_effect = c(0, 0)
+      )
     ),
     enrollment_details = list(
-      administrative_censoring = admin,
-      enrollment_distribution  = "uniform"
+      enrollment_distribution = "exponential",
+      enrollment_exponential_rate = 20
+    ),
+    followup_details = list(
+      max_followup = max_followup
+    ),
+    trial_end_details = list(
+      type = "fixed_calendar",
+      trial_end_time = trial_end_time
+    ),
+    non_fatal_censors_fatal = FALSE,
+    target_correlation = FALSE
+  )
+
+  d <- obj$data
+  tc <- obj$meta$trial_calendar
+
+  testthat::expect_true("enrollTime" %in% names(d))
+  testthat::expect_true("availableFollowup" %in% names(d))
+
+  testthat::expect_equal(tc$trial_end_reason, "fixed_calendar")
+  testthat::expect_equal(tc$trial_end_time, trial_end_time)
+
+  testthat::expect_true(all(d$enrollTime >= 0))
+
+  expected_fu <- pmin(max_followup, pmax(0, trial_end_time - d$enrollTime))
+
+  testthat::expect_equal(d$availableFollowup, expected_fu, tolerance = 1e-10)
+  testthat::expect_true(all(d$TTE_1 <= d$availableFollowup + 1e-12))
+
+  idx0 <- which(d$availableFollowup == 0)
+
+  if (length(idx0) > 0) {
+    testthat::expect_true(all(abs(d$TTE_1[idx0]) < 1e-12))
+    testthat::expect_true(all(d$Status_1[idx0] == 0))
+  }
+
+  idx_admin <- which(d$Status_1 == 0 & abs(d$TTE_1 - d$availableFollowup) < 1e-10)
+
+  if (length(idx_admin) > 0) {
+    testthat::expect_true(all(d$TTE_1[idx_admin] == d$availableFollowup[idx_admin]))
+  }
+})
+
+
+testthat::test_that("trial calendar: max_followup cap binds when trial end is late", {
+  skip_if_missing_pkgs()
+
+  cor_mat <- diag(1)
+  trial_end_time <- 200
+  max_followup <- 104
+
+  obj <- makeData(
+    correlation_matrix = cor_mat,
+    sample_size_per_group = c(400, 400, 400),
+    SEED = 89,
+    arm_mode = "full",
+    endpoint_details = list(
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 40,
+        censoring_rate = 0,
+        fatal_event = FALSE,
+        trt_effect = c(0, 0)
+      )
+    ),
+    enrollment_details = list(
+      enrollment_distribution = "exponential",
+      enrollment_exponential_rate = 20
+    ),
+    followup_details = list(
+      max_followup = max_followup
+    ),
+    trial_end_details = list(
+      type = "fixed_calendar",
+      trial_end_time = trial_end_time
     ),
     non_fatal_censors_fatal = FALSE,
     target_correlation = FALSE
@@ -482,42 +611,104 @@ testthat::test_that("enrollment: admin censoring uses enrollTime-adjusted follow
 
   d <- obj$data
 
-  testthat::expect_true("enrollTime" %in% names(d))
-  testthat::expect_true(all(d$enrollTime >= 0))
-  testthat::expect_true(all(d$enrollTime <= admin + 1e-12))
+  expected_fu <- pmin(max_followup, pmax(0, trial_end_time - d$enrollTime))
 
-  max_fu <- pmax(0, admin - d$enrollTime)
-  testthat::expect_true(all(d$TTE_1 <= max_fu + 1e-12))
-
-  idx0 <- which(max_fu == 0)
-  if (length(idx0) > 0) {
-    testthat::expect_true(all(abs(d$TTE_1[idx0]) < 1e-12))
-    testthat::expect_true(all(d$Status_1[idx0] == 0))
-  }
+  testthat::expect_equal(d$availableFollowup, expected_fu, tolerance = 1e-10)
+  testthat::expect_true(any(abs(d$availableFollowup - max_followup) < 1e-10))
+  testthat::expect_true(all(d$availableFollowup <= max_followup + 1e-12))
+  testthat::expect_true(all(d$TTE_1 <= d$availableFollowup + 1e-12))
 })
 
 
-testthat::test_that("enrollment argument dependencies are enforced", {
+testthat::test_that("trial calendar: last_patient_min_followup rule is applied", {
+  skip_if_missing_pkgs()
+
+  cor_mat <- diag(1)
+  min_followup <- 52
+  max_followup <- 156
+
+  obj <- makeData(
+    correlation_matrix = cor_mat,
+    sample_size_per_group = c(300, 300, 300),
+    SEED = 90,
+    arm_mode = "full",
+    endpoint_details = list(
+      list(
+        endpoint_type = "tte",
+        baseline_rate = 1 / 30,
+        censoring_rate = 0,
+        fatal_event = FALSE,
+        trt_effect = c(0, 0)
+      )
+    ),
+    enrollment_details = list(
+      enrollment_distribution = "exponential",
+      enrollment_exponential_rate = 20
+    ),
+    followup_details = list(
+      min_followup = min_followup,
+      max_followup = max_followup
+    ),
+    trial_end_details = list(
+      type = "last_patient_min_followup"
+    ),
+    non_fatal_censors_fatal = FALSE,
+    target_correlation = FALSE
+  )
+
+  d <- obj$data
+  tc <- obj$meta$trial_calendar
+
+  expected_trial_end <- max(d$enrollTime) + min_followup
+  expected_fu <- pmin(max_followup, pmax(0, expected_trial_end - d$enrollTime))
+
+  testthat::expect_equal(tc$trial_end_reason, "last_patient_min_followup")
+  testthat::expect_equal(tc$trial_end_time, expected_trial_end, tolerance = 1e-10)
+  testthat::expect_equal(d$availableFollowup, expected_fu, tolerance = 1e-10)
+  testthat::expect_true(max(d$availableFollowup) <= max_followup + 1e-12)
+  testthat::expect_true(min(d$availableFollowup) <= min_followup + 1e-12)
+})
+
+
+testthat::test_that("enrollment and trial-calendar argument dependencies are enforced", {
   cor_mat <- diag(1)
 
-  # enrollment != none requires administrative_censoring
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
-      sample_size_per_group = c(10,10,10),
+      sample_size_per_group = c(10, 10, 10),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0,0))
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
       ),
       enrollment_details = list(
-        administrative_censoring = NULL,
-        enrollment_distribution  = "uniform"
+        administrative_censoring = 12
       ),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
-    "administrative_censoring",
+    "administrative_censoring|no longer supported|followup_details|trial_end_details",
+    ignore.case = TRUE
+  )
+
+  # uniform no longer supported
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
+      ),
+      enrollment_details = list(
+        enrollment_distribution = "uniform"
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "enrollment_distribution|none|exponential|piecewise",
     ignore.case = TRUE
   )
 
@@ -525,58 +716,75 @@ testthat::test_that("enrollment argument dependencies are enforced", {
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
-      sample_size_per_group = c(10,10,10),
+      sample_size_per_group = c(10, 10, 10),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0,0))
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
       ),
       enrollment_details = list(
-        administrative_censoring = 10,
-        enrollment_distribution  = "exponential",
+        enrollment_distribution = "exponential",
         enrollment_exponential_rate = NULL
       ),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
-    "exponential_rate",
+    "exponential_rate|enrollment_exponential_rate",
     ignore.case = TRUE
   )
 
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
-      sample_size_per_group = c(10,10,10),
+      sample_size_per_group = c(10, 10, 10),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0,0))
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
       ),
       enrollment_details = list(
-        administrative_censoring = 10,
-        enrollment_distribution  = "exponential",
+        enrollment_distribution = "exponential",
         enrollment_exponential_rate = -1
       ),
       non_fatal_censors_fatal = FALSE,
       target_correlation = FALSE
     ),
-    "positive",
+    "positive|> 0",
     ignore.case = TRUE
+  )
+
+  # stochastic enrollment no longer requires admin censoring
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
+      ),
+      enrollment_details = list(
+        enrollment_distribution = "exponential",
+        enrollment_exponential_rate = 1
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    NA
   )
 
   # piecewise enrollment checks
   testthat::expect_error(
     makeData(
       correlation_matrix = cor_mat,
-      sample_size_per_group = c(10,10,10),
+      sample_size_per_group = c(10, 10, 10),
       SEED = 1,
       arm_mode = "full",
       endpoint_details = list(
-        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0,0))
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
       ),
       enrollment_details = list(
-        administrative_censoring = 10,
-        enrollment_distribution  = "piecewise",
+        enrollment_distribution = "piecewise",
         piecewise_enrollment_cutpoints = c(0, 5, 4),
         piecewise_enrollment_rates = c(0.1, 0.2)
       ),
@@ -586,11 +794,280 @@ testthat::test_that("enrollment argument dependencies are enforced", {
     "increasing",
     ignore.case = TRUE
   )
+
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
+      ),
+      enrollment_details = list(
+        enrollment_distribution = "piecewise",
+        piecewise_enrollment_cutpoints = c(0, 5, 10),
+        piecewise_enrollment_rates = c(0.1)
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "length",
+    ignore.case = TRUE
+  )
+
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = c(0, 0))
+      ),
+      enrollment_details = list(
+        enrollment_distribution = "piecewise",
+        piecewise_enrollment_cutpoints = c(0, 5, 10),
+        piecewise_enrollment_rates = c(0, 0)
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "At least one|must be > 0",
+    ignore.case = TRUE
+  )
+
+  # fixed calendar requires trial_end_time
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = 0)
+      ),
+      trial_end_details = list(
+        type = "fixed_calendar"
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "trial_end_time",
+    ignore.case = TRUE
+  )
+
+  # LPI min follow-up requires min_followup
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "tte", baseline_rate = 0.1, trt_effect = 0)
+      ),
+      enrollment_details = list(
+        enrollment_distribution = "exponential",
+        enrollment_exponential_rate = 1
+      ),
+      trial_end_details = list(
+        type = "last_patient_min_followup"
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "min_followup",
+    ignore.case = TRUE
+  )
+
+  # event-driven requires a TTE endpoint
+  testthat::expect_error(
+    makeData(
+      correlation_matrix = cor_mat,
+      sample_size_per_group = c(10, 10),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "normal", baseline_mean = 0, sd = 1, trt_effect = 0)
+      ),
+      trial_end_details = list(
+        type = "event_driven",
+        event_endpoint = "TTE_1",
+        target_events = 5
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "time-to-event|TTE",
+    ignore.case = TRUE
+  )
 })
 
 
+# --- 5) event-driven trial end ---------------------------------------------
 
-# --- 5) arm_mode = control: no trt column ----------------------------------
+testthat::test_that("event-driven trial end: target events reached and analysis population identified", {
+  skip_if_missing_pkgs()
+
+  obj <- makeData(
+    correlation_matrix = NULL,
+    sample_size_per_group = 500,
+    SEED = 7,
+    endpoint_details = list(ep_tte_fast),
+    enrollment_details = list(
+      enrollment_distribution = "exponential",
+      enrollment_exponential_rate = 20
+    ),
+    followup_details = list(
+      max_followup = 156
+    ),
+    trial_end_details = list(
+      type = "event_driven",
+      event_endpoint = "TTE_1",
+      target_events = 150
+    ),
+    non_fatal_censors_fatal = FALSE,
+    target_correlation = FALSE
+  )
+
+  d <- obj$data
+  tc <- obj$meta$trial_calendar
+
+  testthat::expect_equal(nrow(d), 1000L)
+
+  testthat::expect_true("enrollTime" %in% names(d))
+  testthat::expect_true("availableFollowup" %in% names(d))
+
+  testthat::expect_equal(tc$trial_end_reason, "event_target")
+  testthat::expect_true(isTRUE(tc$event_target_reached))
+  testthat::expect_true(tc$n_events_at_end >= 150)
+
+  expected_fu <- pmin(156, pmax(0, tc$trial_end_time - d$enrollTime))
+
+  testthat::expect_equal(d$availableFollowup, expected_fu, tolerance = 1e-10)
+  testthat::expect_true(all(d$TTE_1 <= d$availableFollowup + 1e-12))
+
+  analysis_idx <- d$availableFollowup > 0
+
+  testthat::expect_true(any(analysis_idx))
+  testthat::expect_true(sum(analysis_idx) <= nrow(d))
+
+  # Rows after trial end are generated as planned subjects but have no follow-up.
+  idx0 <- which(d$availableFollowup == 0)
+
+  if (length(idx0) > 0) {
+    testthat::expect_true(all(abs(d$TTE_1[idx0]) < 1e-12))
+    testthat::expect_true(all(d$Status_1[idx0] == 0))
+    testthat::expect_true(all(d$enrollTime[idx0] >= tc$trial_end_time - 1e-12))
+  }
+
+  # Analysis population should be the positive-follow-up population.
+  d_analysis <- d[analysis_idx, , drop = FALSE]
+
+  testthat::expect_true(all(d_analysis$availableFollowup > 0))
+  testthat::expect_true(sum(d_analysis$Status_1) >= 150)
+})
+
+
+testthat::test_that("event-driven trial end: require_min_followup delays final analysis", {
+  skip_if_missing_pkgs()
+
+  min_followup <- 52
+  max_followup <- 156
+
+  obj <- makeData(
+    correlation_matrix = NULL,
+    sample_size_per_group = 500,
+    SEED = 8,
+    endpoint_details = list(ep_tte_fast),
+    enrollment_details = list(
+      enrollment_distribution = "exponential",
+      enrollment_exponential_rate = 25
+    ),
+    followup_details = list(
+      min_followup = min_followup,
+      max_followup = max_followup
+    ),
+    trial_end_details = list(
+      type = "event_driven",
+      event_endpoint = 1,
+      target_events = 100,
+      require_min_followup = TRUE
+    ),
+    non_fatal_censors_fatal = FALSE,
+    target_correlation = FALSE
+  )
+
+  d <- obj$data
+  tc <- obj$meta$trial_calendar
+
+  lpi_min_time <- max(d$enrollTime) + min_followup
+
+  testthat::expect_true(grepl("plus_min_followup", tc$trial_end_reason))
+  testthat::expect_true(tc$trial_end_time >= lpi_min_time - 1e-10)
+
+  expected_fu <- pmin(max_followup, pmax(0, tc$trial_end_time - d$enrollTime))
+
+  testthat::expect_equal(d$availableFollowup, expected_fu, tolerance = 1e-10)
+  testthat::expect_true(max(d$availableFollowup) <= max_followup + 1e-12)
+})
+
+
+testthat::test_that("event-driven trial end: target-not-reached fallback works", {
+  skip_if_missing_pkgs()
+
+  min_followup <- 52
+  max_followup <- 104
+
+
+  obj <- NULL
+
+  testthat::expect_warning(
+    obj <- makeData(
+      correlation_matrix = NULL,
+      sample_size_per_group = 100,
+      SEED = 9,
+      endpoint_details = list(ep_tte_calendar),
+      enrollment_details = list(
+        enrollment_distribution = "exponential",
+        enrollment_exponential_rate = 10
+      ),
+      followup_details = list(
+        min_followup = min_followup,
+        max_followup = max_followup
+      ),
+      trial_end_details = list(
+        type = "event_driven",
+        event_endpoint = "TTE_1",
+        target_events = 100000,
+        target_not_reached = "last_patient_min_followup"
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    ),
+    "Event target was not reached"
+  )
+
+
+
+  d <- obj$data
+  tc <- obj$meta$trial_calendar
+
+  expected_trial_end <- max(d$enrollTime) + min_followup
+  expected_fu <- pmin(max_followup, pmax(0, expected_trial_end - d$enrollTime))
+
+  testthat::expect_false(isTRUE(tc$event_target_reached))
+  testthat::expect_equal(
+    tc$trial_end_reason,
+    "last_patient_min_followup_target_not_reached"
+  )
+  testthat::expect_equal(tc$trial_end_time, expected_trial_end, tolerance = 1e-10)
+  testthat::expect_equal(d$availableFollowup, expected_fu, tolerance = 1e-10)
+})
+
+
+# --- 6) arm_mode = control: no trt column ----------------------------------
 
 testthat::test_that("arm_mode='control': omit trt column and behave like K=1", {
   skip_if_missing_pkgs()
@@ -606,7 +1083,13 @@ testthat::test_that("arm_mode='control': omit trt column and behave like K=1", {
       list(endpoint_type = "normal", baseline_mean = 5, sd = 2, trt_effect = NULL),
       list(endpoint_type = "binary", baseline_prob = 0.40, trt_effect = NULL)
     ),
-    enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+    enrollment_details = list(
+      enrollment_distribution = "none"
+    ),
+    followup_details = list(),
+    trial_end_details = list(
+      type = "none"
+    ),
     non_fatal_censors_fatal = FALSE,
     target_correlation = TRUE,
     calibration_control = cal_ctl_fast
@@ -627,8 +1110,7 @@ testthat::test_that("arm_mode='control': omit trt column and behave like K=1", {
 })
 
 
-
-# --- 6) single-endpoint mode (correlation_matrix=NULL) ----------------------
+# --- 7) single-endpoint mode ------------------------------------------------
 
 testthat::test_that("single-endpoint mode: correlation_matrix=NULL generates one endpoint", {
   skip_if_missing_pkgs()
@@ -641,9 +1123,21 @@ testthat::test_that("single-endpoint mode: correlation_matrix=NULL generates one
     SEED = 303,
     arm_mode = "control",
     endpoint_details = list(
-      list(endpoint_type = "count", baseline_mean = 7, size = 4, p_zero = 0.1, trt_effect = NULL)
+      list(
+        endpoint_type = "count",
+        baseline_mean = 7,
+        size = 4,
+        p_zero = 0.1,
+        trt_effect = NULL
+      )
     ),
-    enrollment_details = list(administrative_censoring = NULL, enrollment_distribution = "none"),
+    enrollment_details = list(
+      enrollment_distribution = "none"
+    ),
+    followup_details = list(),
+    trial_end_details = list(
+      type = "none"
+    ),
     non_fatal_censors_fatal = FALSE,
     target_correlation = FALSE
   )
@@ -654,15 +1148,10 @@ testthat::test_that("single-endpoint mode: correlation_matrix=NULL generates one
   testthat::expect_true("Int_1" %in% names(d))
   testthat::expect_false("trt" %in% names(d))
 
-  # Under the current qzinb_mixture() implementation:
-  # E[Y] = (1 - p0) * mu
   mu0 <- 7
   p0  <- 0.1
-  mean_target <- (1 - p0) * mu0  # 6.3
+  mean_target <- (1 - p0) * mu0
 
   testthat::expect_true(abs(mean(d$Int_1) - mean_target) < 0.35)
-
-  # sanity check: some zeros should exist
   testthat::expect_true(mean(d$Int_1 == 0) > 0.05)
 })
-

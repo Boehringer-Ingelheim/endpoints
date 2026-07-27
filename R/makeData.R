@@ -14,9 +14,8 @@
 #'   \item independent censoring for time-to-event outcomes,
 #'   \item fatal and non-fatal time-to-event logic (including semi-competing
 #'   risks),
-#'   \item administrative censoring,
-#'   \item stochastic enrollment (uniform, exponential, or piecewise
-#'   exponential), and
+#'   \item trial-calendar features including stochastic enrollment,
+#'   subject-level follow-up limits, and trial-ending rules, and
 #'   \item generation of longitudinal data.
 #' }
 #'
@@ -43,33 +42,71 @@
 #'   parameters for one endpoint. See \code{\link{endpoint_details}} for the
 #'   complete schema, supported endpoint types, and detailed examples.
 #'
-#' @param enrollment_details A named list controlling enrollment and
-#'   administrative follow-up. Fields include:
+#' @param enrollment_details A named list controlling enrollment. Fields include:
 #'   \describe{
-#'     \item{administrative_censoring}{
-#'       Numeric scalar. If non-\code{NULL}, follow-up is administratively
-#'       censored at this time.
-#'     }
 #'     \item{enrollment_distribution}{
-#'       Character. One of \code{"none"}, \code{"uniform"},
-#'       \code{"exponential"}, or \code{"piecewise"}.
+#'       Character. One of \code{"none"}, \code{"exponential"}, or
+#'       \code{"piecewise"}. The value \code{"exponential"} denotes homogeneous
+#'       Poisson-process accrual, with exponentially distributed inter-arrival
+#'       times. The value \code{"piecewise"} denotes piecewise homogeneous
+#'       Poisson-process accrual.
 #'     }
 #'     \item{enrollment_exponential_rate}{
-#'       Numeric scalar rate for exponential enrollment when
+#'       Numeric scalar accrual rate per unit time when
 #'       \code{enrollment_distribution = "exponential"}.
 #'     }
 #'     \item{piecewise_enrollment_cutpoints}{
-#'       Numeric vector of cutpoints defining intervals for piecewise
-#'       enrollment.
+#'       Numeric vector of cutpoints defining calendar intervals for piecewise
+#'       enrollment. Should start at 0.
 #'     }
 #'     \item{piecewise_enrollment_rates}{
-#'       Numeric vector of rates, one per interval, for piecewise exponential
-#'       enrollment.
+#'       Numeric vector of accrual rates, one per interval, for piecewise
+#'       Poisson-process enrollment.
 #'     }
 #'   }
 #'
-#'   See \code{\link{enrollment_details}} for full details and recommended
-#'   parameterization.
+#' @param followup_details A named list controlling subject-level follow-up
+#'   limits. Fields include:
+#'   \describe{
+#'     \item{min_followup}{
+#'       Planned minimum follow-up used by trial-ending rules such as
+#'       \code{"last_patient_min_followup"}.
+#'     }
+#'     \item{max_followup}{
+#'       Maximum observable follow-up for any individual subject.
+#'     }
+#'   }
+#'
+#' @param trial_end_details A named list controlling the calendar time of final
+#'   analysis or database cutoff. Fields include:
+#'   \describe{
+#'     \item{type}{
+#'       Character. One of \code{"none"}, \code{"fixed_calendar"},
+#'       \code{"last_patient_min_followup"}, or \code{"event_driven"}.
+#'     }
+#'     \item{trial_end_time}{
+#'       Numeric scalar calendar time for \code{type = "fixed_calendar"}.
+#'     }
+#'     \item{event_endpoint}{
+#'       TTE endpoint used for event-driven stopping. May be a TTE ordinal such
+#'       as \code{1}, or a character value such as \code{"TTE_1"}.
+#'     }
+#'     \item{target_events}{
+#'       Positive integer number of events required for
+#'       \code{type = "event_driven"}.
+#'     }
+#'     \item{require_min_followup}{
+#'       Logical. For event-driven trials, if \code{TRUE}, the trial cannot end
+#'       before the last randomized subject has \code{min_followup}.
+#'     }
+#'     \item{max_trial_duration}{
+#'       Optional positive scalar maximum calendar trial duration.
+#'     }
+#'     \item{target_not_reached}{
+#'       Character. One of \code{"error"}, \code{"max_trial_duration"}, or
+#'       \code{"last_patient_min_followup"}.
+#'     }
+#'   }
 #'
 #' @param non_fatal_censors_fatal Logical. Controls semi-competing risks
 #'   behavior when multiple TTE endpoints are present. If \code{TRUE}, censoring
@@ -153,7 +190,15 @@
 #'     \item{enrollTime}{
 #'       Enrollment times, when stochastic enrollment is used.
 #'     }
+#'     \item{availableFollowup}{
+#'       Realized administrative follow-up available to each subject when
+#'       trial-calendar features are active.
+#'     }
 #'   }
+#'
+#'   The \code{meta} component also stores realized trial-calendar metadata in
+#'   \code{meta$trial_calendar} when enrollment, follow-up, or trial-ending
+#'   features are used.
 #'
 #' @section Overview:
 #' When multiple endpoints are simulated, \code{makeData()} uses a Gaussian
@@ -176,12 +221,20 @@
 #' \code{trt} column coded as \code{0, 1, 2, \dots}. This can also be
 #' controlled via \code{arm_mode}.
 #'
-#' @section Administrative censoring and enrollment:
-#' If \code{administrative_censoring} is supplied, all TTE outcomes are
-#' truncated at the maximum available follow-up. If stochastic enrollment is
-#' enabled, each subject receives an \code{enrollTime}, and maximum observable
-#' follow-up is reduced to \eqn{\mathcal{A} - T_E}, where \eqn{\mathcal{A}} is
-#' the administrative censoring time and \eqn{T_E} is the enrollment time.
+#' @section Enrollment, follow-up, and trial calendar:
+#' Trial-calendar behavior is controlled through
+#' \code{enrollment_details}, \code{followup_details}, and
+#' \code{trial_end_details}.
+#'
+#' These arguments allow users to simulate staggered enrollment, subject-level
+#' follow-up limits, and trial-ending rules such as fixed calendar end,
+#' last-patient-minimum-follow-up, or event-driven final analysis.
+#'
+#' When these features are active, \code{makeData()} may return
+#' \code{enrollTime}, \code{availableFollowup}, and realized trial-calendar
+#' metadata in \code{meta$trial_calendar}. For TTE endpoints, this calendar
+#' structure also determines administrative censoring of observed event times
+#' and statuses.
 #'
 #' @section Output object:
 #' The returned object has class \code{"makeDataSim"} and is intended to be
@@ -195,15 +248,17 @@
 #' @seealso
 #' \code{\link{endpoint_details}} for endpoint specification details.
 #'
-#' \code{\link{enrollment_details}} for administrative censoring and stochastic
-#' enrollment options.
+#' \code{\link{enrollment_details}}, \code{\link{followup_details}}, and
+#' \code{\link{trial_end_details}} for trial-calendar settings.
 #'
 #' \code{\link{calibration_control}} for calibration tuning parameters.
 #'
 #' \code{\link{corr_make}} for creating correlation matrices.
 #'
 #' See the \code{vignette("user_guide", package = "endpoints")} vignette for
-#' introductory examples, and the
+#' introductory examples, the
+#' \code{vignette("enrollment_guide", package = "endpoints")} vignette for
+#' enrollment and trial-calendar features, and the
 #' \code{vignette("longitudinal_data", package = "endpoints")} vignette for
 #' simulating longitudinal data.
 #'
@@ -288,11 +343,18 @@
 #' sim_tte <- makeData(
 #'   correlation_matrix    = NULL,
 #'   sample_size_per_group = 500,
+#'   SEED                  = 1,
 #'   endpoint_details      = list(ep_tte),
-#'   enrollment_details    = list(
-#'     administrative_censoring    = 24,
-#'     enrollment_distribution     = "exponential",
+#'   enrollment_details = list(
+#'     enrollment_distribution = "exponential",
 #'     enrollment_exponential_rate = 1 / 4
+#'   ),
+#'   followup_details = list(
+#'     min_followup = 12,
+#'     max_followup = 24
+#'   ),
+#'   trial_end_details = list(
+#'     type = "last_patient_min_followup"
 #'   )
 #' )
 #'
@@ -305,6 +367,8 @@ makeData <- function(
     sample_size_per_group,
     endpoint_details,
     enrollment_details = list(),
+    followup_details = list(),
+    trial_end_details = list(),
     non_fatal_censors_fatal = FALSE,
     target_correlation = TRUE,
     arm_mode = c("auto", "full", "control"),
@@ -320,29 +384,22 @@ makeData <- function(
 
   arm_mode <- match.arg(arm_mode)
 
-  # ---- enrollment defaults -------------------------------------------------
-  enrollment_details <- utils::modifyList(
-    list(
-      administrative_censoring       = NULL,
-      enrollment_distribution        = "none",
-      enrollment_exponential_rate    = NULL,
-      piecewise_enrollment_cutpoints = NULL,
-      piecewise_enrollment_rates     = NULL
-    ),
-    enrollment_details
-  )
-  enrollment_details$enrollment_distribution <- match.arg(
-    enrollment_details$enrollment_distribution,
-    c("none","uniform","exponential","piecewise")
-  )
+  # ---- calendar defaults ---------------------------------------------------
+  enrollment_details <- normalize_enrollment_details(enrollment_details)
+  followup_details   <- normalize_followup_details(followup_details)
+  trial_end_details  <- normalize_trial_end_details(trial_end_details)
 
-  # ---- checks (delegated to helper function) --------------------------------------------------
+  # ---- checks --------------------------------------------------------------
+  # Note: update `check_makeData_args()` later to formally validate
+  # `followup_details` and `trial_end_details`.
   chk <- check_makeData_args(
     correlation_matrix = correlation_matrix,
     SEED = SEED,
     sample_size_per_group = sample_size_per_group,
     endpoint_details = endpoint_details,
     enrollment_details = enrollment_details,
+    followup_details = followup_details,
+    trial_end_details = trial_end_details,
     non_fatal_censors_fatal = non_fatal_censors_fatal,
     target_correlation = target_correlation,
     calibration_control = calibration_control,
@@ -356,7 +413,7 @@ makeData <- function(
 
   p <- length(endpoint_details)
 
-  # ---- design skeleton: one row per arm, for the copula generation -----------------------------------
+  # ---- design skeleton -----------------------------------------------------
   tt <- data.frame(
     trt = 0:(K - 1L),
     n_i = as.integer(n_by_arm)
@@ -365,29 +422,35 @@ makeData <- function(
   # ---- helpers -------------------------------------------------------------
   expand_eff_K <- function(eff, K) {
     if (is.null(eff)) return(rep(0, K))
-    if (!is.numeric(eff) || anyNA(eff)) stop("`trt_effect` must be numeric (or NULL).")
+    if (!is.numeric(eff) || anyNA(eff)) {
+      stop("`trt_effect` must be numeric, or NULL.")
+    }
     if (length(eff) == 1L) return(c(0, rep(eff, K - 1L)))
     if (length(eff) == (K - 1L)) return(c(0, eff))
-    stop("`trt_effect` must have length 1 or K-1 (or be NULL).")
+    stop("`trt_effect` must have length 1 or K-1, or be NULL.")
   }
 
   expand_param_K_including_control <- function(x, K, name = "param") {
     if (is.null(x)) stop("Internal error: missing ", name)
-    if (!is.numeric(x) || anyNA(x)) stop("`", name, "` must be numeric with no NA.")
+    if (!is.numeric(x) || anyNA(x)) {
+      stop("`", name, "` must be numeric with no NA.")
+    }
     if (length(x) == 1L) return(rep(x, K))
-    if (length(x) == K)  return(as.numeric(x))
-    stop("`", name, "` must have length 1 or K (K=", K, ").")
+    if (length(x) == K) return(as.numeric(x))
+    stop("`", name, "` must have length 1 or K. K = ", K, ".")
   }
 
   expand_active <- function(x, K, name = "arg") {
     if (is.null(x)) return(NULL)
-    if (!is.numeric(x) || anyNA(x)) stop("`", name, "` must be numeric with no NA.")
+    if (!is.numeric(x) || anyNA(x)) {
+      stop("`", name, "` must be numeric with no NA.")
+    }
     if (length(x) == 1L) return(rep(x, K - 1L))
     if (length(x) == (K - 1L)) return(as.numeric(x))
-    stop("`", name, "` must have length 1 or K-1 (K=", K, ").")
+    stop("`", name, "` must have length 1 or K-1. K = ", K, ".")
   }
 
-  # ---- build mu1..mu_p and (optionally) sd1..sd_p (for normal endpoints) --------------------------
+  # ---- build arm-specific marginal parameters ------------------------------
   for (j in seq_len(p)) {
     spec <- endpoint_details[[j]]
     typ  <- endpoint_types[j]
@@ -398,11 +461,12 @@ makeData <- function(
       tt[[paste0("mu", j)]] <- spec$baseline_mean + arm_eff
 
       sd_vec <- expand_param_K_including_control(spec$sd, K, name = "sd")
-      if (any(sd_vec <= 0)) stop("Continuous endpoint j=", j, " `sd` must be > 0.")
+      if (any(sd_vec <= 0)) {
+        stop("Continuous endpoint j = ", j, " `sd` must be > 0.")
+      }
       tt[[paste0("sd", j)]] <- sd_vec[tt$trt + 1L]
 
     } else if (typ == "binary") {
-
       logit0 <- logit(spec$baseline_prob)
 
       if (!is.null(spec$trt_prob)) {
@@ -417,7 +481,6 @@ makeData <- function(
       tt[[paste0("mu", j)]] <- inv_logit(logit0 + arm_eff)
 
     } else if (typ == "count") {
-
       if (!is.null(spec$trt_count)) {
         mu_trt <- expand_active(spec$trt_count, K, name = "trt_count")
         eff_active <- log(mu_trt / spec$baseline_mean)
@@ -430,12 +493,13 @@ makeData <- function(
       tt[[paste0("mu", j)]] <- spec$baseline_mean * exp(arm_eff)
 
     } else if (typ == "time-to-event") {
-
       eff_vec <- expand_eff_K(spec$trt_effect %||% NULL, K)
       arm_eff <- eff_vec[tt$trt + 1L]
       tt[[paste0("mu", j)]] <- spec$baseline_rate * exp(arm_eff)
 
-    } else stop("Unknown endpoint type at j=", j)
+    } else {
+      stop("Unknown endpoint type at j = ", j)
+    }
   }
 
   if (!is.null(SEED)) set.seed(SEED)
@@ -447,14 +511,13 @@ makeData <- function(
     L_latent_default <- make_pd(correlation_matrix)$L
   }
 
-  # normalize calibration_control
   cc <- calibration_control
-  cc_n_mc      <- cc$n_mc            %||% 10000
-  cc_tol       <- cc$tol             %||% 0.001
-  cc_maxit     <- cc$maxit           %||% 100
-  cc_rho_cap   <- cc$rho_cap         %||% 0.999
-  cc_ensure_pd <- cc$ensure_pd       %||% TRUE
-  cc_conv_type <- cc$conv_norm_type  %||% "O"
+  cc_n_mc      <- cc$n_mc           %||% 10000
+  cc_tol       <- cc$tol            %||% 0.001
+  cc_maxit     <- cc$maxit          %||% 100
+  cc_rho_cap   <- cc$rho_cap        %||% 0.999
+  cc_ensure_pd <- cc$ensure_pd      %||% TRUE
+  cc_conv_type <- cc$conv_norm_type %||% "O"
 
   # ---- simulate per arm ----------------------------------------------------
   conditional_dist_sim <- function(i) {
@@ -466,29 +529,39 @@ makeData <- function(
 
       if (typ == "continuous") {
         local({
-          m <- mu_value; s <- sd_value
-          function(u) qnorm(u, mean = m, sd = s)
+          m <- mu_value
+          s <- sd_value
+          function(u) stats::qnorm(u, mean = m, sd = s)
         })
+
       } else if (typ == "binary") {
         local({
           p <- mu_value
-          function(u) qbinom(u, size = 1, prob = p)
+          function(u) stats::qbinom(u, size = 1, prob = p)
         })
+
       } else if (typ == "count") {
         local({
-          mu <- mu_value; size <- spec$size; p0 <- (spec$p_zero %||% 0)
+          mu <- mu_value
+          size <- spec$size
+          p0 <- spec$p_zero %||% 0
           function(u) qzinb_mixture(u, mu = mu, size = size, p0 = p0)
         })
+
       } else if (typ == "time-to-event") {
         local({
           r <- mu_value
-          function(u) qexp(u, rate = r)
+          function(u) stats::qexp(u, rate = r)
         })
-      } else stop("Unknown endpoint type at j=", j)
+
+      } else {
+        stop("Unknown endpoint type at j = ", j)
+      }
     }
 
     qfun_list <- lapply(seq_len(p), function(j) {
       mu_value <- tt[i, paste0("mu", j)]
+
       if (endpoint_types[j] == "continuous") {
         sd_value <- tt[i, paste0("sd", j)]
         create_dist_function(j, mu_value, sd_value = sd_value)
@@ -498,24 +571,25 @@ makeData <- function(
     })
 
     if (single_endpoint_mode) {
-      U <- matrix(runif(n_i), ncol = 1)
+      U <- matrix(stats::runif(n_i), ncol = 1)
       eps <- 1e-12
       U <- pmin(pmax(U, eps), 1 - eps)
 
     } else {
       if (isTRUE(target_correlation)) {
         latent_cor_cal <- calibrate_latent_cor_matrix(
-          target_cor      = correlation_matrix,
-          qfuns           = qfun_list,
-          ensure_pd       = isTRUE(cc_ensure_pd),
-          conv_norm_type  = cc_conv_type,
+          target_cor         = correlation_matrix,
+          qfuns              = qfun_list,
+          ensure_pd          = isTRUE(cc_ensure_pd),
+          conv_norm_type     = cc_conv_type,
           return_diagnostics = FALSE,
-          n_mc            = cc_n_mc,
-          seed            = NULL,
-          tol             = cc_tol,
-          maxit           = cc_maxit,
-          rho_cap         = cc_rho_cap
+          n_mc               = cc_n_mc,
+          seed               = NULL,
+          tol                = cc_tol,
+          maxit              = cc_maxit,
+          rho_cap            = cc_rho_cap
         )
+
         L_use <- make_pd(latent_cor_cal)$L
       } else {
         L_use <- L_latent_default
@@ -525,21 +599,37 @@ makeData <- function(
     }
 
     X <- lapply(seq_len(p), function(j) qfun_list[[j]](U[, j]))
+
     sim_data <- as.data.frame(X)
     names(sim_data) <- paste0("V", seq_len(p))
 
-    if (!control_only) sim_data$trt <- tt[i, "trt"]
+    if (!control_only) {
+      sim_data$trt <- tt[i, "trt"]
+    }
+
     sim_data
   }
 
-  total_sim_data <- do.call(rbind, lapply(seq_len(nrow(tt)), conditional_dist_sim))
+  total_sim_data <- do.call(
+    rbind,
+    lapply(seq_len(nrow(tt)), conditional_dist_sim)
+  )
 
-  # ---- TTE censoring + indicators -----------------------------------------
+  # ---- TTE independent censoring + indicators ------------------------------
   tte_idx <- which(endpoint_types == "time-to-event")
-  if (length(tte_idx) > 0) {
 
-    censoring_rates <- vapply(tte_idx, function(j) endpoint_details[[j]]$censoring_rate %||% 0, numeric(1))
-    fatal_events <- vapply(tte_idx, function(j) isTRUE(endpoint_details[[j]]$fatal_event %||% FALSE), logical(1))
+  if (length(tte_idx) > 0L) {
+    censoring_rates <- vapply(
+      tte_idx,
+      function(j) endpoint_details[[j]]$censoring_rate %||% 0,
+      numeric(1)
+    )
+
+    fatal_events <- vapply(
+      tte_idx,
+      function(j) isTRUE(endpoint_details[[j]]$fatal_event %||% FALSE),
+      logical(1)
+    )
 
     for (k in seq_along(tte_idx)) {
       j <- tte_idx[k]
@@ -547,13 +637,20 @@ makeData <- function(
 
       ev_times <- total_sim_data[[time_col]]
       cr <- censoring_rates[k]
-      cens_times <- if (cr <= 0) rep(Inf, length(ev_times)) else rexp(length(ev_times), rate = cr)
+
+      cens_times <- if (cr <= 0) {
+        rep(Inf, length(ev_times))
+      } else {
+        stats::rexp(length(ev_times), rate = cr)
+      }
 
       is_censored <- ev_times > cens_times
+
       total_sim_data[[time_col]] <- pmin(ev_times, cens_times)
       total_sim_data[[paste0("Status_", k)]] <- as.integer(!is_censored)
     }
 
+    # ---- semi-competing risks: non-fatal censoring can censor other TTEs ----
     if (non_fatal_censors_fatal) {
       fatal_k <- which(fatal_events)
       nonfatal_k <- setdiff(seq_along(tte_idx), fatal_k)
@@ -562,49 +659,57 @@ makeData <- function(
         time_col_k <- paste0("V", tte_idx[k])
         cens_col_k <- paste0("Status_", k)
 
-        is_cens <- total_sim_data[[cens_col_k]] == 0
+        is_cens <- total_sim_data[[cens_col_k]] == 0L
         if (!any(is_cens)) next
 
         t_cens <- total_sim_data[[time_col_k]][is_cens]
 
         for (kk in seq_along(tte_idx)) {
           if (kk == k) next
+
           time_col_kk <- paste0("V", tte_idx[kk])
           cens_col_kk <- paste0("Status_", kk)
 
-          total_sim_data[[time_col_kk]][is_cens] <- pmin(total_sim_data[[time_col_kk]][is_cens], t_cens)
-          total_sim_data[[cens_col_kk]][is_cens] <- 0
+          total_sim_data[[time_col_kk]][is_cens] <- pmin(
+            total_sim_data[[time_col_kk]][is_cens],
+            t_cens
+          )
+
+          total_sim_data[[cens_col_kk]][is_cens] <- 0L
         }
       }
     }
 
-    if (length(tte_idx) > 1 && any(fatal_events)) {
-      if (length(tte_idx) >= 2 && fatal_events[1] && fatal_events[2]) {
+    # ---- fatal-event logic -------------------------------------------------
+    if (length(tte_idx) > 1L && any(fatal_events)) {
+      if (length(tte_idx) >= 2L && fatal_events[1] && fatal_events[2]) {
         t1 <- total_sim_data[[paste0("V", tte_idx[1])]]
         t2 <- total_sim_data[[paste0("V", tte_idx[2])]]
         c1 <- total_sim_data[["Status_1"]]
         c2 <- total_sim_data[["Status_2"]]
 
-        cond1 <- (c1 == 1) & (t1 < t2)
+        cond1 <- (c1 == 1L) & (t1 < t2)
         total_sim_data[[paste0("V", tte_idx[2])]][cond1] <- t1[cond1]
-        total_sim_data[["Status_2"]][cond1] <- 0
+        total_sim_data[["Status_2"]][cond1] <- 0L
 
-        cond2 <- (c2 == 1) & (t2 < t1)
+        cond2 <- (c2 == 1L) & (t2 < t1)
         total_sim_data[[paste0("V", tte_idx[1])]][cond2] <- t2[cond2]
-        total_sim_data[["Status_1"]][cond2] <- 0
+        total_sim_data[["Status_1"]][cond2] <- 0L
 
-        cond3 <- (c1 == 0) & (c2 == 0)
+        cond3 <- (c1 == 0L) & (c2 == 0L)
         m <- pmin(t1[cond3], t2[cond3])
+
         total_sim_data[[paste0("V", tte_idx[1])]][cond3] <- m
         total_sim_data[[paste0("V", tte_idx[2])]][cond3] <- m
       }
 
       for (k in seq_along(tte_idx)) {
         if (!fatal_events[k]) next
+
         t_k <- total_sim_data[[paste0("V", tte_idx[k])]]
 
         if (k < length(tte_idx)) {
-          for (kk in (k + 1):length(tte_idx)) {
+          for (kk in (k + 1L):length(tte_idx)) {
             time_col_kk <- paste0("V", tte_idx[kk])
             cens_col_kk <- paste0("Status_", kk)
 
@@ -612,75 +717,96 @@ makeData <- function(
             cond <- t_kk > t_k
 
             total_sim_data[[time_col_kk]][cond] <- t_k[cond]
-            total_sim_data[[cens_col_kk]][cond] <- 0
+            total_sim_data[[cens_col_kk]][cond] <- 0L
           }
         }
       }
     }
   }
 
-  # ---- Enrollment + admin censoring ---------------------------------------
-  admin_cens <- enrollment_details$administrative_censoring
-  if (!is.null(admin_cens) && admin_cens > 0) {
-    nSubs <- nrow(total_sim_data)
-    enroll_time <- rep(0, nSubs)
+  # ---- Enrollment, trial end, and administrative follow-up -----------------
+  nSubs <- nrow(total_sim_data)
 
-    if (enrollment_details$enrollment_distribution == "uniform") {
-      enroll_time <- runif(nSubs, min = 0, max = admin_cens)
+  enroll_time <- simulate_enrollment_times(
+    n = nSubs,
+    enrollment_details = enrollment_details,
+    randomize_order = TRUE
+  )
 
-    } else if (enrollment_details$enrollment_distribution == "exponential") {
-      rate <- enrollment_details$enrollment_exponential_rate
-      if (is.null(rate) || rate <= 0)
-        stop("For exponential enrollment, provide `enrollment_exponential_rate > 0`.")
-      tmp <- rexp(nSubs, rate = rate)
-      enroll_time <- pmin(tmp, admin_cens)
+  add_enroll_column <-
+    enrollment_details$enrollment_distribution != "none" ||
+    trial_end_details$type != "none" ||
+    !is.null(followup_details$max_followup)
 
-    } else if (enrollment_details$enrollment_distribution == "piecewise") {
-      cuts  <- enrollment_details$piecewise_enrollment_cutpoints
-      rates <- enrollment_details$piecewise_enrollment_rates
-
-      piecewise_draw <- function() {
-        piece_len <- diff(cuts)
-        t <- 0
-        for (k in seq_along(piece_len)) {
-          w <- rexp(1, rate = rates[k])
-          if (w < piece_len[k]) { t <- t + w; break }
-          t <- t + piece_len[k]
-        }
-        min(t, max(cuts))
-      }
-      enroll_time <- replicate(nSubs, piecewise_draw())
-    }
-
+  if (isTRUE(add_enroll_column)) {
     total_sim_data$enrollTime <- enroll_time
+  }
 
-    if (length(tte_idx) > 0) {
-      max_follow_up <- pmax(0, admin_cens - enroll_time)
-      for (k in seq_along(tte_idx)) {
-        time_col <- paste0("V", tte_idx[k])
-        cens_col <- paste0("Status_", k)
+  trial_calendar <- determine_trial_end_time(
+    enroll_time = enroll_time,
+    followup_details = followup_details,
+    trial_end_details = trial_end_details,
+    total_sim_data = total_sim_data,
+    tte_idx = tte_idx
+  )
 
-        t <- total_sim_data[[time_col]]
-        is_admin_cens <- t > max_follow_up
+  available_followup <- derive_available_followup(
+    enroll_time = enroll_time,
+    trial_end_time = trial_calendar$trial_end_time,
+    followup_details = followup_details
+  )
 
-        total_sim_data[[time_col]] <- pmin(t, max_follow_up)
-        total_sim_data[[cens_col]][is_admin_cens] <- 0
-      }
-    }
+  add_followup_column <-
+    trial_end_details$type != "none" ||
+    !is.null(followup_details$max_followup)
+
+  if (isTRUE(add_followup_column)) {
+    total_sim_data$availableFollowup <- available_followup
+  }
+
+  if (length(tte_idx) > 0L && any(is.finite(available_followup))) {
+    total_sim_data <- apply_followup_censoring(
+      total_sim_data = total_sim_data,
+      tte_idx = tte_idx,
+      available_followup = available_followup
+    )
   }
 
   # ---- rename endpoints ----------------------------------------------------
-  cont_k <- 0; bin_k <- 0; tte_k <- 0; cnt_k <- 0
+  cont_k <- 0L
+  bin_k  <- 0L
+  tte_k  <- 0L
+  cnt_k  <- 0L
+
   new_names <- character(p)
 
   for (j in seq_len(p)) {
-    if (endpoint_types[j] == "continuous")    { cont_k <- cont_k + 1; new_names[j] <- paste0("Cont_", cont_k) }
-    if (endpoint_types[j] == "binary")        { bin_k  <- bin_k  + 1; new_names[j] <- paste0("Bin_",  bin_k) }
-    if (endpoint_types[j] == "count")         { cnt_k  <- cnt_k  + 1; new_names[j] <- paste0("Int_",  cnt_k) }
-    if (endpoint_types[j] == "time-to-event") { tte_k  <- tte_k  + 1; new_names[j] <- paste0("TTE_",  tte_k) }
-  }
-  names(total_sim_data)[match(paste0("V", seq_len(p)), names(total_sim_data))] <- new_names
+    if (endpoint_types[j] == "continuous") {
+      cont_k <- cont_k + 1L
+      new_names[j] <- paste0("Cont_", cont_k)
+    }
 
+    if (endpoint_types[j] == "binary") {
+      bin_k <- bin_k + 1L
+      new_names[j] <- paste0("Bin_", bin_k)
+    }
+
+    if (endpoint_types[j] == "count") {
+      cnt_k <- cnt_k + 1L
+      new_names[j] <- paste0("Int_", cnt_k)
+    }
+
+    if (endpoint_types[j] == "time-to-event") {
+      tte_k <- tte_k + 1L
+      new_names[j] <- paste0("TTE_", tte_k)
+    }
+  }
+
+  names(total_sim_data)[
+    match(paste0("V", seq_len(p)), names(total_sim_data))
+  ] <- new_names
+
+  # ---- metadata ------------------------------------------------------------
   meta <- list(
     correlation_matrix   = correlation_matrix,
     target_correlation   = isTRUE(target_correlation) && !single_endpoint_mode,
@@ -690,7 +816,11 @@ makeData <- function(
     n_arms               = K,
     n_by_arm             = as.integer(n_by_arm),
     control_only         = control_only,
-    single_endpoint_mode = single_endpoint_mode
+    single_endpoint_mode = single_endpoint_mode,
+    enrollment_details   = enrollment_details,
+    followup_details     = followup_details,
+    trial_end_details    = trial_end_details,
+    trial_calendar       = trial_calendar
   )
 
   new_makeDataSim(total_sim_data, meta)

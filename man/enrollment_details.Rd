@@ -4,145 +4,357 @@
 \alias{enrollment_details}
 \title{Specification format for \code{enrollment_details} used by \code{makeData()}}
 \description{
-\code{enrollment_details} is a named list controlling administrative
-censoring and stochastic enrollment in \code{\link{makeData}}.
+\code{enrollment_details} is a named list controlling stochastic subject
+enrollment in \code{\link{makeData}}.
 }
 \details{
+Enrollment times are represented on the trial calendar scale. That is,
+\code{enrollTime} is the calendar time at which a subject enters the trial,
+measured relative to the first randomized subject.
+
 If omitted, \code{makeData()} fills in defaults internally:
 \preformatted{
 list(
-  administrative_censoring = NULL,
-  enrollment_distribution = "none",
-  enrollment_exponential_rate = NULL,
+  enrollment_distribution        = "none",
+  enrollment_exponential_rate    = NULL,
   piecewise_enrollment_cutpoints = NULL,
-  piecewise_enrollment_rates = NULL
+  piecewise_enrollment_rates     = NULL
 )
 }
 }
 \section{Purpose}{
 
-Administrative censoring and stochastic enrollment affect \emph{observed
-follow-up}. This primarily affects time-to-event endpoints, but may also be
-useful for interim-analysis settings.
+Enrollment determines when subjects enter the trial calendar. It is distinct
+from subject-level follow-up limits and trial-level stopping rules.
+
+The trial calendar is generally constructed in three conceptual steps:
+\enumerate{
+\item enrollment is simulated using \code{enrollment_details};
+\item the trial end time is determined using \code{trial_end_details};
+\item subject-level available follow-up is derived using
+\code{followup_details}.
+}
+
+For a subject \eqn{i}, \code{enrollTime_i} is measured on the trial calendar
+scale. These enrollment times can be used with any endpoint type. For
+time-to-event endpoints, variables such as \code{TTE_1} are measured from
+that subject's own enrollment or randomization time.
+
+If the trial ends at calendar time \eqn{\mathcal{T}}, the subject's
+available administrative follow-up is generally:
+\deqn{
+  \max(0, \mathcal{T} - T_{E,i}),
+}
+where \eqn{T_{E,i}} is the subject's enrollment time. If
+\code{followup_details$max_followup} is supplied, available follow-up is
+further capped at that value.
 
 If no enrollment model is supplied,
 \code{enrollment_distribution = "none"}, all subjects are treated as
-enrolling at time 0.
-
-If enrollment is stochastic and administrative censoring is enabled, each
-subject receives an \code{enrollTime}, and maximum available follow-up is
-reduced from \eqn{\mathcal{A}} to \eqn{\mathcal{A} - T_E}, where
-\eqn{\mathcal{A}} is the administrative censoring time and \eqn{T_E} is the
-subject's enrollment time.
+enrolling at trial calendar time 0.
 }
 
 \section{Arguments}{
 
 \describe{
-\item{administrative_censoring}{
-Numeric scalar or \code{NULL}. If non-\code{NULL} and positive, this
-defines the administrative end of follow-up. Any TTE outcome occurring
-after this limit is administratively censored.
-}
-\item{enrollment_distribution}{
-Character string giving the enrollment-time distribution. Must be one
-of:
+\item{\code{enrollment_distribution}}{
+Character string giving the enrollment process. Must be one of:
 \describe{
-\item{none}{
+\item{\code{"none"}}{
 All subjects enroll at time 0.
 }
-\item{uniform}{
-Enrollment times are drawn from \eqn{U(0,\mathcal{A})}.
-}
-\item{exponential}{
-Enrollment times are drawn from an exponential distribution,
-truncated at \eqn{\mathcal{A}}. Requires
+\item{\code{"exponential"}}{
+Homogeneous Poisson-process accrual. Inter-enrollment gaps are
+exponentially distributed with rate
+\code{enrollment_exponential_rate}. Requires
 \code{enrollment_exponential_rate}.
 }
-\item{piecewise}{
-Enrollment times are generated from a piecewise exponential model
-over user-specified intervals. Requires
-\code{piecewise_enrollment_cutpoints} and
-\code{piecewise_enrollment_rates}.
+\item{\code{"piecewise"}}{
+Piecewise homogeneous Poisson-process accrual. Accrual rates vary by
+calendar interval. Requires \code{piecewise_enrollment_cutpoints}
+and \code{piecewise_enrollment_rates}.
 }
 }
 }
-\item{enrollment_exponential_rate}{
-Numeric scalar (> 0). Used only when
-\code{enrollment_distribution = "exponential"}. Gives the exponential
-rate governing enrollment times.
+
+\item{\code{enrollment_exponential_rate}}{
+Numeric scalar greater than 0. Used only when
+\code{enrollment_distribution = "exponential"}.\cr \cr
+This is the expected accrual rate per unit calendar time. For example,
+\code{enrollment_exponential_rate = 10} corresponds to an average of 10
+subjects enrolled per time unit. Inter-enrollment gaps are generated from
+an exponential distribution with this rate, and enrollment times are
+formed as cumulative sums of those gaps.
 }
-\item{piecewise_enrollment_cutpoints}{
-Numeric vector of strictly increasing cutpoints defining the intervals
-for piecewise enrollment. For example, \code{c(0, 8, 16, 24)} defines
-three intervals: \code{[0,8)}, \code{[8,16)}, and \code{[16,24]}.
+
+\item{\code{piecewise_enrollment_cutpoints}}{
+Numeric vector of strictly increasing cutpoints defining calendar
+intervals for piecewise accrual. The first cutpoint should be 0. \cr \cr
+For example, \code{c(0, 8, 16, 24)} defines three intervals:
+\eqn{[0,8)}, \eqn{[8,16)}, and \eqn{[16,24]}.
 }
-\item{piecewise_enrollment_rates}{
-Numeric vector of positive exponential rates, one for each interval
+
+\item{\code{piecewise_enrollment_rates}}{
+Numeric vector of non-negative accrual rates, one for each interval
 defined by \code{piecewise_enrollment_cutpoints}. Its length must be
-\code{length(piecewise_enrollment_cutpoints) - 1}.
+\code{length(piecewise_enrollment_cutpoints) - 1}. \cr \cr
+At least one rate must be greater than 0. A rate of 0 can be used to
+encode an interval with no accrual. If the finite piecewise accrual
+window does not generate enough subjects, \code{makeData()} continues
+enrollment beyond the final cutpoint using the final interval's rate.
+Therefore, if the final rate is 0 and the target sample size has not
+been reached, simulation will fail.
 }
 }
 }
 
-\section{Administrative censoring only}{
+\section{No stochastic enrollment}{
 
-If \code{administrative_censoring} is supplied and
-\code{enrollment_distribution = "none"}, all subjects are assumed to enter
-at time 0 and remain under observation until the administrative end of
-follow-up, unless they experience an event or are independently censored
-earlier.
+When \code{enrollment_distribution = "none"}, all subjects are assigned:
+\preformatted{
+enrollTime = 0
 }
 
-\section{Uniform enrollment}{
-
-Under uniform enrollment, subjects enter uniformly over the interval
-\eqn{[0,\mathcal{A}]}. This induces heterogeneous follow-up, with later
-enrollees having less potential follow-up time before administrative
-censoring.
+In this case, if a trial end rule is used, all subjects share the same
+calendar entry time. For example, if
+\code{trial_end_details$type = "fixed_calendar"} and
+\code{trial_end_time = 80}, each subject's calendar-derived available
+follow-up is 80, subject to any \code{max_followup} cap.
 }
 
 \section{Exponential enrollment}{
 
-Under exponential enrollment, subject entry times are sampled from an
-exponential distribution and truncated at the administrative censoring time.
-This can be used to represent rapid early enrollment followed by a tapering
-accrual pattern.
+When \code{enrollment_distribution = "exponential"}, enrollment follows a
+homogeneous Poisson-process style accrual model.
+
+The inter-enrollment gaps are generated as:
+\deqn{
+  G_i \sim \mathrm{Exponential}(\lambda),
+}
+where \eqn{\lambda} is \code{enrollment_exponential_rate}. Enrollment times
+are then generated as cumulative sums:
+\deqn{
+  T_{E,i} = \sum_{m=1}^{i} G_m.
 }
 
-\section{Piecewise exponential enrollment}{
+The enrollment clock is shifted so the first enrolled subject has
+\code{enrollTime = 0}. In \code{makeData()}, these calendar enrollment times
+are randomly assigned across generated subject rows to avoid confounding
+treatment arm with enrollment order.
 
-Under piecewise enrollment, the waiting time to enrollment is simulated
-interval by interval. Within each interval, an exponential waiting time is
-drawn using that interval's rate. If the draw exceeds the remaining interval
-width, the process moves to the next interval.
+This model is appropriate when the expected enrollment rate is approximately
+constant over calendar time.
+}
 
-This allows users to encode enrollment patterns such as slow-then-fast
-accrual, fast-then-slow accrual, or more complex piecewise shapes. See the
-\code{vignette("user_guide", package = "endpoints")} vignette for an example
-of how to use this option to achieve certain enrollment proportions in
-certain enrollment periods.
+\section{Piecewise enrollment}{
+
+When \code{enrollment_distribution = "piecewise"}, enrollment follows a
+piecewise homogeneous Poisson-process style accrual model.
+
+Enrollment is simulated using exponential inter-arrival gaps. At any point
+on the trial calendar, the waiting time to the next enrolled subject is drawn
+using the accrual rate for the current calendar interval:
+\deqn{
+  G \sim \mathrm{Exponential}(\lambda_k),
+}
+where \eqn{\lambda_k} is the accrual rate for interval \eqn{k}.
+
+If the proposed next enrollment time falls within the current interval, that
+subject is enrolled and the process continues from the new enrollment time.
+If the proposed next enrollment time crosses the next cutpoint, no subject is
+enrolled before that boundary; the trial calendar advances to the cutpoint,
+and the process continues using the accrual rate for the next interval.
+
+This construction supports start-up, ramp-up, plateau, slowdown, and
+temporary enrollment pause patterns. Intervals with rate 0 are allowed and
+represent periods with no accrual.
+
+For example:
+\preformatted{
+enrollment_details <- list(
+  enrollment_distribution        = "piecewise",
+  piecewise_enrollment_cutpoints = c(0, 8, 24, 52),
+  piecewise_enrollment_rates     = c(2, 8, 12)
+)
+}
+
+This represents expected accrual of:
+\itemize{
+\item 2 subjects per time unit from 0 to 8,
+\item 8 subjects per time unit from 8 to 24,
+\item 12 subjects per time unit from 24 to 52.
+}
+
+If the requested sample size is not reached by the final cutpoint, enrollment
+continues beyond the last cutpoint using the final interval's rate. For
+example, with cutpoints \code{c(0, 12, 24, 52)} and rates
+\code{c(1, 5, 10)}, the rate of 10 applies from 24 to 52 and also after 52
+if additional subjects are needed.
+}
+
+\section{Interaction with follow-up and trial-end rules}{
+
+\code{enrollment_details} only determines when subjects enter the trial. It
+can be used with continuous, binary, count, or TTE endpoints. By itself, it
+does not alter endpoint values, and it does not by itself censor
+time-to-event endpoints.
+
+Administrative follow-up is determined by combining enrollment times with
+\code{trial_end_details} and \code{followup_details}. For example:
+\preformatted{
+followup_details <- list(
+  min_followup = 52,
+  max_followup = 156
+)
+
+trial_end_details <- list(
+  type = "last_patient_min_followup"
+)
+}
+
+Under this design, the trial ends when the last randomized subject has at
+least 52 time units of follow-up:
+\deqn{
+  \mathcal{T} = \max_i(T_{E,i}) + 52.
+}
+
+Subject-level available follow-up is then:
+\deqn{
+  \min\{M, \max(0, \mathcal{T} - T_{E,i})\},
+}
+where \eqn{M} denotes \code{max_followup}.
+
+For non-TTE endpoints, this same calendar logic still determines the
+returned \code{enrollTime}, \code{availableFollowup}, and trial-calendar
+metadata, even though no event time is administratively censored.
+
+For a fixed-calendar trial:
+\preformatted{
+trial_end_details <- list(
+  type = "fixed_calendar",
+  trial_end_time = 80
+)
+}
+
+the trial ends at calendar time 80, and subject-level available follow-up is:
+\deqn{
+  \min\{M, \max(0, 80 - T_{E,i})\},
+}
+again with \eqn{M} denoting \code{max_followup}.
+
+Subjects with \code{enrollTime} after the trial end time have
+\code{availableFollowup = 0}. These rows may represent planned subjects who
+would not contribute positive follow-up under the realized trial calendar.
+}
+
+\section{Event-driven trials}{
+
+For event-driven trials, enrollment times are used to convert subject-level
+event times to calendar event times:
+\deqn{
+  \mathrm{calendar\ event\ time}_i = T_{E,i} + T_i,
+}
+where \eqn{T_i} is the subject-level time-to-event value.
+
+For example:
+\preformatted{
+trial_end_details <- list(
+  type = "event_driven",
+  event_endpoint = "TTE_1",
+  target_events = 150
+)
+}
+
+The trial end time is the calendar time at which the target number of
+observed events is reached, subject to any additional options in
+\code{trial_end_details}, such as \code{require_min_followup} or
+\code{max_trial_duration}.
+
+In event-driven trials, \code{makeData()} returns the planned simulated
+sample. If the event target is reached before all planned subjects have
+enrolled, some rows may have enrollment times after the realized trial end
+time. These rows represent subjects who would not contribute positive
+follow-up under the realized trial calendar.
+
+Users can define the analysis population using the realized trial end time
+stored in the object metadata:
+\preformatted{
+dat <- as.data.frame(sim)
+trial_end <- sim$meta$trial_calendar$trial_end_time
+
+dat_analysis <- subset(dat, enrollTime < trial_end & availableFollowup > 0)
+}
+}
+
+\section{Deprecated behavior}{
+
+Earlier versions of \code{makeData()} allowed
+\code{enrollment_details$administrative_censoring} and
+\code{enrollment_distribution = "uniform"}.
+
+These are no longer supported as part of the trial-calendar interface.
+Administrative censoring is now represented through the combination of
+\code{followup_details} and \code{trial_end_details}. Uniform enrollment has
+been removed in favor of Poisson-process based accrual models.
+
+If \code{administrative_censoring} is supplied in
+\code{enrollment_details}, \code{makeData()} now errors and asks users to
+express administrative follow-up through \code{followup_details} and
+\code{trial_end_details}.
 }
 
 \examples{
-## Administrative censoring only
+## No stochastic enrollment
 enrollment_details <- list(
-  administrative_censoring = 24
+  enrollment_distribution = "none"
 )
 
-## Exponential enrollment
+## Homogeneous Poisson-process enrollment
+## Average accrual rate of 10 subjects per time unit
 enrollment_details <- list(
-  administrative_censoring    = 24,
   enrollment_distribution     = "exponential",
-  enrollment_exponential_rate = 1 / 4
+  enrollment_exponential_rate = 10
 )
 
-## Piecewise exponential enrollment
+## Piecewise Poisson-process enrollment
 enrollment_details <- list(
-  administrative_censoring       = 24,
   enrollment_distribution        = "piecewise",
-  piecewise_enrollment_cutpoints = c(0, 8, 16, 24),
-  piecewise_enrollment_rates     = c(0.02, 0.06, 0.50)
+  piecewise_enrollment_cutpoints = c(0, 8, 24, 52),
+  piecewise_enrollment_rates     = c(2, 8, 12)
 )
+
+## Example with last-patient-minimum-follow-up trial end
+followup_details <- list(
+  min_followup = 52,
+  max_followup = 156
+)
+
+trial_end_details <- list(
+  type = "last_patient_min_followup"
+)
+
+## Example with fixed calendar trial end
+followup_details <- list(
+  max_followup = 104
+)
+
+trial_end_details <- list(
+  type = "fixed_calendar",
+  trial_end_time = 80
+)
+
+## Example with event-driven trial end
+trial_end_details <- list(
+  type = "event_driven",
+  event_endpoint = "TTE_1",
+  target_events = 150
+)
+}
+\seealso{
+\code{\link{makeData}} for the main simulation function.
+
+\code{\link{endpoint_details}} for endpoint specifications.
+
+\code{\link{calibration_control}} for correlation-calibration settings.
 }
 \keyword{documentation}
