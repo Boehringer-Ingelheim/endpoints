@@ -67,6 +67,8 @@ correlation matrix on the observed endpoint scale.</p>
 <span>  <span class="va">sample_size_per_group</span>,</span>
 <span>  <span class="va">endpoint_details</span>,</span>
 <span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  followup_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  trial_end_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  target_correlation <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  arm_mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"full"</span>, <span class="st">"control"</span><span class="op">)</span>,</span>
@@ -110,30 +112,72 @@ complete schema, supported endpoint types, and detailed examples.</p></dd>
 
 
 <dt id="arg-enrollment-details">enrollment_details<a class="anchor" aria-label="anchor" href="#arg-enrollment-details"></a></dt>
-<dd><p>A named list controlling enrollment and
-administrative follow-up. Fields include:</p><dl><dt>administrative_censoring</dt>
-<dd><p>Numeric scalar. If non-<code>NULL</code>, follow-up is administratively
-censored at this time.</p></dd>
-
-<dt>enrollment_distribution</dt>
-<dd><p>Character. One of <code>"none"</code>, <code>"uniform"</code>,
-<code>"exponential"</code>, or <code>"piecewise"</code>.</p></dd>
+<dd><p>A named list controlling enrollment. Fields include:</p><dl><dt>enrollment_distribution</dt>
+<dd><p>Character. One of <code>"none"</code>, <code>"exponential"</code>, or
+<code>"piecewise"</code>. The value <code>"exponential"</code> denotes homogeneous
+Poisson-process accrual, with exponentially distributed inter-arrival
+times. The value <code>"piecewise"</code> denotes piecewise homogeneous
+Poisson-process accrual.</p></dd>
 
 <dt>enrollment_exponential_rate</dt>
-<dd><p>Numeric scalar rate for exponential enrollment when
+<dd><p>Numeric scalar accrual rate per unit time when
 <code>enrollment_distribution = "exponential"</code>.</p></dd>
 
 <dt>piecewise_enrollment_cutpoints</dt>
-<dd><p>Numeric vector of cutpoints defining intervals for piecewise
-enrollment.</p></dd>
+<dd><p>Numeric vector of cutpoints defining calendar intervals for piecewise
+enrollment. Should start at 0.</p></dd>
 
 <dt>piecewise_enrollment_rates</dt>
-<dd><p>Numeric vector of rates, one per interval, for piecewise exponential
-enrollment.</p></dd>
+<dd><p>Numeric vector of accrual rates, one per interval, for piecewise
+Poisson-process enrollment.</p></dd>
 
 
-</dl><p>See <code><a href="enrollment_details.html">enrollment_details</a></code> for full details and recommended
-parameterization.</p></dd>
+</dl></dd>
+
+
+<dt id="arg-followup-details">followup_details<a class="anchor" aria-label="anchor" href="#arg-followup-details"></a></dt>
+<dd><p>A named list controlling subject-level follow-up
+limits. Fields include:</p><dl><dt>min_followup</dt>
+<dd><p>Planned minimum follow-up used by trial-ending rules such as
+<code>"last_patient_min_followup"</code>.</p></dd>
+
+<dt>max_followup</dt>
+<dd><p>Maximum observable follow-up for any individual subject.</p></dd>
+
+
+</dl></dd>
+
+
+<dt id="arg-trial-end-details">trial_end_details<a class="anchor" aria-label="anchor" href="#arg-trial-end-details"></a></dt>
+<dd><p>A named list controlling the calendar time of final
+analysis or database cutoff. Fields include:</p><dl><dt>type</dt>
+<dd><p>Character. One of <code>"none"</code>, <code>"fixed_calendar"</code>,
+<code>"last_patient_min_followup"</code>, or <code>"event_driven"</code>.</p></dd>
+
+<dt>trial_end_time</dt>
+<dd><p>Numeric scalar calendar time for <code>type = "fixed_calendar"</code>.</p></dd>
+
+<dt>event_endpoint</dt>
+<dd><p>TTE endpoint used for event-driven stopping. May be a TTE ordinal such
+as <code>1</code>, or a character value such as <code>"TTE_1"</code>.</p></dd>
+
+<dt>target_events</dt>
+<dd><p>Positive integer number of events required for
+<code>type = "event_driven"</code>.</p></dd>
+
+<dt>require_min_followup</dt>
+<dd><p>Logical. For event-driven trials, if <code>TRUE</code>, the trial cannot end
+before the last randomized subject has <code>min_followup</code>.</p></dd>
+
+<dt>max_trial_duration</dt>
+<dd><p>Optional positive scalar maximum calendar trial duration.</p></dd>
+
+<dt>target_not_reached</dt>
+<dd><p>Character. One of <code>"error"</code>, <code>"max_trial_duration"</code>, or
+<code>"last_patient_min_followup"</code>.</p></dd>
+
+
+</dl></dd>
 
 
 <dt id="arg-non-fatal-censors-fatal">non_fatal_censors_fatal<a class="anchor" aria-label="anchor" href="#arg-non-fatal-censors-fatal"></a></dt>
@@ -216,17 +260,23 @@ and input settings.</p></dd>
 <dt>enrollTime</dt>
 <dd><p>Enrollment times, when stochastic enrollment is used.</p></dd>
 
+<dt>availableFollowup</dt>
+<dd><p>Realized administrative follow-up available to each subject when
+trial-calendar features are active.</p></dd>
 
-</dl></div>
+
+</dl><p>The <code>meta</code> component also stores realized trial-calendar metadata in
+<code>meta$trial_calendar</code> when enrollment, follow-up, or trial-ending
+features are used.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The function also supports:</p><ul><li><p>multiple treatment arms,</p></li>
 <li><p>independent censoring for time-to-event outcomes,</p></li>
 <li><p>fatal and non-fatal time-to-event logic (including semi-competing
 risks),</p></li>
-<li><p>administrative censoring,</p></li>
-<li><p>stochastic enrollment (uniform, exponential, or piecewise
-exponential), and</p></li>
+<li><p>trial-calendar features including stochastic enrollment,
+subject-level follow-up limits, and trial-ending rules, and</p></li>
 <li><p>generation of longitudinal data.</p></li>
 </ul></div>
     <div class="section level2">
@@ -256,14 +306,20 @@ of <code>trt_effect</code>. When treatment arms are present, the output includes
 controlled via <code>arm_mode</code>.</p>
     </div>
     <div class="section level2">
-    <h2 id="administrative-censoring-and-enrollment">Administrative censoring and enrollment<a class="anchor" aria-label="anchor" href="#administrative-censoring-and-enrollment"></a></h2>
+    <h2 id="enrollment-follow-up-and-trial-calendar">Enrollment, follow-up, and trial calendar<a class="anchor" aria-label="anchor" href="#enrollment-follow-up-and-trial-calendar"></a></h2>
 
 
-<p>If <code>administrative_censoring</code> is supplied, all TTE outcomes are
-truncated at the maximum available follow-up. If stochastic enrollment is
-enabled, each subject receives an <code>enrollTime</code>, and maximum observable
-follow-up is reduced to \(\mathcal{A} - T_E\), where \(\mathcal{A}\) is
-the administrative censoring time and \(T_E\) is the enrollment time.</p>
+<p>Trial-calendar behavior is controlled through
+<code>enrollment_details</code>, <code>followup_details</code>, and
+<code>trial_end_details</code>.</p>
+<p>These arguments allow users to simulate staggered enrollment, subject-level
+follow-up limits, and trial-ending rules such as fixed calendar end,
+last-patient-minimum-follow-up, or event-driven final analysis.</p>
+<p>When these features are active, <code>makeData()</code> may return
+<code>enrollTime</code>, <code>availableFollowup</code>, and realized trial-calendar
+metadata in <code>meta$trial_calendar</code>. For TTE endpoints, this calendar
+structure also determines administrative censoring of observed event times
+and statuses.</p>
     </div>
     <div class="section level2">
     <h2 id="output-object">Output object<a class="anchor" aria-label="anchor" href="#output-object"></a></h2>
@@ -284,12 +340,14 @@ Sciences, Northwestern University, Evanston, Illinois.</p>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="endpoint_details.html">endpoint_details</a></code> for endpoint specification details.</p>
-<p><code><a href="enrollment_details.html">enrollment_details</a></code> for administrative censoring and stochastic
-enrollment options.</p>
+<p><code><a href="enrollment_details.html">enrollment_details</a></code>, <code><a href="followup_details.html">followup_details</a></code>, and
+<code><a href="trial_end_details.html">trial_end_details</a></code> for trial-calendar settings.</p>
 <p><code><a href="calibration_control.html">calibration_control</a></code> for calibration tuning parameters.</p>
 <p><code><a href="corr_make.html">corr_make</a></code> for creating correlation matrices.</p>
 <p>See the <code><a href="../articles/user_guide.html">vignette("user_guide", package = "endpoints")</a></code> vignette for
-introductory examples, and the
+introductory examples, the
+<code><a href="../articles/enrollment_guide.html">vignette("enrollment_guide", package = "endpoints")</a></code> vignette for
+enrollment and trial-calendar features, and the
 <code><a href="../articles/longitudinal_data.html">vignette("longitudinal_data", package = "endpoints")</a></code> vignette for
 simulating longitudinal data.</p></div>
     </div>
@@ -458,11 +516,18 @@ simulating longitudinal data.</p></div>
 <span class="r-in"><span><span class="va">sim_tte</span> <span class="op">&lt;-</span> <span class="fu">makeData</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  correlation_matrix    <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
 <span class="r-in"><span>  sample_size_per_group <span class="op">=</span> <span class="fl">500</span>,</span></span>
+<span class="r-in"><span>  SEED                  <span class="op">=</span> <span class="fl">1</span>,</span></span>
 <span class="r-in"><span>  endpoint_details      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">ep_tte</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  enrollment_details    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    administrative_censoring    <span class="op">=</span> <span class="fl">24</span>,</span></span>
-<span class="r-in"><span>    enrollment_distribution     <span class="op">=</span> <span class="st">"exponential"</span>,</span></span>
+<span class="r-in"><span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    enrollment_distribution <span class="op">=</span> <span class="st">"exponential"</span>,</span></span>
 <span class="r-in"><span>    enrollment_exponential_rate <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  followup_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    min_followup <span class="op">=</span> <span class="fl">12</span>,</span></span>
+<span class="r-in"><span>    max_followup <span class="op">=</span> <span class="fl">24</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  trial_end_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    type <span class="op">=</span> <span class="st">"last_patient_min_followup"</span></span></span>
 <span class="r-in"><span>  <span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
@@ -489,8 +554,8 @@ simulating longitudinal data.</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1    TTE_1   0   Status_1          0.04166667       0.0000000          1.0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2    TTE_1   1   Status_1          0.04166667      -0.2231436          0.8</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   est_trt_logHR est_trt_HR obs_event_rate   exp_rate</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1     0.0000000  1.0000000          0.584 0.04455648</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2    -0.3631404  0.6954888          0.452 0.03085210</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1     0.0000000  1.0000000          0.648 0.04338253</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2    -0.2644058  0.7676619          0.550 0.03335743</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

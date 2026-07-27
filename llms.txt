@@ -6,10 +6,11 @@ copula framework. Centered on a single core function,
 [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md),
 it provides a unified interface for generating continuous, binary,
 count, and time-to-event outcomes, while also supporting multiple
-treatment arms, censoring, and stochastic enrollment. The package is
-designed to produce realistic patient-level datasets with configurable
-treatment effects and dependence structures for trial planning and
-simulation studies.
+treatment arms, censoring, stochastic enrollment, subject-level
+follow-up limits, and trial-ending rules. The package is designed to
+produce realistic patient-level datasets with configurable treatment
+effects, dependence structures, and trial-calendar features for trial
+planning and simulation studies.
 
 ## Features
 
@@ -23,10 +24,13 @@ simulation studies.
 - Correlation control through a Gaussian copula, with optional automatic
   calibration to target observed Pearson correlations
 - Time-to-event functionality including independent censoring,
-  administrative censoring, and fatal/non-fatal endpoint logic for
-  semi-competing risks settings
-- Stochastic enrollment with uniform, exponential, and piecewise
-  exponential accrual mechanisms
+  fatal/non-fatal endpoint logic for semi-competing risks settings
+- Trial-calendar functionality through `enrollment_details`,
+  `followup_details`, and `trial_end_details`
+- Stochastic enrollment with exponential and piecewise Poisson-process
+  accrual mechanisms
+- Subject-level follow-up limits and trial-ending rules, including fixed
+  calendar end, last-patient-minimum-follow-up, and event-driven designs
 - Longitudinal data creation, either by treating repeated measurements
   as correlated endpoints or by generating correlated latent quantities
   for downstream longitudinal data-generating processes
@@ -47,6 +51,8 @@ remotes::install_github("Boehringer-Ingelheim/endpoints")
 
 - [A User Guide for the `endpoints`
   Package](https://boehringer-ingelheim.github.io/endpoints/articles/user_guide.html)
+- [Stochastic Enrollment, Follow-up and Trial
+  Calendar](https://boehringer-ingelheim.github.io/endpoints/articles/enrollment_guide.html)
 - [Simulating Longitudinal Data with
   `endpoints`](https://boehringer-ingelheim.github.io/endpoints/articles/longitudinal_data.html)
 
@@ -137,6 +143,12 @@ plot(sim_dat, arm = 0, names = c("Biomarker", "Response", "Time to event"))
   Specification format for `enrollment_details` used by
   [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
 
+- [`followup_details`](https://boehringer-ingelheim.github.io/endpoints/reference/followup_details.md)
+  :
+
+  Specification format for `followup_details` used by
+  [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
+
 - [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
   : Simulate trial data with mixed endpoint types, optional
   Gaussian-copula dependence, and enrollment/censoring features
@@ -156,12 +168,23 @@ plot(sim_dat, arm = 0, names = c("Biomarker", "Response", "Time to event"))
 
   Summarize simulated data from a `makeDataSim` object
 
+- [`trial_end_details`](https://boehringer-ingelheim.github.io/endpoints/reference/trial_end_details.md)
+  :
+
+  Specification format for `trial_end_details` used by
+  [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
+
 # Articles
 
 ### Getting Started
 
 - [A User Guide for the \`endpoints\`
   Package](https://boehringer-ingelheim.github.io/endpoints/articles/user_guide.md):
+
+### Enrollment and Trial Duration
+
+- [Stochastic Enrollment, Follow-up and Trial
+  Calendar](https://boehringer-ingelheim.github.io/endpoints/articles/enrollment_guide.md):
 
 ### Advanced
 

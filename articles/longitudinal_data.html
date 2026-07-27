@@ -61,7 +61,7 @@
                         <h4 data-toc-skip class="author">Colin
 Longhurst</h4>
             
-            <h4 data-toc-skip class="date">2026-07-13</h4>
+            <h4 data-toc-skip class="date">2026-07-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/Boehringer-Ingelheim/endpoints/blob/main/vignettes/longitudinal_data.Rmd" class="external-link"><code>vignettes/longitudinal_data.Rmd</code></a></small>
       <div class="d-none name"><code>longitudinal_data.Rmd</code></div>
@@ -774,8 +774,8 @@ centered at 0:</p>
 <span>  fatal_event    <span class="op">=</span> <span class="cn">FALSE</span>     </span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Now we use <code><a href="../reference/makeData.html">makeData()</a></code> to generate the subject-level
-dataset, where each subjects has their latent random effects
-generated:</p>
+dataset, where each subject has their latent random effects generated.
+In this example, we cap subject-level follow-up at 4 time units:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rf_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
 <span>  correlation_matrix <span class="op">=</span> <span class="va">cor_rf</span>,</span>
@@ -783,8 +783,8 @@ generated:</p>
 <span>  SEED <span class="op">=</span> <span class="fl">888</span>,</span>
 <span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">ACM</span>,<span class="va">HP</span>,<span class="va">random_intercept</span>,<span class="va">random_slope</span><span class="op">)</span>,</span>
 <span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    administrative_censoring <span class="op">=</span> <span class="fl">4</span></span>
+<span>  followup_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    max_followup <span class="op">=</span> <span class="fl">4</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>At this stage, the simulated dataset contains:</p>
@@ -868,25 +868,25 @@ behaving as intended:</p>
 <span><span class="co">## Formula: response ~ trt * time + (time | ID)</span></span>
 <span><span class="co">##    Data: long_rf_data_test</span></span>
 <span><span class="co">## </span></span>
-<span><span class="co">## REML criterion at convergence: 54565</span></span>
+<span><span class="co">## REML criterion at convergence: 54510.2</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Scaled residuals: </span></span>
 <span><span class="co">##     Min      1Q  Median      3Q     Max </span></span>
-<span><span class="co">## -3.6266 -0.6276 -0.0022  0.6318  3.4589 </span></span>
+<span><span class="co">## -3.7939 -0.6437  0.0043  0.6447  3.9195 </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Random effects:</span></span>
 <span><span class="co">##  Groups   Name        Variance Std.Dev. Corr </span></span>
-<span><span class="co">##  ID       (Intercept) 0.25831  0.5082        </span></span>
-<span><span class="co">##           time        0.06888  0.2625   0.27 </span></span>
-<span><span class="co">##  Residual             1.00564  1.0028        </span></span>
+<span><span class="co">##  ID       (Intercept) 0.26111  0.5110        </span></span>
+<span><span class="co">##           time        0.07656  0.2767   0.22 </span></span>
+<span><span class="co">##  Residual             0.99914  0.9996        </span></span>
 <span><span class="co">## Number of obs: 18000, groups:  ID, 2000</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Fixed effects:</span></span>
 <span><span class="co">##             Estimate Std. Error t value</span></span>
-<span><span class="co">## (Intercept)  9.99614    0.02526 395.682</span></span>
-<span><span class="co">## trt          0.01046    0.03573   0.293</span></span>
-<span><span class="co">## time        -0.49682    0.01836 -27.061</span></span>
-<span><span class="co">## trt:time     0.97304    0.02596  37.477</span></span></code></pre>
+<span><span class="co">## (Intercept) 10.02791    0.02527 396.832</span></span>
+<span><span class="co">## trt          0.01111    0.03574   0.311</span></span>
+<span><span class="co">## time        -0.51202    0.01852 -27.647</span></span>
+<span><span class="co">## trt:time     0.98381    0.02619  37.562</span></span></code></pre>
 <p>The estimated treatment-by-time interaction, residual variation, and
 random-effects covariance are close to their data-generating values.</p>
 <p>Next, we regenerate the longitudinal data, this time allowing the
@@ -908,17 +908,18 @@ event.</p>
 <table class="table">
 <colgroup>
 <col width="2%">
+<col width="8%">
+<col width="8%">
 <col width="9%">
-<col width="9%">
-<col width="10%">
-<col width="9%">
+<col width="8%">
 <col width="3%">
-<col width="8%">
-<col width="8%">
-<col width="10%">
+<col width="7%">
+<col width="7%">
+<col width="9%">
+<col width="15%">
 <col width="4%">
-<col width="9%">
-<col width="9%">
+<col width="8%">
+<col width="8%">
 </colgroup>
 <thead><tr class="header">
 <th align="right">ID</th>
@@ -930,6 +931,7 @@ event.</p>
 <th align="right">Status_1</th>
 <th align="right">Status_2</th>
 <th align="right">enrollTime</th>
+<th align="right">availableFollowup</th>
 <th align="right">time</th>
 <th align="right">linPred</th>
 <th align="right">response</th>
@@ -945,9 +947,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.00</td>
 <td align="right">10.606900</td>
-<td align="right">11.859258</td>
+<td align="right">9.400602</td>
 </tr>
 <tr class="even">
 <td align="right">1</td>
@@ -959,9 +962,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.25</td>
 <td align="right">10.645208</td>
-<td align="right">11.300007</td>
+<td align="right">9.023166</td>
 </tr>
 <tr class="odd">
 <td align="right">1</td>
@@ -973,9 +977,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.50</td>
 <td align="right">10.683515</td>
-<td align="right">12.501410</td>
+<td align="right">10.317673</td>
 </tr>
 <tr class="even">
 <td align="right">1</td>
@@ -987,9 +992,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.75</td>
 <td align="right">10.721823</td>
-<td align="right">11.860288</td>
+<td align="right">10.623685</td>
 </tr>
 <tr class="odd">
 <td align="right">1</td>
@@ -1001,9 +1007,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">1.00</td>
 <td align="right">10.760131</td>
-<td align="right">9.239832</td>
+<td align="right">9.926915</td>
 </tr>
 <tr class="even">
 <td align="right">1</td>
@@ -1015,9 +1022,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">1.25</td>
 <td align="right">10.798438</td>
-<td align="right">11.032595</td>
+<td align="right">11.023809</td>
 </tr>
 <tr class="odd">
 <td align="right">1</td>
@@ -1029,9 +1037,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">1.50</td>
 <td align="right">10.836746</td>
-<td align="right">11.883674</td>
+<td align="right">8.744633</td>
 </tr>
 <tr class="even">
 <td align="right">1</td>
@@ -1043,9 +1052,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">1.75</td>
 <td align="right">10.875054</td>
-<td align="right">10.691956</td>
+<td align="right">11.217336</td>
 </tr>
 <tr class="odd">
 <td align="right">1</td>
@@ -1057,9 +1067,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">2.00</td>
 <td align="right">10.913361</td>
-<td align="right">9.886203</td>
+<td align="right">11.875564</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
@@ -1071,9 +1082,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.00</td>
 <td align="right">9.749710</td>
-<td align="right">10.748149</td>
+<td align="right">9.641089</td>
 </tr>
 <tr class="odd">
 <td align="right">2</td>
@@ -1085,9 +1097,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.25</td>
 <td align="right">9.688822</td>
-<td align="right">10.609906</td>
+<td align="right">8.842817</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
@@ -1099,9 +1112,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.50</td>
 <td align="right">9.627934</td>
-<td align="right">8.825088</td>
+<td align="right">8.110577</td>
 </tr>
 <tr class="odd">
 <td align="right">2</td>
@@ -1113,9 +1127,10 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">0.75</td>
 <td align="right">9.567045</td>
-<td align="right">7.266656</td>
+<td align="right">11.857615</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
@@ -1127,6 +1142,7 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">1.00</td>
 <td align="right">9.506157</td>
 <td align="right">NA</td>
@@ -1141,6 +1157,7 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">1.25</td>
 <td align="right">9.445269</td>
 <td align="right">NA</td>
@@ -1155,6 +1172,7 @@ event.</p>
 <td align="right">0</td>
 <td align="right">1</td>
 <td align="right">0</td>
+<td align="right">4</td>
 <td align="right">1.50</td>
 <td align="right">9.384381</td>
 <td align="right">NA</td>

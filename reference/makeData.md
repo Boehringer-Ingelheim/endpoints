@@ -17,6 +17,8 @@ makeData(
   sample_size_per_group,
   endpoint_details,
   enrollment_details = list(),
+  followup_details = list(),
+  trial_end_details = list(),
   non_fatal_censors_fatal = FALSE,
   target_correlation = TRUE,
   arm_mode = c("auto", "full", "control"),
@@ -61,37 +63,82 @@ makeData(
 
 - enrollment_details:
 
-  A named list controlling enrollment and administrative follow-up.
-  Fields include:
-
-  administrative_censoring
-
-  :   Numeric scalar. If non-`NULL`, follow-up is administratively
-      censored at this time.
+  A named list controlling enrollment. Fields include:
 
   enrollment_distribution
 
-  :   Character. One of `"none"`, `"uniform"`, `"exponential"`, or
-      `"piecewise"`.
+  :   Character. One of `"none"`, `"exponential"`, or `"piecewise"`. The
+      value `"exponential"` denotes homogeneous Poisson-process accrual,
+      with exponentially distributed inter-arrival times. The value
+      `"piecewise"` denotes piecewise homogeneous Poisson-process
+      accrual.
 
   enrollment_exponential_rate
 
-  :   Numeric scalar rate for exponential enrollment when
+  :   Numeric scalar accrual rate per unit time when
       `enrollment_distribution = "exponential"`.
 
   piecewise_enrollment_cutpoints
 
-  :   Numeric vector of cutpoints defining intervals for piecewise
-      enrollment.
+  :   Numeric vector of cutpoints defining calendar intervals for
+      piecewise enrollment. Should start at 0.
 
   piecewise_enrollment_rates
 
-  :   Numeric vector of rates, one per interval, for piecewise
-      exponential enrollment.
+  :   Numeric vector of accrual rates, one per interval, for piecewise
+      Poisson-process enrollment.
 
-  See
-  [`enrollment_details`](https://boehringer-ingelheim.github.io/endpoints/reference/enrollment_details.md)
-  for full details and recommended parameterization.
+- followup_details:
+
+  A named list controlling subject-level follow-up limits. Fields
+  include:
+
+  min_followup
+
+  :   Planned minimum follow-up used by trial-ending rules such as
+      `"last_patient_min_followup"`.
+
+  max_followup
+
+  :   Maximum observable follow-up for any individual subject.
+
+- trial_end_details:
+
+  A named list controlling the calendar time of final analysis or
+  database cutoff. Fields include:
+
+  type
+
+  :   Character. One of `"none"`, `"fixed_calendar"`,
+      `"last_patient_min_followup"`, or `"event_driven"`.
+
+  trial_end_time
+
+  :   Numeric scalar calendar time for `type = "fixed_calendar"`.
+
+  event_endpoint
+
+  :   TTE endpoint used for event-driven stopping. May be a TTE ordinal
+      such as `1`, or a character value such as `"TTE_1"`.
+
+  target_events
+
+  :   Positive integer number of events required for
+      `type = "event_driven"`.
+
+  require_min_followup
+
+  :   Logical. For event-driven trials, if `TRUE`, the trial cannot end
+      before the last randomized subject has `min_followup`.
+
+  max_trial_duration
+
+  :   Optional positive scalar maximum calendar trial duration.
+
+  target_not_reached
+
+  :   Character. One of `"error"`, `"max_trial_duration"`, or
+      `"last_patient_min_followup"`.
 
 - non_fatal_censors_fatal:
 
@@ -194,6 +241,15 @@ The `data` component may include:
 
   Enrollment times, when stochastic enrollment is used.
 
+- availableFollowup:
+
+  Realized administrative follow-up available to each subject when
+  trial-calendar features are active.
+
+The `meta` component also stores realized trial-calendar metadata in
+`meta$trial_calendar` when enrollment, follow-up, or trial-ending
+features are used.
+
 ## Details
 
 The function also supports:
@@ -205,10 +261,8 @@ The function also supports:
 - fatal and non-fatal time-to-event logic (including semi-competing
   risks),
 
-- administrative censoring,
-
-- stochastic enrollment (uniform, exponential, or piecewise
-  exponential), and
+- trial-calendar features including stochastic enrollment, subject-level
+  follow-up limits, and trial-ending rules, and
 
 - generation of longitudinal data.
 
@@ -232,14 +286,21 @@ length of `trt_effect`. When treatment arms are present, the output
 includes a `trt` column coded as `0, 1, 2, ...`. This can also be
 controlled via `arm_mode`.
 
-## Administrative censoring and enrollment
+## Enrollment, follow-up, and trial calendar
 
-If `administrative_censoring` is supplied, all TTE outcomes are
-truncated at the maximum available follow-up. If stochastic enrollment
-is enabled, each subject receives an `enrollTime`, and maximum
-observable follow-up is reduced to \\\mathcal{A} - T_E\\, where
-\\\mathcal{A}\\ is the administrative censoring time and \\T_E\\ is the
-enrollment time.
+Trial-calendar behavior is controlled through `enrollment_details`,
+`followup_details`, and `trial_end_details`.
+
+These arguments allow users to simulate staggered enrollment,
+subject-level follow-up limits, and trial-ending rules such as fixed
+calendar end, last-patient-minimum-follow-up, or event-driven final
+analysis.
+
+When these features are active, `makeData()` may return `enrollTime`,
+`availableFollowup`, and realized trial-calendar metadata in
+`meta$trial_calendar`. For TTE endpoints, this calendar structure also
+determines administrative censoring of observed event times and
+statuses.
 
 ## Output object
 
@@ -266,8 +327,11 @@ Management Sciences, Northwestern University, Evanston, Illinois.
 [`endpoint_details`](https://boehringer-ingelheim.github.io/endpoints/reference/endpoint_details.md)
 for endpoint specification details.
 
-[`enrollment_details`](https://boehringer-ingelheim.github.io/endpoints/reference/enrollment_details.md)
-for administrative censoring and stochastic enrollment options.
+[`enrollment_details`](https://boehringer-ingelheim.github.io/endpoints/reference/enrollment_details.md),
+[`followup_details`](https://boehringer-ingelheim.github.io/endpoints/reference/followup_details.md),
+and
+[`trial_end_details`](https://boehringer-ingelheim.github.io/endpoints/reference/trial_end_details.md)
+for trial-calendar settings.
 
 [`calibration_control`](https://boehringer-ingelheim.github.io/endpoints/reference/calibration_control.md)
 for calibration tuning parameters.
@@ -277,7 +341,9 @@ for creating correlation matrices.
 
 See the
 [`vignette("user_guide", package = "endpoints")`](https://boehringer-ingelheim.github.io/endpoints/articles/user_guide.md)
-vignette for introductory examples, and the
+vignette for introductory examples, the
+[`vignette("enrollment_guide", package = "endpoints")`](https://boehringer-ingelheim.github.io/endpoints/articles/enrollment_guide.md)
+vignette for enrollment and trial-calendar features, and the
 [`vignette("longitudinal_data", package = "endpoints")`](https://boehringer-ingelheim.github.io/endpoints/articles/longitudinal_data.md)
 vignette for simulating longitudinal data.
 
@@ -446,11 +512,18 @@ ep_tte <- list(
 sim_tte <- makeData(
   correlation_matrix    = NULL,
   sample_size_per_group = 500,
+  SEED                  = 1,
   endpoint_details      = list(ep_tte),
-  enrollment_details    = list(
-    administrative_censoring    = 24,
-    enrollment_distribution     = "exponential",
+  enrollment_details = list(
+    enrollment_distribution = "exponential",
     enrollment_exponential_rate = 1 / 4
+  ),
+  followup_details = list(
+    min_followup = 12,
+    max_followup = 24
+  ),
+  trial_end_details = list(
+    type = "last_patient_min_followup"
   )
 )
 
@@ -477,6 +550,6 @@ summary(sim_tte)
 #> 1    TTE_1   0   Status_1          0.04166667       0.0000000          1.0
 #> 2    TTE_1   1   Status_1          0.04166667      -0.2231436          0.8
 #>   est_trt_logHR est_trt_HR obs_event_rate   exp_rate
-#> 1     0.0000000  1.0000000          0.584 0.04455648
-#> 2    -0.3631404  0.6954888          0.452 0.03085210
+#> 1     0.0000000  1.0000000          0.648 0.04338253
+#> 2    -0.2644058  0.7676619          0.550 0.03335743
 ```

@@ -27,6 +27,12 @@
   Specification format for `enrollment_details` used by
   [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
 
+- [`followup_details`](https://boehringer-ingelheim.github.io/endpoints/reference/followup_details.md)
+  :
+
+  Specification format for `followup_details` used by
+  [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
+
 - [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
   : Simulate trial data with mixed endpoint types, optional
   Gaussian-copula dependence, and enrollment/censoring features
@@ -45,3 +51,9 @@
   :
 
   Summarize simulated data from a `makeDataSim` object
+
+- [`trial_end_details`](https://boehringer-ingelheim.github.io/endpoints/reference/trial_end_details.md)
+  :
+
+  Specification format for `trial_end_details` used by
+  [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)

@@ -61,7 +61,7 @@
                         <h4 data-toc-skip class="author">Colin
 Longhurst</h4>
             
-            <h4 data-toc-skip class="date">2026-07-13</h4>
+            <h4 data-toc-skip class="date">2026-07-27</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/Boehringer-Ingelheim/endpoints/blob/main/vignettes/user_guide.Rmd" class="external-link"><code>vignettes/user_guide.Rmd</code></a></small>
       <div class="d-none name"><code>user_guide.Rmd</code></div>
@@ -442,8 +442,11 @@ practical concern for simulation.</p>
 </h4>
 <p>Time-to-event endpoints are supported through exponential event-time
 models with optional independent censoring, fatal/non-fatal event logic,
-administrative censoring, and stochastic enrollment. We defer details to
-the dedicated section below.</p>
+and the trial-calendar interface built from
+<code>enrollment_details</code>, <code>followup_details</code>, and
+<code>trial_end_details</code>. We return to these features later in
+this vignette and in the dedicated <code>enrollment_guide</code>
+vignette.</p>
 </div>
 </div>
 </div>
@@ -951,476 +954,182 @@ model.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="administrative-censoring-stochastic-enrollment">Administrative Censoring &amp; Stochastic Enrollment<a class="anchor" aria-label="anchor" href="#administrative-censoring-stochastic-enrollment"></a>
+<h2 id="stochastic-enrollment-follow-up-and-trial-duration-rules">Stochastic enrollment, Follow-Up, and Trial Duration Rules<a class="anchor" aria-label="anchor" href="#stochastic-enrollment-follow-up-and-trial-duration-rules"></a>
 </h2>
-<div class="section level3">
-<h3 id="administrative-censoring">Administrative Censoring<a class="anchor" aria-label="anchor" href="#administrative-censoring"></a>
-</h3>
-<p>Administrative censoring (which we denote as <span class="math inline">\(\mathcal{A}\)</span>) is controlled via
-<code>enrollment_details</code> argument, which is a list of settings.
-Within <code>enrollment_details</code> administrative censoring is
-toggled using <code>administrative_censoring = NULL</code>. If it is set
-to a positive value, then any TTE event that occurs (or is censored)
-after <span class="math inline">\(\mathcal{A}\)</span>, is set to <span class="math inline">\(\mathcal{A}\)</span> as that is the limit of
-follow-up.</p>
-<p>To illustrate, we can re-run the example above, but this time setting
-a 24 time-unit limit:</p>
+<p><code>endpoints</code> also allows for a detailed trial-calendar
+interface through the <code>enrollment_details</code>,
+<code>followup_details</code>, and <code>trial_end_details</code>
+arguments. These features allow users to simulate more realistic trials,
+including staggered enrollment/recruitment, calendar-based follow-up
+limits, and event-driven final analyses.</p>
+<p>For a full tutorial, see:</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span> <span class="va">tte_ex_admin_cens</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
-<span>  correlation_matrix    <span class="op">=</span> <span class="va">small_cor</span>,</span>
-<span>  sample_size_per_group <span class="op">=</span> <span class="fl">5000</span>,</span>
-<span>  SEED <span class="op">=</span> <span class="fl">321</span>,</span>
-<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> <span class="va">tte_fatal</span>, <span class="va">tte_nonfatal</span><span class="op">)</span>,</span>
-<span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    administrative_censoring <span class="op">=</span> <span class="fl">24</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Comparing the datasets, we now see patient 3 is administratively
-censored at time 24:</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tte_ex</span><span class="op">$</span><span class="va">data</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">.</span>,caption <span class="op">=</span> <span class="st">"Data without admin censoring"</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<caption>Data without admin censoring</caption>
-<thead><tr class="header">
-<th align="right">TTE_1</th>
-<th align="right">TTE_2</th>
-<th align="right">trt</th>
-<th align="right">Status_1</th>
-<th align="right">Status_2</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="right">1.0472795</td>
-<td align="right">1.0472795</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="right">1.0865490</td>
-<td align="right">1.0865490</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="right">28.7011752</td>
-<td align="right">10.1710911</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-</tr>
-<tr class="even">
-<td align="right">7.0854601</td>
-<td align="right">1.4042196</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-</tr>
-<tr class="odd">
-<td align="right">0.7436455</td>
-<td align="right">0.7436455</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="right">18.4536996</td>
-<td align="right">7.1912254</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tte_ex_admin_cens</span><span class="op">$</span><span class="va">data</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">.</span>,caption <span class="op">=</span> <span class="st">"Data with admin censoring"</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<caption>Data with admin censoring</caption>
-<thead><tr class="header">
-<th align="right">TTE_1</th>
-<th align="right">TTE_2</th>
-<th align="right">trt</th>
-<th align="right">Status_1</th>
-<th align="right">Status_2</th>
-<th align="right">enrollTime</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="right">1.0472795</td>
-<td align="right">1.0472795</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="right">1.0865490</td>
-<td align="right">1.0865490</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="right">24.0000000</td>
-<td align="right">10.1710911</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="right">7.0854601</td>
-<td align="right">1.4042196</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">0</td>
-</tr>
-<tr class="odd">
-<td align="right">0.7436455</td>
-<td align="right">0.7436455</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-<tr class="even">
-<td align="right">18.4536996</td>
-<td align="right">7.1912254</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">0</td>
-<td align="right">0</td>
-</tr>
-</tbody>
-</table>
-<p>Note that an <code>enrollTime</code> column is automatically
-generated when using this feature.</p>
-<p>If there is no non-administrative censoring (e.g. no random
-drop-out), we can solve for expected event rates by evaluating <span class="math inline">\(\int_{0}^{\mathcal{A}} \lambda e^{-\lambda x} dx =
-1 - e^{-\lambda x}\)</span>. To solve for <span class="math inline">\(\lambda\)</span>, we calculate <span class="math inline">\(\frac{\ln(1-r)}{-\mathcal{A}}\)</span> where r is
-the desired event rate. For example, if we want to simulate a 4-year
-trial with a 20% fatal event rate, we need to set the baseline hazard to
-<code>log(1-.2)/(-4) = .0558.</code> Once again, we can use the helper
-function <code><a href="../reference/rate_from_prob.html">rate_from_prob()</a></code> to solve this math:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/rate_from_prob.html">rate_from_prob</a></span><span class="op">(</span></span>
-<span>  target_prob <span class="op">=</span> <span class="fl">0.20</span>,</span>
-<span>  mode <span class="op">=</span> <span class="st">"admin"</span>,</span>
-<span>  admin_time <span class="op">=</span> <span class="fl">4</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] 0.05578589</span></span></code></pre>
-<p>which can then be used in <code><a href="../reference/makeData.html">makeData()</a></code></p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">admin_ex2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
-<span>  correlation_matrix    <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sample_size_per_group <span class="op">=</span> <span class="fl">5000</span>,</span>
-<span>  SEED <span class="op">=</span> <span class="fl">12</span>,</span>
-<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> </span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>      endpoint_type  <span class="op">=</span> <span class="st">"tte"</span>,</span>
-<span>      baseline_rate  <span class="op">=</span> <span class="fl">.0558</span>,        </span>
-<span>      trt_effect     <span class="op">=</span> <span class="fl">0</span>,   </span>
-<span>      fatal_event    <span class="op">=</span> <span class="cn">TRUE</span> <span class="op">)</span> <span class="op">)</span>,</span>
-<span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    administrative_censoring <span class="op">=</span> <span class="fl">4</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">obs_rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">admin_ex2</span><span class="op">)</span><span class="op">$</span><span class="va">tte</span><span class="op">$</span><span class="va">obs_event_rate</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Observed event rate for control group is: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">obs_rates</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>,<span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## [1] "Observed event rate for control group is: 0.2"</span></span></code></pre>
-</div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"enrollment_guide"</span>, package <span class="op">=</span> <span class="st">"endpoints"</span><span class="op">)</span></span></code></pre></div>
+<p>Briefly, these arguments support:</p>
+<ul>
+<li>stochastic enrollment with
+<code>enrollment_distribution = "none"</code>,
+<code>"exponential"</code>, or <code>"piecewise"</code>
+</li>
+<li>trial-ending rules through <code>trial_end_details</code>, including
+fixed calendar end, last-patient-minimum-follow-up end, or event-driven
+end</li>
+<li>subject-level follow-up limits through
+<code>followup_details</code>, where <code>min_followup</code> defines a
+required minimum follow-up window for late enrollees and
+<code>max_followup</code> caps how long any subject can be observed</li>
+<li>realized calendar outputs through the returned
+<code>enrollTime</code>, <code>availableFollowup</code>, and
+<code>sim$meta$trial_calendar</code>
+</li>
+</ul>
+<p>Below we show two compact TTE examples. The first uses a
+last-patient-minimum-follow-up design, while the second uses an
+event-driven stopping rule.</p>
 <div class="section level3">
-<h3 id="stochastic-enrollment">Stochastic Enrollment<a class="anchor" aria-label="anchor" href="#stochastic-enrollment"></a>
+<h3 id="example-last-patient-minimum-follow-up-design">Example: last-patient-minimum-follow-up design<a class="anchor" aria-label="anchor" href="#example-last-patient-minimum-follow-up-design"></a>
 </h3>
-<p>By default, all patients are enrolled on day 0 of the trial. To
-simulate a more realistic trial, probabilistic enrollment is controlled
-via the following arguments:</p>
-<ul>
-<li>
-<code>enrollment_distribution = c("none","uniform","exponential","piecewise")</code>:
-This specifies the enrollment-time distribution (default is
-<code>"none"</code>). If <code>"uniform"</code>, enrollment time is
-<span class="math inline">\(\mathbf{U}[0,\mathcal{A}]\)</span>, where
-<span class="math inline">\(\mathcal{A}\)</span> is the time of
-administrative censoring. If <code>"exponential"</code>, enrollment time
-is based on an exponential distribution (see
-<code>enrollment_exponential_rate</code>). If <code>"piecewise"</code>,
-enrollment follows a piecewise exponential distribution. This option
-requires specifying <code>piecewise_enrollment_cutpoints</code> and
-<code>piecewise_enrollment_rates</code> (see examples below).</li>
-<li>
-<code>enrollment_exponential_rate = NULL</code>: The rate for the
-exponential distribution if
-<code>enrollment_distribution = "exponential"</code>.</li>
-<li>
-<code>piecewise_enrollment_cutpoints = NULL</code>: The time points
-defining the bins for the piecewise enrollment pattern.</li>
-<li>
-<code>piecewise_enrollment_rates = NULL</code>: The rates for each
-exponential distribution within each time bin.</li>
-</ul>
-<p>If a user specifies stochastic enrollment and administrative
-censoring, then maximum potential time-on-study is <span class="math inline">\(\mathcal{A} - T_E\)</span>, where <span class="math inline">\(T_E\)</span> is time of enrollment. If we re-run
-the example from above,</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span> <span class="va">tte_admin_cens_exp_enroll</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
-<span>  correlation_matrix    <span class="op">=</span> <span class="va">small_cor</span>,</span>
-<span>  sample_size_per_group <span class="op">=</span> <span class="fl">5000</span>,</span>
-<span>  SEED <span class="op">=</span> <span class="fl">321</span>,</span>
-<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> <span class="va">tte_fatal</span>, <span class="va">tte_nonfatal</span><span class="op">)</span>,</span>
-<span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    administrative_censoring <span class="op">=</span> <span class="fl">24</span>,</span>
-<span>     enrollment_distribution <span class="op">=</span> <span class="st">"exponential"</span>,</span>
-<span>    enrollment_exponential_rate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">4</span></span>
+<p>In this example, subjects enroll gradually, each subject can
+contribute at most 36 months of follow-up, and the final analysis occurs
+only after the last randomized subject has at least 24 months of
+follow-up.</p>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tte_calendar_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  endpoint_type <span class="op">=</span> <span class="st">"tte"</span>,</span>
+<span>  baseline_rate <span class="op">=</span> <span class="fu"><a href="../reference/rate_from_prob.html">rate_from_prob</a></span><span class="op">(</span></span>
+<span>    target_prob <span class="op">=</span> <span class="fl">0.30</span>,</span>
+<span>    mode <span class="op">=</span> <span class="st">"admin"</span>,</span>
+<span>    admin_time <span class="op">=</span> <span class="fl">12</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tte_admin_cens_exp_enroll</span><span class="op">$</span><span class="va">data</span><span class="op">)</span>,caption <span class="op">=</span> <span class="st">"Data with admin censoring and stochastic enrollment"</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<caption>Data with admin censoring and stochastic enrollment</caption>
-<thead><tr class="header">
-<th align="right">TTE_1</th>
-<th align="right">TTE_2</th>
-<th align="right">trt</th>
-<th align="right">Status_1</th>
-<th align="right">Status_2</th>
-<th align="right">enrollTime</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td align="right">1.0472795</td>
-<td align="right">1.0472795</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1.5548657</td>
-</tr>
-<tr class="even">
-<td align="right">1.0865490</td>
-<td align="right">1.0865490</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">4.4949425</td>
-</tr>
-<tr class="odd">
-<td align="right">19.7241782</td>
-<td align="right">10.1710911</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">4.2758218</td>
-</tr>
-<tr class="even">
-<td align="right">7.0854601</td>
-<td align="right">1.4042196</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">3.9579370</td>
-</tr>
-<tr class="odd">
-<td align="right">0.7436455</td>
-<td align="right">0.7436455</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">0</td>
-<td align="right">1.1697326</td>
-</tr>
-<tr class="even">
-<td align="right">18.4536996</td>
-<td align="right">7.1912254</td>
-<td align="right">0</td>
-<td align="right">1</td>
-<td align="right">0</td>
-<td align="right">0.8527512</td>
-</tr>
-</tbody>
-</table>
-<p>we now see that patient 3 is now censored at time 19.72 (instead of
-time 24), as their enrollment time is 4.28. From the code above, we
-observed an enrollment curve of:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">tte_admin_cens_exp_enroll</span><span class="op">$</span><span class="va">data</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">enrollTime</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span>bins <span class="op">=</span> <span class="fl">30</span>,fill <span class="op">=</span> <span class="st">"steelblue"</span>, alpha <span class="op">=</span> <span class="fl">0.35</span>,</span>
-<span>    color <span class="op">=</span> <span class="st">"black"</span>,linewidth <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="st">"Enrollment time"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Count"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Histogram of enrollment times (Exponential)"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="user_guide_files/figure-html/unnamed-chunk-30-1.png" class="r-plt" alt="" width="700"></p>
-<p>The function also supports a simple enrollment (uniform) curve:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ex_unif</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
-<span>  correlation_matrix    <span class="op">=</span> <span class="va">small_cor</span>,</span>
-<span>  sample_size_per_group <span class="op">=</span> <span class="fl">5000</span>,</span>
-<span>  SEED <span class="op">=</span> <span class="fl">321321</span>,</span>
-<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> <span class="va">tte_fatal</span>, <span class="va">tte_nonfatal</span><span class="op">)</span>,</span>
-<span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    administrative_censoring <span class="op">=</span> <span class="fl">24</span>,</span>
-<span>     enrollment_distribution <span class="op">=</span> <span class="st">"uniform"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  trt_effect <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">0.70</span><span class="op">)</span>,</span>
+<span>  censoring_rate <span class="op">=</span> <span class="fl">0.015</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">ex_unif</span><span class="op">$</span><span class="va">data</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">enrollTime</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span>bins <span class="op">=</span> <span class="fl">30</span>,fill <span class="op">=</span> <span class="st">"steelblue"</span>, alpha <span class="op">=</span> <span class="fl">0.35</span>,</span>
-<span>    color <span class="op">=</span> <span class="st">"black"</span>,linewidth <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="st">"Enrollment time"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Count"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Histogram of enrollment times (Uniform)"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="user_guide_files/figure-html/unnamed-chunk-31-1.png" class="r-plt" alt="" width="700"></p>
-<p>Stochastic enrollment does not change the underlying event-time
-generation mechanism (i.e., the event hazard parameters), but it can
-materially change observed follow-up time and observed event proportions
-when administrative censoring is present.</p>
-<p><strong>Piecewise Enrollment</strong></p>
-<p>In some trials, we may expect varied enrollment throughout the study
-period (e.g. heavy <span class="math inline">\(\rightarrow\)</span>
-light <span class="math inline">\(\rightarrow\)</span> medium <span class="math inline">\(\rightarrow\)</span> heavy) due to seasonal trends
-or logistic constraints. For example,</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pw_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
-<span>  correlation_matrix    <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sample_size_per_group <span class="op">=</span> <span class="fl">5000</span>,</span>
-<span>  SEED <span class="op">=</span> <span class="fl">321</span>,</span>
-<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> </span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>      endpoint_type  <span class="op">=</span> <span class="st">"tte"</span>,</span>
-<span>      baseline_rate  <span class="op">=</span> <span class="fl">.0558</span>,        </span>
-<span>      trt_effect     <span class="op">=</span> <span class="fl">0</span>,   </span>
-<span>      fatal_event    <span class="op">=</span> <span class="cn">TRUE</span> <span class="op">)</span><span class="op">)</span>,</span>
+<span><span class="va">sim_lpmf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
+<span>  correlation_matrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sample_size_per_group <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  SEED <span class="op">=</span> <span class="fl">42</span>,</span>
+<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">tte_calendar_ep</span><span class="op">)</span>,</span>
 <span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    administrative_censoring <span class="op">=</span> <span class="fl">4</span>,</span>
-<span>     enrollment_distribution <span class="op">=</span> <span class="st">"piecewise"</span>,</span>
-<span>      piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">.5</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">2.5</span><span class="op">)</span>,</span>
-<span>                piecewise_enrollment_rates  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">.5</span>, <span class="fl">4</span>, <span class="fl">.5</span><span class="op">)</span></span>
+<span>    enrollment_distribution <span class="op">=</span> <span class="st">"exponential"</span>,</span>
+<span>    enrollment_exponential_rate <span class="op">=</span> <span class="fl">8</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>yields the following pattern:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="va">pw_example</span><span class="op">$</span><span class="va">data</span>, <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">enrollTime</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_histogram.html" class="external-link">geom_histogram</a></span><span class="op">(</span>bins <span class="op">=</span> <span class="fl">30</span>,fill <span class="op">=</span> <span class="st">"steelblue"</span>, alpha <span class="op">=</span> <span class="fl">0.35</span>,</span>
-<span>    color <span class="op">=</span> <span class="st">"black"</span>,linewidth <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
-<span>    x <span class="op">=</span> <span class="st">"Enrollment time"</span>,</span>
-<span>    y <span class="op">=</span> <span class="st">"Count"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Histogram of enrollment times (Piecewise Exponential)"</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p><img src="user_guide_files/figure-html/unnamed-chunk-33-1.png" class="r-plt" alt="" width="700"></p>
-<p>For transparency, the sampler proceeds as follows:</p>
-<ul>
-<li>For each subject, it simulates the waiting time until enrollment,
-starting from time 0.</li>
-<li>It checks interval by interval: If a randomly drawn exponential
-waiting time (using the interval’s rate) falls within that interval, the
-subject enrolls at that time.</li>
-<li>If not, the process moves to the next interval (with its potentially
-different rate), adding the completed interval’s duration to the
-subject’s time.</li>
-<li>This repeats until enrollment occurs or the final cutpoint is
-reached.</li>
-<li>After the loop finishes (either by an enrollment event occurring or
-by reaching the end of all intervals), it ensures the subject’s
-enrollment time does not exceed the final defined cutpoint.</li>
-</ul>
-<p><strong>Piecewise Enrollment with Proportions</strong></p>
-<p>Assume a 24-month trial with a target enrollment of <span class="math inline">\(N = 1{,}100\)</span> patients. Suppose we want the
-enrollment pattern to be:</p>
-<ul>
-<li>10% enrolled during months 0–8,</li>
-<li>35% enrolled during months 8–16, and</li>
-<li>55% enrolled during months 16–24.</li>
-</ul>
-<p>To achieve this piecewise exponential enrollment pattern, we solve
-for the exponential rates in each interval using basic probability.</p>
-<p>First, set the cutpoints to define the three enrollment windows
-<code>piecewise_enrollment_cutpoints = c(0, 8, 16, 24)</code>. This
-creates three time bins: <span class="math inline">\([0,8),[8,16)\)</span>, and <span class="math inline">\([16,24]\)</span>. Next, solve for <span class="math inline">\(\lambda_1\)</span> so that <span class="math inline">\(10 \%\)</span> of patients enroll before month 8.
-For an exponential waiting time in the first interval,</p>
-<p><span class="math display">\[
-P(T&lt;8)=1-e^{-8 \lambda_1}=0.10 .
-\]</span></p>
-<p>Rearranging,</p>
-<p><span class="math display">\[\begin{align*}
-1 - e^{-8\lambda_1} &amp;= 0.10 \\
-e^{-8\lambda_1} &amp;= 0.90 \\
--8\lambda_1 &amp;= \log(0.90) \\
-\lambda_1 &amp;= -\frac{\log(0.90)}{8}.
-\end{align*}\]</span></p>
-<p>Second, solve for <span class="math inline">\(\lambda_2\)</span> so
-that <span class="math inline">\(35 \%\)</span> of patients enroll in
-the second bin (months <span class="math inline">\(8-16\)</span> ). This
-probability is</p>
-<p><span class="math display">\[
-P(8 \leq T&lt;16)=P(T \geq 8) P(T-8&lt;8 \mid T \geq 8)=e^{-8
-\lambda_1}\left(1-e^{-8 \lambda_2}\right)=0.35 .
-\]</span></p>
-<p>Using <span class="math inline">\(e^{-8 \lambda_1}=0.90\)</span>, we
-get <span class="math display">\[\begin{align*}
-0.90\left(1 - e^{-8\lambda_2}\right) &amp;= 0.35 \\
-1 - e^{-8\lambda_2} &amp;= \frac{0.35}{0.90} \\
-e^{-8\lambda_2} &amp;= 1 - \frac{0.35}{0.90} \\
-\lambda_2 &amp;= -\frac{1}{8}\log\left(1 - \frac{0.35}{0.90}\right).
-\end{align*}\]</span> The third rate, <span class="math inline">\(\boldsymbol{\lambda}_3\)</span>, does not affect
-the overall proportion enrolled in months 16-24 (that remaining <span class="math inline">\(55 \%\)</span> is already determined by <span class="math inline">\(\lambda_1\)</span> and <span class="math inline">\(\lambda_2\)</span> ). However, <span class="math inline">\(\lambda_3\)</span> does affect the shape of the
-enrollment-time distribution within the final bin, here we set this
-value to 0.25.</p>
-<p>Putting this together:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># define rates from calculations above</span></span>
-<span><span class="va">rate1</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">.9</span><span class="op">)</span><span class="op">/</span><span class="fl">8</span></span>
-<span><span class="va">rate2</span> <span class="op">&lt;-</span> <span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">-</span><span class="fl">.35</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="va">rate1</span><span class="op">*</span><span class="fl">8</span><span class="op">)</span><span class="op">)</span><span class="op">/</span><span class="fl">8</span></span>
-<span>  </span>
+<span>  followup_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    min_followup <span class="op">=</span> <span class="fl">24</span>,</span>
+<span>    max_followup <span class="op">=</span> <span class="fl">36</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  trial_end_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    type <span class="op">=</span> <span class="st">"last_patient_min_followup"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pw_example2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
-<span>  correlation_matrix    <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sample_size_per_group <span class="op">=</span> <span class="fl">5000</span>,</span>
-<span>  SEED <span class="op">=</span> <span class="fl">321</span>,</span>
-<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span> </span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>      endpoint_type  <span class="op">=</span> <span class="st">"tte"</span>,</span>
-<span>      baseline_rate  <span class="op">=</span> <span class="fl">.0558</span>,        </span>
-<span>      trt_effect     <span class="op">=</span> <span class="fl">0</span>,   </span>
-<span>      fatal_event    <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    administrative_censoring <span class="op">=</span> <span class="fl">24</span>,</span>
-<span>     enrollment_distribution <span class="op">=</span> <span class="st">"piecewise"</span>,</span>
-<span>    piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">16</span>, <span class="fl">24</span><span class="op">)</span>,</span>
-<span>  piecewise_enrollment_rates  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">rate1</span>, <span class="va">rate2</span>, <span class="fl">.25</span><span class="op">)</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  non_fatal_censors_fatal <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>And to double check enrollment scheme:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pw_example2</span><span class="op">$</span><span class="va">data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span><span class="va">.</span>,</span>
-<span>  Bin1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">enrollTime</span> <span class="op">&lt;</span> <span class="fl">8</span><span class="op">)</span>,</span>
-<span>  Bin2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">enrollTime</span> <span class="op">&gt;=</span> <span class="fl">8</span> <span class="op">&amp;</span> <span class="va">enrollTime</span> <span class="op">&lt;</span> <span class="fl">16</span><span class="op">)</span>,</span>
-<span>  Bin3 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">enrollTime</span> <span class="op">&gt;=</span> <span class="fl">16</span><span class="op">)</span></span>
-<span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">.</span>,caption<span class="op">=</span><span class="st">"Observed enrollment proportion by time period"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">dat_lpmf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim_lpmf</span><span class="op">)</span></span>
+<span><span class="va">tc_lpmf</span> <span class="op">&lt;-</span> <span class="va">sim_lpmf</span><span class="op">$</span><span class="va">meta</span><span class="op">$</span><span class="va">trial_calendar</span></span>
+<span></span>
+<span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  trial_end_time <span class="op">=</span> <span class="va">tc_lpmf</span><span class="op">$</span><span class="va">trial_end_time</span>,</span>
+<span>  trial_end_reason <span class="op">=</span> <span class="va">tc_lpmf</span><span class="op">$</span><span class="va">trial_end_reason</span>,</span>
+<span>  mean_available_followup <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dat_lpmf</span><span class="op">$</span><span class="va">availableFollowup</span><span class="op">)</span>,</span>
+<span>  observed_events <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">dat_lpmf</span><span class="op">$</span><span class="va">Status_1</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
+<span>    digits <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Last-patient-minimum-follow-up example"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Observed enrollment proportion by time period</caption>
+<caption>Last-patient-minimum-follow-up example</caption>
+<colgroup>
+<col width="18%">
+<col width="32%">
+<col width="29%">
+<col width="19%">
+</colgroup>
 <thead><tr class="header">
-<th align="right">Bin1</th>
-<th align="right">Bin2</th>
-<th align="right">Bin3</th>
+<th align="right">trial_end_time</th>
+<th align="left">trial_end_reason</th>
+<th align="right">mean_available_followup</th>
+<th align="right">observed_events</th>
 </tr></thead>
 <tbody><tr class="odd">
-<td align="right">0.107</td>
-<td align="right">0.3471</td>
-<td align="right">0.5459</td>
+<td align="right">49.88</td>
+<td align="left">last_patient_min_followup</td>
+<td align="right">33.06</td>
+<td align="right">85</td>
 </tr></tbody>
 </table>
+<p>Here the analysis time depends on when the final subject enrolls.
+Earlier subjects may contribute more follow-up, but each subject remains
+capped at <code>max_followup = 36</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="example-event-driven-trial-end">Example: event-driven trial end<a class="anchor" aria-label="anchor" href="#example-event-driven-trial-end"></a>
+</h3>
+<p>We now switch to an event-driven design. In this case, enrollment is
+still stochastic, but the trial ends once the chosen TTE endpoint
+reaches a target number of observed events.</p>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sim_event_driven</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
+<span>  correlation_matrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sample_size_per_group <span class="op">=</span> <span class="fl">120</span>,</span>
+<span>  SEED <span class="op">=</span> <span class="fl">99</span>,</span>
+<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">tte_calendar_ep</span><span class="op">)</span>,</span>
+<span>  enrollment_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    enrollment_distribution <span class="op">=</span> <span class="st">"piecewise"</span>,</span>
+<span>    piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">6</span>, <span class="fl">12</span>, <span class="fl">24</span><span class="op">)</span>,</span>
+<span>    piecewise_enrollment_rates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  followup_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    max_followup <span class="op">=</span> <span class="fl">30</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  trial_end_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    type <span class="op">=</span> <span class="st">"event_driven"</span>,</span>
+<span>    event_endpoint <span class="op">=</span> <span class="st">"TTE_1"</span>,</span>
+<span>    target_events <span class="op">=</span> <span class="fl">70</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">dat_event_driven</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim_event_driven</span><span class="op">)</span></span>
+<span><span class="va">tc_event_driven</span> <span class="op">&lt;-</span> <span class="va">sim_event_driven</span><span class="op">$</span><span class="va">meta</span><span class="op">$</span><span class="va">trial_calendar</span></span>
+<span></span>
+<span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  trial_end_time <span class="op">=</span> <span class="va">tc_event_driven</span><span class="op">$</span><span class="va">trial_end_time</span>,</span>
+<span>  trial_end_reason <span class="op">=</span> <span class="va">tc_event_driven</span><span class="op">$</span><span class="va">trial_end_reason</span>,</span>
+<span>  event_target_reached <span class="op">=</span> <span class="va">tc_event_driven</span><span class="op">$</span><span class="va">event_target_reached</span>,</span>
+<span>  n_events_at_end <span class="op">=</span> <span class="va">tc_event_driven</span><span class="op">$</span><span class="va">n_events_at_end</span>,</span>
+<span>  mean_available_followup <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dat_event_driven</span><span class="op">$</span><span class="va">availableFollowup</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
+<span>    digits <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>    caption <span class="op">=</span> <span class="st">"Event-driven example"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>Event-driven example</caption>
+<colgroup>
+<col width="16%">
+<col width="18%">
+<col width="22%">
+<col width="17%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th align="right">trial_end_time</th>
+<th align="left">trial_end_reason</th>
+<th align="left">event_target_reached</th>
+<th align="right">n_events_at_end</th>
+<th align="right">mean_available_followup</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td align="right">31.58</td>
+<td align="left">event_target</td>
+<td align="left">TRUE</td>
+<td align="right">70</td>
+<td align="right">14.64</td>
+</tr></tbody>
+</table>
+<p>The realized calendar information is stored in
+<code>sim_event_driven$meta$trial_calendar</code>. This metadata records
+why the trial stopped, when it stopped, and how many events were
+observed at the realized analysis time.</p>
 </div>
 </div>
 <div class="section level2">

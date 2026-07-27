@@ -5,9 +5,9 @@
       fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
     }
   };
-</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Specification format for enrollment_details used by makeData() — enrollment_details"><meta name="description" content="enrollment_details is a named list controlling administrative
-censoring and stochastic enrollment in makeData."><meta property="og:description" content="enrollment_details is a named list controlling administrative
-censoring and stochastic enrollment in makeData."></head><body>
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Specification format for enrollment_details used by makeData() — enrollment_details"><meta name="description" content="enrollment_details is a named list controlling stochastic subject
+enrollment in makeData."><meta property="og:description" content="enrollment_details is a named list controlling stochastic subject
+enrollment in makeData."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -43,20 +43,22 @@ censoring and stochastic enrollment in makeData."></head><body>
     </div>
 
     <div class="ref-description section level2">
-    <p><code>enrollment_details</code> is a named list controlling administrative
-censoring and stochastic enrollment in <code><a href="makeData.html">makeData</a></code>.</p>
+    <p><code>enrollment_details</code> is a named list controlling stochastic subject
+enrollment in <code><a href="makeData.html">makeData</a></code>.</p>
     </div>
 
 
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>If omitted, <code><a href="makeData.html">makeData()</a></code> fills in defaults internally:</p><div class="sourceCode"><pre><code><span></span>
+    <p>Enrollment times are represented on the trial calendar scale. That is,
+<code>enrollTime</code> is the calendar time at which a subject enters the trial,
+measured relative to the first randomized subject.</p>
+<p>If omitted, <code><a href="makeData.html">makeData()</a></code> fills in defaults internally:</p><div class="sourceCode"><pre><code><span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>  administrative_censoring <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  enrollment_distribution <span class="op">=</span> <span class="st">"none"</span>,</span>
-<span>  enrollment_exponential_rate <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  enrollment_distribution        <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  enrollment_exponential_rate    <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  piecewise_enrollment_cutpoints <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  piecewise_enrollment_rates <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  piecewise_enrollment_rates     <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 
     </div>
@@ -64,129 +66,303 @@ censoring and stochastic enrollment in <code><a href="makeData.html">makeData</a
     <h2 id="purpose">Purpose<a class="anchor" aria-label="anchor" href="#purpose"></a></h2>
 
 
-<p>Administrative censoring and stochastic enrollment affect <em>observed
-follow-up</em>. This primarily affects time-to-event endpoints, but may also be
-useful for interim-analysis settings.</p>
+<p>Enrollment determines when subjects enter the trial calendar. It is distinct
+from subject-level follow-up limits and trial-level stopping rules.</p>
+<p>The trial calendar is generally constructed in three conceptual steps:</p><ol><li><p>enrollment is simulated using <code>enrollment_details</code>;</p></li>
+<li><p>the trial end time is determined using <code>trial_end_details</code>;</p></li>
+<li><p>subject-level available follow-up is derived using
+<code>followup_details</code>.</p></li>
+</ol><p>For a subject \(i\), <code>enrollTime_i</code> is measured on the trial calendar
+scale. These enrollment times can be used with any endpoint type. For
+time-to-event endpoints, variables such as <code>TTE_1</code> are measured from
+that subject's own enrollment or randomization time.</p>
+<p>If the trial ends at calendar time \(\mathcal{T}\), the subject's
+available administrative follow-up is generally:
+$$
+  \max(0, \mathcal{T} - T_{E,i}),
+$$
+where \(T_{E,i}\) is the subject's enrollment time. If
+<code>followup_details$max_followup</code> is supplied, available follow-up is
+further capped at that value.</p>
 <p>If no enrollment model is supplied,
 <code>enrollment_distribution = "none"</code>, all subjects are treated as
-enrolling at time 0.</p>
-<p>If enrollment is stochastic and administrative censoring is enabled, each
-subject receives an <code>enrollTime</code>, and maximum available follow-up is
-reduced from \(\mathcal{A}\) to \(\mathcal{A} - T_E\), where
-\(\mathcal{A}\) is the administrative censoring time and \(T_E\) is the
-subject's enrollment time.</p>
+enrolling at trial calendar time 0.</p>
     </div>
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt>administrative_censoring</dt>
-<dd><p>Numeric scalar or <code>NULL</code>. If non-<code>NULL</code> and positive, this
-defines the administrative end of follow-up. Any TTE outcome occurring
-after this limit is administratively censored.</p></dd>
-
-<dt>enrollment_distribution</dt>
-<dd><p>Character string giving the enrollment-time distribution. Must be one
-of:</p><dl><dt>none</dt>
+<dl><dt><code>enrollment_distribution</code></dt>
+<dd><p>Character string giving the enrollment process. Must be one of:</p><dl><dt><code>"none"</code></dt>
 <dd><p>All subjects enroll at time 0.</p></dd>
 
-<dt>uniform</dt>
-<dd><p>Enrollment times are drawn from \(U(0,\mathcal{A})\).</p></dd>
-
-<dt>exponential</dt>
-<dd><p>Enrollment times are drawn from an exponential distribution,
-truncated at \(\mathcal{A}\). Requires
+<dt><code>"exponential"</code></dt>
+<dd><p>Homogeneous Poisson-process accrual. Inter-enrollment gaps are
+exponentially distributed with rate
+<code>enrollment_exponential_rate</code>. Requires
 <code>enrollment_exponential_rate</code>.</p></dd>
 
-<dt>piecewise</dt>
-<dd><p>Enrollment times are generated from a piecewise exponential model
-over user-specified intervals. Requires
-<code>piecewise_enrollment_cutpoints</code> and
-<code>piecewise_enrollment_rates</code>.</p></dd>
+<dt><code>"piecewise"</code></dt>
+<dd><p>Piecewise homogeneous Poisson-process accrual. Accrual rates vary by
+calendar interval. Requires <code>piecewise_enrollment_cutpoints</code>
+and <code>piecewise_enrollment_rates</code>.</p></dd>
 
 
 </dl></dd>
 
-<dt>enrollment_exponential_rate</dt>
-<dd><p>Numeric scalar (&gt; 0). Used only when
-<code>enrollment_distribution = "exponential"</code>. Gives the exponential
-rate governing enrollment times.</p></dd>
 
-<dt>piecewise_enrollment_cutpoints</dt>
-<dd><p>Numeric vector of strictly increasing cutpoints defining the intervals
-for piecewise enrollment. For example, <code>c(0, 8, 16, 24)</code> defines
-three intervals: <code>[0,8)</code>, <code>[8,16)</code>, and <code>[16,24]</code>.</p></dd>
+<dt><code>enrollment_exponential_rate</code></dt>
+<dd><p>Numeric scalar greater than 0. Used only when
+<code>enrollment_distribution = "exponential"</code>.<br><br>
+This is the expected accrual rate per unit calendar time. For example,
+<code>enrollment_exponential_rate = 10</code> corresponds to an average of 10
+subjects enrolled per time unit. Inter-enrollment gaps are generated from
+an exponential distribution with this rate, and enrollment times are
+formed as cumulative sums of those gaps.</p></dd>
 
-<dt>piecewise_enrollment_rates</dt>
-<dd><p>Numeric vector of positive exponential rates, one for each interval
+
+<dt><code>piecewise_enrollment_cutpoints</code></dt>
+<dd><p>Numeric vector of strictly increasing cutpoints defining calendar
+intervals for piecewise accrual. The first cutpoint should be 0. <br><br>
+For example, <code>c(0, 8, 16, 24)</code> defines three intervals:
+\([0,8)\), \([8,16)\), and \([16,24]\).</p></dd>
+
+
+<dt><code>piecewise_enrollment_rates</code></dt>
+<dd><p>Numeric vector of non-negative accrual rates, one for each interval
 defined by <code>piecewise_enrollment_cutpoints</code>. Its length must be
-<code>length(piecewise_enrollment_cutpoints) - 1</code>.</p></dd>
+<code>length(piecewise_enrollment_cutpoints) - 1</code>. <br><br>
+At least one rate must be greater than 0. A rate of 0 can be used to
+encode an interval with no accrual. If the finite piecewise accrual
+window does not generate enough subjects, <code><a href="makeData.html">makeData()</a></code> continues
+enrollment beyond the final cutpoint using the final interval's rate.
+Therefore, if the final rate is 0 and the target sample size has not
+been reached, simulation will fail.</p></dd>
 
 
 </dl></div>
     <div class="section level2">
-    <h2 id="administrative-censoring-only">Administrative censoring only<a class="anchor" aria-label="anchor" href="#administrative-censoring-only"></a></h2>
+    <h2 id="no-stochastic-enrollment">No stochastic enrollment<a class="anchor" aria-label="anchor" href="#no-stochastic-enrollment"></a></h2>
 
 
-<p>If <code>administrative_censoring</code> is supplied and
-<code>enrollment_distribution = "none"</code>, all subjects are assumed to enter
-at time 0 and remain under observation until the administrative end of
-follow-up, unless they experience an event or are independently censored
-earlier.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="uniform-enrollment">Uniform enrollment<a class="anchor" aria-label="anchor" href="#uniform-enrollment"></a></h2>
+<p>When <code>enrollment_distribution = "none"</code>, all subjects are assigned:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">enrollTime</span> <span class="op">=</span> <span class="fl">0</span></span></code></pre></div>
 
-
-<p>Under uniform enrollment, subjects enter uniformly over the interval
-\([0,\mathcal{A}]\). This induces heterogeneous follow-up, with later
-enrollees having less potential follow-up time before administrative
-censoring.</p>
+<p>In this case, if a trial end rule is used, all subjects share the same
+calendar entry time. For example, if
+<code>trial_end_details$type = "fixed_calendar"</code> and
+<code>trial_end_time = 80</code>, each subject's calendar-derived available
+follow-up is 80, subject to any <code>max_followup</code> cap.</p>
     </div>
     <div class="section level2">
     <h2 id="exponential-enrollment">Exponential enrollment<a class="anchor" aria-label="anchor" href="#exponential-enrollment"></a></h2>
 
 
-<p>Under exponential enrollment, subject entry times are sampled from an
-exponential distribution and truncated at the administrative censoring time.
-This can be used to represent rapid early enrollment followed by a tapering
-accrual pattern.</p>
+<p>When <code>enrollment_distribution = "exponential"</code>, enrollment follows a
+homogeneous Poisson-process style accrual model.</p>
+<p>The inter-enrollment gaps are generated as:
+$$
+  G_i \sim \mathrm{Exponential}(\lambda),
+$$
+where \(\lambda\) is <code>enrollment_exponential_rate</code>. Enrollment times
+are then generated as cumulative sums:
+$$
+  T_{E,i} = \sum_{m=1}^{i} G_m.
+$$</p>
+<p>The enrollment clock is shifted so the first enrolled subject has
+<code>enrollTime = 0</code>. In <code><a href="makeData.html">makeData()</a></code>, these calendar enrollment times
+are randomly assigned across generated subject rows to avoid confounding
+treatment arm with enrollment order.</p>
+<p>This model is appropriate when the expected enrollment rate is approximately
+constant over calendar time.</p>
     </div>
     <div class="section level2">
-    <h2 id="piecewise-exponential-enrollment">Piecewise exponential enrollment<a class="anchor" aria-label="anchor" href="#piecewise-exponential-enrollment"></a></h2>
+    <h2 id="piecewise-enrollment">Piecewise enrollment<a class="anchor" aria-label="anchor" href="#piecewise-enrollment"></a></h2>
 
 
-<p>Under piecewise enrollment, the waiting time to enrollment is simulated
-interval by interval. Within each interval, an exponential waiting time is
-drawn using that interval's rate. If the draw exceeds the remaining interval
-width, the process moves to the next interval.</p>
-<p>This allows users to encode enrollment patterns such as slow-then-fast
-accrual, fast-then-slow accrual, or more complex piecewise shapes. See the
-<code><a href="../articles/user_guide.html">vignette("user_guide", package = "endpoints")</a></code> vignette for an example
-of how to use this option to achieve certain enrollment proportions in
-certain enrollment periods.</p>
+<p>When <code>enrollment_distribution = "piecewise"</code>, enrollment follows a
+piecewise homogeneous Poisson-process style accrual model.</p>
+<p>Enrollment is simulated using exponential inter-arrival gaps. At any point
+on the trial calendar, the waiting time to the next enrolled subject is drawn
+using the accrual rate for the current calendar interval:
+$$
+  G \sim \mathrm{Exponential}(\lambda_k),
+$$
+where \(\lambda_k\) is the accrual rate for interval \(k\).</p>
+<p>If the proposed next enrollment time falls within the current interval, that
+subject is enrolled and the process continues from the new enrollment time.
+If the proposed next enrollment time crosses the next cutpoint, no subject is
+enrolled before that boundary; the trial calendar advances to the cutpoint,
+and the process continues using the accrual rate for the next interval.</p>
+<p>This construction supports start-up, ramp-up, plateau, slowdown, and
+temporary enrollment pause patterns. Intervals with rate 0 are allowed and
+represent periods with no accrual.</p>
+<p>For example:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">enrollment_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  enrollment_distribution        <span class="op">=</span> <span class="st">"piecewise"</span>,</span>
+<span>  piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">24</span>, <span class="fl">52</span><span class="op">)</span>,</span>
+<span>  piecewise_enrollment_rates     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+
+<p>This represents expected accrual of:</p><ul><li><p>2 subjects per time unit from 0 to 8,</p></li>
+<li><p>8 subjects per time unit from 8 to 24,</p></li>
+<li><p>12 subjects per time unit from 24 to 52.</p></li>
+</ul><p>If the requested sample size is not reached by the final cutpoint, enrollment
+continues beyond the last cutpoint using the final interval's rate. For
+example, with cutpoints <code>c(0, 12, 24, 52)</code> and rates
+<code>c(1, 5, 10)</code>, the rate of 10 applies from 24 to 52 and also after 52
+if additional subjects are needed.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="interaction-with-follow-up-and-trial-end-rules">Interaction with follow-up and trial-end rules<a class="anchor" aria-label="anchor" href="#interaction-with-follow-up-and-trial-end-rules"></a></h2>
+
+
+<p><code>enrollment_details</code> only determines when subjects enter the trial. It
+can be used with continuous, binary, count, or TTE endpoints. By itself, it
+does not alter endpoint values, and it does not by itself censor
+time-to-event endpoints.</p>
+<p>Administrative follow-up is determined by combining enrollment times with
+<code>trial_end_details</code> and <code>followup_details</code>. For example:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">followup_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  min_followup <span class="op">=</span> <span class="fl">52</span>,</span>
+<span>  max_followup <span class="op">=</span> <span class="fl">156</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">trial_end_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  type <span class="op">=</span> <span class="st">"last_patient_min_followup"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+
+<p>Under this design, the trial ends when the last randomized subject has at
+least 52 time units of follow-up:
+$$
+  \mathcal{T} = \max_i(T_{E,i}) + 52.
+$$</p>
+<p>Subject-level available follow-up is then:
+$$
+  \min\{M, \max(0, \mathcal{T} - T_{E,i})\},
+$$
+where \(M\) denotes <code>max_followup</code>.</p>
+<p>For non-TTE endpoints, this same calendar logic still determines the
+returned <code>enrollTime</code>, <code>availableFollowup</code>, and trial-calendar
+metadata, even though no event time is administratively censored.</p>
+<p>For a fixed-calendar trial:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">trial_end_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  type <span class="op">=</span> <span class="st">"fixed_calendar"</span>,</span>
+<span>  trial_end_time <span class="op">=</span> <span class="fl">80</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+
+<p>the trial ends at calendar time 80, and subject-level available follow-up is:
+$$
+  \min\{M, \max(0, 80 - T_{E,i})\},
+$$
+again with \(M\) denoting <code>max_followup</code>.</p>
+<p>Subjects with <code>enrollTime</code> after the trial end time have
+<code>availableFollowup = 0</code>. These rows may represent planned subjects who
+would not contribute positive follow-up under the realized trial calendar.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="event-driven-trials">Event-driven trials<a class="anchor" aria-label="anchor" href="#event-driven-trials"></a></h2>
+
+
+<p>For event-driven trials, enrollment times are used to convert subject-level
+event times to calendar event times:
+$$
+  \mathrm{calendar\ event\ time}_i = T_{E,i} + T_i,
+$$
+where \(T_i\) is the subject-level time-to-event value.</p>
+<p>For example:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">trial_end_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  type <span class="op">=</span> <span class="st">"event_driven"</span>,</span>
+<span>  event_endpoint <span class="op">=</span> <span class="st">"TTE_1"</span>,</span>
+<span>  target_events <span class="op">=</span> <span class="fl">150</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+
+<p>The trial end time is the calendar time at which the target number of
+observed events is reached, subject to any additional options in
+<code>trial_end_details</code>, such as <code>require_min_followup</code> or
+<code>max_trial_duration</code>.</p>
+<p>In event-driven trials, <code><a href="makeData.html">makeData()</a></code> returns the planned simulated
+sample. If the event target is reached before all planned subjects have
+enrolled, some rows may have enrollment times after the realized trial end
+time. These rows represent subjects who would not contribute positive
+follow-up under the realized trial calendar.</p>
+<p>Users can define the analysis population using the realized trial end time
+stored in the object metadata:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span></span>
+<span><span class="va">trial_end</span> <span class="op">&lt;-</span> <span class="va">sim</span><span class="op">$</span><span class="va">meta</span><span class="op">$</span><span class="va">trial_calendar</span><span class="op">$</span><span class="va">trial_end_time</span></span>
+<span></span>
+<span><span class="va">dat_analysis</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/subset.html" class="external-link">subset</a></span><span class="op">(</span><span class="va">dat</span>, <span class="va">enrollTime</span> <span class="op">&lt;</span> <span class="va">trial_end</span> <span class="op">&amp;</span> <span class="va">availableFollowup</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+
+    </div>
+    <div class="section level2">
+    <h2 id="deprecated-behavior">Deprecated behavior<a class="anchor" aria-label="anchor" href="#deprecated-behavior"></a></h2>
+
+
+<p>Earlier versions of <code><a href="makeData.html">makeData()</a></code> allowed
+<code>enrollment_details$administrative_censoring</code> and
+<code>enrollment_distribution = "uniform"</code>.</p>
+<p>These are no longer supported as part of the trial-calendar interface.
+Administrative censoring is now represented through the combination of
+<code>followup_details</code> and <code>trial_end_details</code>. Uniform enrollment has
+been removed in favor of Poisson-process based accrual models.</p>
+<p>If <code>administrative_censoring</code> is supplied in
+<code>enrollment_details</code>, <code><a href="makeData.html">makeData()</a></code> now errors and asks users to
+express administrative follow-up through <code>followup_details</code> and
+<code>trial_end_details</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="makeData.html">makeData</a></code> for the main simulation function.</p>
+<p><code><a href="endpoint_details.html">endpoint_details</a></code> for endpoint specifications.</p>
+<p><code><a href="calibration_control.html">calibration_control</a></code> for correlation-calibration settings.</p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## Administrative censoring only</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">## No stochastic enrollment</span></span></span>
 <span class="r-in"><span><span class="va">enrollment_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  administrative_censoring <span class="op">=</span> <span class="fl">24</span></span></span>
+<span class="r-in"><span>  enrollment_distribution <span class="op">=</span> <span class="st">"none"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Exponential enrollment</span></span></span>
+<span class="r-in"><span><span class="co">## Homogeneous Poisson-process enrollment</span></span></span>
+<span class="r-in"><span><span class="co">## Average accrual rate of 10 subjects per time unit</span></span></span>
 <span class="r-in"><span><span class="va">enrollment_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  administrative_censoring    <span class="op">=</span> <span class="fl">24</span>,</span></span>
 <span class="r-in"><span>  enrollment_distribution     <span class="op">=</span> <span class="st">"exponential"</span>,</span></span>
-<span class="r-in"><span>  enrollment_exponential_rate <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span></span></span>
+<span class="r-in"><span>  enrollment_exponential_rate <span class="op">=</span> <span class="fl">10</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co">## Piecewise exponential enrollment</span></span></span>
+<span class="r-in"><span><span class="co">## Piecewise Poisson-process enrollment</span></span></span>
 <span class="r-in"><span><span class="va">enrollment_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>  administrative_censoring       <span class="op">=</span> <span class="fl">24</span>,</span></span>
 <span class="r-in"><span>  enrollment_distribution        <span class="op">=</span> <span class="st">"piecewise"</span>,</span></span>
-<span class="r-in"><span>  piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">16</span>, <span class="fl">24</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  piecewise_enrollment_rates     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.02</span>, <span class="fl">0.06</span>, <span class="fl">0.50</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">24</span>, <span class="fl">52</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  piecewise_enrollment_rates     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Example with last-patient-minimum-follow-up trial end</span></span></span>
+<span class="r-in"><span><span class="va">followup_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  min_followup <span class="op">=</span> <span class="fl">52</span>,</span></span>
+<span class="r-in"><span>  max_followup <span class="op">=</span> <span class="fl">156</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">trial_end_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  type <span class="op">=</span> <span class="st">"last_patient_min_followup"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Example with fixed calendar trial end</span></span></span>
+<span class="r-in"><span><span class="va">followup_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  max_followup <span class="op">=</span> <span class="fl">104</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="va">trial_end_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  type <span class="op">=</span> <span class="st">"fixed_calendar"</span>,</span></span>
+<span class="r-in"><span>  trial_end_time <span class="op">=</span> <span class="fl">80</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Example with event-driven trial end</span></span></span>
+<span class="r-in"><span><span class="va">trial_end_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  type <span class="op">=</span> <span class="st">"event_driven"</span>,</span></span>
+<span class="r-in"><span>  event_endpoint <span class="op">=</span> <span class="st">"TTE_1"</span>,</span></span>
+<span class="r-in"><span>  target_events <span class="op">=</span> <span class="fl">150</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 </code></pre></div>
     </div>
