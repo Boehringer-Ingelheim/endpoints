@@ -2454,10 +2454,11 @@ check_makeData_args <- function(correlation_matrix,
       stop("Error: `piecewise_enrollment_rates` must be numeric with no NA.")
     }
 
-    if (length(rates) != length(cuts) - 1L) {
+    if (!length(rates) %in% c(length(cuts) - 1L, length(cuts))) {
       stop(
         "Error: `piecewise_enrollment_rates` must have length ",
-        "`length(piecewise_enrollment_cutpoints) - 1`."
+        "`length(piecewise_enrollment_cutpoints) - 1` or ",
+        "`length(piecewise_enrollment_cutpoints)`."
       )
     }
 
