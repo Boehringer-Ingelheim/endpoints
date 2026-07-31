@@ -2872,8 +2872,11 @@ make_piecewise_poisson_enrollment <- function(n, cutpoints, rates) {
     stop("`piecewise_enrollment_rates` must be non-negative numeric values.")
   }
 
-  if (length(rates) != length(cutpoints) - 1L) {
-    stop("`piecewise_enrollment_rates` must have length `length(cutpoints) - 1`.")
+  if (!length(rates) %in% c(length(cutpoints) - 1L, length(cutpoints))) {
+    stop(
+      "`piecewise_enrollment_rates` must have length ",
+      "`length(cutpoints) - 1` or `length(cutpoints)`."
+    )
   }
 
   if (all(rates == 0)) {
