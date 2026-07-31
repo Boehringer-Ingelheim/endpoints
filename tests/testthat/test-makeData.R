@@ -837,6 +837,33 @@ testthat::test_that("enrollment and trial-calendar argument dependencies are enf
     ignore.case = TRUE
   )
 
+  testthat::expect_no_error({
+    obj <- makeData(
+      correlation_matrix = NULL,
+      sample_size_per_group = c(40, 40),
+      SEED = 1,
+      arm_mode = "full",
+      endpoint_details = list(
+        list(endpoint_type = "normal", baseline_mean = 0, sd = 1, trt_effect = 0)
+      ),
+      enrollment_details = list(
+        enrollment_distribution = "piecewise",
+        piecewise_enrollment_cutpoints = c(0, 4.5, 6),
+        piecewise_enrollment_rates = c(24 / 4.5, 7, 8.9)
+      ),
+      non_fatal_censors_fatal = FALSE,
+      target_correlation = FALSE
+    )
+
+    d <- as.data.frame(obj)
+
+    testthat::expect_equal(nrow(d), 80)
+    testthat::expect_true("enrollTime" %in% names(d))
+    testthat::expect_true(all(is.finite(d$enrollTime)))
+    testthat::expect_equal(min(d$enrollTime), 0)
+    testthat::expect_gt(max(d$enrollTime), 6)
+  })
+
   # fixed calendar requires trial_end_time
   testthat::expect_error(
     makeData(
