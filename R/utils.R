@@ -2893,7 +2893,7 @@ make_piecewise_poisson_enrollment <- function(n, cutpoints, rates) {
   while (n_enrolled < n) {
     # If we have moved beyond the user-specified intervals, continue with the
     # final interval rate.
-    if (k > length(rates)) {
+    if (k >=  length(rates)) {
       final_rate <- tail(rates, 1L)
 
       if (final_rate <= 0) {
