@@ -94,17 +94,19 @@ all subjects are treated as enrolling at trial calendar time 0.
 
 - `piecewise_enrollment_rates`:
 
-  Numeric vector of non-negative accrual rates, one for each interval
-  defined by `piecewise_enrollment_cutpoints`. Its length must be
-  `length(piecewise_enrollment_cutpoints) - 1`.  
+  Numeric vector of non-negative accrual rates for piecewise intervals.
+  Its length may be either `length(piecewise_enrollment_cutpoints) - 1`,
+  in which case each rate corresponds to a finite interval between
+  adjacent cutpoints, or `length(piecewise_enrollment_cutpoints)`, in
+  which case the final rate applies from the final cutpoint onward.  
     
   At least one rate must be greater than 0. A rate of 0 can be used to
   encode an interval with no accrual. If the finite piecewise accrual
   window does not generate enough subjects,
   [`makeData()`](https://boehringer-ingelheim.github.io/endpoints/reference/makeData.md)
   continues enrollment beyond the final cutpoint using the final
-  interval's rate. Therefore, if the final rate is 0 and the target
-  sample size has not been reached, simulation will fail.
+  interval's rate. If the final rate is 0 and the target sample size has
+  not been reached, simulation will fail.
 
 ## No stochastic enrollment
 
@@ -160,6 +162,11 @@ This construction supports start-up, ramp-up, plateau, slowdown, and
 temporary enrollment pause patterns. Intervals with rate 0 are allowed
 and represent periods with no accrual.
 
+Two rate-vector lengths are supported. If there is one fewer rate than
+cutpoints, each rate corresponds to one finite interval between adjacent
+cutpoints. If there is one rate per cutpoint, the final rate defines an
+open-ended interval beginning at the final cutpoint.
+
 For example:
 
 
@@ -182,6 +189,24 @@ enrollment continues beyond the last cutpoint using the final interval's
 rate. For example, with cutpoints `c(0, 12, 24, 52)` and rates
 `c(1, 5, 10)`, the rate of 10 applies from 24 to 52 and also after 52 if
 additional subjects are needed.
+
+Alternatively, users may specify the final rate as an open-ended
+interval:
+
+
+    enrollment_details <- list(
+      enrollment_distribution        = "piecewise",
+      piecewise_enrollment_cutpoints = c(0, 4.5, 6),
+      piecewise_enrollment_rates     = c(24 / 4.5, 7, 8.9)
+    )
+
+This represents expected accrual of:
+
+- 24 subjects over the first 4.5 time units,
+
+- 7 subjects per time unit from 4.5 to 6,
+
+- 8.9 subjects per time unit from 6 onward.
 
 ## Interaction with follow-up and trial-end rules
 
@@ -317,6 +342,13 @@ enrollment_details <- list(
   enrollment_distribution        = "piecewise",
   piecewise_enrollment_cutpoints = c(0, 8, 24, 52),
   piecewise_enrollment_rates     = c(2, 8, 12)
+)
+
+## Piecewise Poisson-process enrollment with an open-ended final rate
+enrollment_details <- list(
+  enrollment_distribution        = "piecewise",
+  piecewise_enrollment_cutpoints = c(0, 4.5, 6),
+  piecewise_enrollment_rates     = c(24 / 4.5, 7, 8.9)
 )
 
 ## Example with last-patient-minimum-follow-up trial end

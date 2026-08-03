@@ -129,14 +129,17 @@ For example, <code>c(0, 8, 16, 24)</code> defines three intervals:
 
 
 <dt><code>piecewise_enrollment_rates</code></dt>
-<dd><p>Numeric vector of non-negative accrual rates, one for each interval
-defined by <code>piecewise_enrollment_cutpoints</code>. Its length must be
-<code>length(piecewise_enrollment_cutpoints) - 1</code>. <br><br>
+<dd><p>Numeric vector of non-negative accrual rates for piecewise intervals.
+Its length may be either
+<code>length(piecewise_enrollment_cutpoints) - 1</code>, in which case each
+rate corresponds to a finite interval between adjacent cutpoints, or
+<code>length(piecewise_enrollment_cutpoints)</code>, in which case the final
+rate applies from the final cutpoint onward. <br><br>
 At least one rate must be greater than 0. A rate of 0 can be used to
 encode an interval with no accrual. If the finite piecewise accrual
 window does not generate enough subjects, <code><a href="makeData.html">makeData()</a></code> continues
 enrollment beyond the final cutpoint using the final interval's rate.
-Therefore, if the final rate is 0 and the target sample size has not
+If the final rate is 0 and the target sample size has not
 been reached, simulation will fail.</p></dd>
 
 
@@ -197,6 +200,10 @@ and the process continues using the accrual rate for the next interval.</p>
 <p>This construction supports start-up, ramp-up, plateau, slowdown, and
 temporary enrollment pause patterns. Intervals with rate 0 are allowed and
 represent periods with no accrual.</p>
+<p>Two rate-vector lengths are supported. If there is one fewer rate than
+cutpoints, each rate corresponds to one finite interval between adjacent
+cutpoints. If there is one rate per cutpoint, the final rate defines an
+open-ended interval beginning at the final cutpoint.</p>
 <p>For example:</p><div class="sourceCode"><pre><code><span></span>
 <span><span class="va">enrollment_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  enrollment_distribution        <span class="op">=</span> <span class="st">"piecewise"</span>,</span>
@@ -212,7 +219,17 @@ continues beyond the last cutpoint using the final interval's rate. For
 example, with cutpoints <code>c(0, 12, 24, 52)</code> and rates
 <code>c(1, 5, 10)</code>, the rate of 10 applies from 24 to 52 and also after 52
 if additional subjects are needed.</p>
-    </div>
+<p>Alternatively, users may specify the final rate as an open-ended interval:</p><div class="sourceCode"><pre><code><span></span>
+<span><span class="va">enrollment_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  enrollment_distribution        <span class="op">=</span> <span class="st">"piecewise"</span>,</span>
+<span>  piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">4.5</span>, <span class="fl">6</span><span class="op">)</span>,</span>
+<span>  piecewise_enrollment_rates     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24</span> <span class="op">/</span> <span class="fl">4.5</span>, <span class="fl">7</span>, <span class="fl">8.9</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+
+<p>This represents expected accrual of:</p><ul><li><p>24 subjects over the first 4.5 time units,</p></li>
+<li><p>7 subjects per time unit from 4.5 to 6,</p></li>
+<li><p>8.9 subjects per time unit from 6 onward.</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="interaction-with-follow-up-and-trial-end-rules">Interaction with follow-up and trial-end rules<a class="anchor" aria-label="anchor" href="#interaction-with-follow-up-and-trial-end-rules"></a></h2>
 
@@ -336,6 +353,13 @@ express administrative follow-up through <code>followup_details</code> and
 <span class="r-in"><span>  enrollment_distribution        <span class="op">=</span> <span class="st">"piecewise"</span>,</span></span>
 <span class="r-in"><span>  piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">8</span>, <span class="fl">24</span>, <span class="fl">52</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  piecewise_enrollment_rates     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">8</span>, <span class="fl">12</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co">## Piecewise Poisson-process enrollment with an open-ended final rate</span></span></span>
+<span class="r-in"><span><span class="va">enrollment_details</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  enrollment_distribution        <span class="op">=</span> <span class="st">"piecewise"</span>,</span></span>
+<span class="r-in"><span>  piecewise_enrollment_cutpoints <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">4.5</span>, <span class="fl">6</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  piecewise_enrollment_rates     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24</span> <span class="op">/</span> <span class="fl">4.5</span>, <span class="fl">7</span>, <span class="fl">8.9</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co">## Example with last-patient-minimum-follow-up trial end</span></span></span>

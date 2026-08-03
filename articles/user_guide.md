@@ -891,7 +891,7 @@ tibble(
 
 | trial_end_time | trial_end_reason | event_target_reached | n_events_at_end | mean_available_followup |
 |---:|:---|:---|---:|---:|
-| 31.58 | event_target | TRUE | 70 | 14.64 |
+| 31.6 | event_target | TRUE | 70 | 14.68 |
 
 Event-driven example {.table}
 
