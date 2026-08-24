@@ -2106,7 +2106,19 @@ check_makeData_args <- function(correlation_matrix,
     integer(1)
   )
 
-  any_arm_info <- any(c(lens_effect, lens_bprob, lens_cmean) > 0L)
+  lens_censor <- vapply(
+    seq_along(endpoint_details),
+    function(j) {
+      if (endpoint_types[j] != "time-to-event") return(0L)
+      active_len(endpoint_details[[j]]$censoring_rate %||% NULL, "censoring_rate")
+    },
+    integer(1)
+  )
+
+  active_arm_lens <- c(lens_effect, lens_bprob, lens_cmean)
+  all_arm_lens <- lens_censor[lens_censor > 1L]
+
+  any_arm_info <- any(active_arm_lens > 0L) || length(all_arm_lens) > 0L
 
   control_only <- switch(
     arm_mode,
@@ -2118,8 +2130,13 @@ check_makeData_args <- function(correlation_matrix,
   if (control_only) {
     K <- 1L
   } else {
-    max_len <- max(c(lens_effect, lens_bprob, lens_cmean))
-    K <- max(2L, max_len + 1L)
+    active_K <- if (any(active_arm_lens > 0L)) {
+      max(active_arm_lens) + 1L
+    } else {
+      2L
+    }
+    all_arm_K <- if (length(all_arm_lens) > 0L) max(all_arm_lens) else 2L
+    K <- max(2L, active_K, all_arm_K)
   }
 
   if (!control_only) {
@@ -2136,17 +2153,31 @@ check_makeData_args <- function(correlation_matrix,
       invisible(TRUE)
     }
 
+    validate_len_all_arms <- function(len, nm, j) {
+      if (len == 0L) return(invisible(TRUE))
+
+      if (!(len %in% c(1L, K))) {
+        stop(
+          "Error: endpoint ", j, " `", nm, "` must have length 1 or K ",
+          "(K = ", K, ")."
+        )
+      }
+
+      invisible(TRUE)
+    }
+
     for (j in seq_along(endpoint_details)) {
       validate_len(lens_effect[j], "trt_effect", j)
       validate_len(lens_bprob[j],  "trt_prob",  j)
       validate_len(lens_cmean[j],  "trt_count", j)
+      validate_len_all_arms(lens_censor[j], "censoring_rate", j)
     }
 
   } else {
-    if (any(c(lens_effect, lens_bprob, lens_cmean) > 0L)) {
+    if (any(active_arm_lens > 0L) || any(lens_censor > 1L)) {
       stop(
         "Error: control-only mode prohibits specifying `trt_effect`, ",
-        "`trt_prob`, or `trt_count`."
+        "`trt_prob`, `trt_count`, or multi-arm `censoring_rate`."
       )
     }
   }
@@ -2331,12 +2362,13 @@ check_makeData_args <- function(correlation_matrix,
 
       if (!is.null(spec$censoring_rate)) {
         if (!is.numeric(spec$censoring_rate) ||
-            length(spec$censoring_rate) != 1L ||
-            is.na(spec$censoring_rate) ||
-            spec$censoring_rate < 0) {
+            anyNA(spec$censoring_rate) ||
+            !(length(spec$censoring_rate) %in% c(1L, K)) ||
+            any(spec$censoring_rate < 0)) {
           stop(
             "Error: TTE endpoint ", j,
-            " `censoring_rate` must be a single numeric value >= 0."
+            " `censoring_rate` must have length 1 or K ",
+            "(K = ", K, ") and contain only values >= 0."
           )
         }
       }

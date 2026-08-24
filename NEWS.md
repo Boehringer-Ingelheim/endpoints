@@ -2,6 +2,10 @@
 
 ## Development version
 
+- Time-to-event endpoints now support arm-specific independent random
+  censoring rates by supplying `censoring_rate` as a length-`K` vector ordered
+  by treatment arm. A scalar input continues to apply to
+  all arms.
 - `plot.makeDataSim()` no longer depends on `GGally` and now draws its plot
   matrix directly. As a result, it returns `invisible(NULL)` rather than a
   ggplot object, so plots can no longer be customized afterward with ggplot2's

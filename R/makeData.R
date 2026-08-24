@@ -11,7 +11,8 @@
 #' The function also supports:
 #' \itemize{
 #'   \item multiple treatment arms,
-#'   \item independent censoring for time-to-event outcomes,
+#'   \item independent censoring for time-to-event outcomes, including
+#'   arm-specific censoring rates,
 #'   \item fatal and non-fatal time-to-event logic (including semi-competing
 #'   risks),
 #'   \item trial-calendar features including stochastic enrollment,
@@ -217,9 +218,11 @@
 #' @section Treatment arms:
 #' The total number of study arms is generally determined from the lengths of
 #' treatment-specific inputs in \code{endpoint_details}, for example the length
-#' of \code{trt_effect}. When treatment arms are present, the output includes a
+#' of \code{trt_effect}. All-arm inputs such as a vector-valued TTE
+#' \code{censoring_rate} include the control arm and can also determine the
+#' number of arms. When treatment arms are present, the output includes a
 #' \code{trt} column coded as \code{0, 1, 2, \dots}. This can also be
-#' controlled via \code{arm_mode}.
+#' controlled via \code{arm_mode}. Scalar censoring rates are used for all arms.
 #'
 #' @section Enrollment, follow-up, and trial calendar:
 #' Trial-calendar behavior is controlled through
@@ -619,10 +622,15 @@ makeData <- function(
   tte_idx <- which(endpoint_types == "time-to-event")
 
   if (length(tte_idx) > 0L) {
-    censoring_rates <- vapply(
+    censoring_rates <- lapply(
       tte_idx,
-      function(j) endpoint_details[[j]]$censoring_rate %||% 0,
-      numeric(1)
+      function(j) {
+        expand_param_K_including_control(
+          endpoint_details[[j]]$censoring_rate %||% 0,
+          K,
+          name = "censoring_rate"
+        )
+      }
     )
 
     fatal_events <- vapply(
@@ -636,12 +644,20 @@ makeData <- function(
       time_col <- paste0("V", j)
 
       ev_times <- total_sim_data[[time_col]]
-      cr <- censoring_rates[k]
-
-      cens_times <- if (cr <= 0) {
-        rep(Inf, length(ev_times))
+      cr_by_arm <- censoring_rates[[k]]
+      cr <- if (control_only) {
+        rep(cr_by_arm[1L], length(ev_times))
       } else {
-        stats::rexp(length(ev_times), rate = cr)
+        cr_by_arm[total_sim_data$trt + 1L]
+      }
+
+      cens_times <- rep(Inf, length(ev_times))
+      has_random_censoring <- cr > 0
+      if (any(has_random_censoring)) {
+        cens_times[has_random_censoring] <- stats::rexp(
+          sum(has_random_censoring),
+          rate = cr[has_random_censoring]
+        )
       }
 
       is_censored <- ev_times > cens_times
