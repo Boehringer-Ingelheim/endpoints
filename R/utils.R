@@ -2502,7 +2502,7 @@ check_makeData_args <- function(correlation_matrix,
       stop("Error: At least one `piecewise_enrollment_rates` value must be > 0.")
     }
 
-    if (tail(rates, 1L) <= 0) {
+    if (utils::tail(rates, 1L) <= 0) {
       warning(
         "The final piecewise enrollment rate is 0. If the finite piecewise ",
         "accrual window does not generate enough subjects, simulation will fail."
@@ -2926,7 +2926,7 @@ make_piecewise_poisson_enrollment <- function(n, cutpoints, rates) {
     # If we have moved beyond the user-specified intervals, continue with the
     # final interval rate.
     if (k >=  length(rates)) {
-      final_rate <- tail(rates, 1L)
+      final_rate <- utils::tail(rates, 1L)
 
       if (final_rate <= 0) {
         stop(
