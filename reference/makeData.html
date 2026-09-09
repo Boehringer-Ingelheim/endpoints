@@ -23,7 +23,7 @@ correlation matrix on the observed endpoint scale."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">endpoints</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -272,7 +272,8 @@ features are used.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The function also supports:</p><ul><li><p>multiple treatment arms,</p></li>
-<li><p>independent censoring for time-to-event outcomes,</p></li>
+<li><p>independent censoring for time-to-event outcomes, including
+arm-specific censoring rates,</p></li>
 <li><p>fatal and non-fatal time-to-event logic (including semi-competing
 risks),</p></li>
 <li><p>trial-calendar features including stochastic enrollment,
@@ -301,9 +302,11 @@ are applied to the copula uniforms.</p>
 
 <p>The total number of study arms is generally determined from the lengths of
 treatment-specific inputs in <code>endpoint_details</code>, for example the length
-of <code>trt_effect</code>. When treatment arms are present, the output includes a
+of <code>trt_effect</code>. All-arm inputs such as a vector-valued TTE
+<code>censoring_rate</code> include the control arm and can also determine the
+number of arms. When treatment arms are present, the output includes a
 <code>trt</code> column coded as <code>0, 1, 2, ...</code>. This can also be
-controlled via <code>arm_mode</code>.</p>
+controlled via <code>arm_mode</code>. Scalar censoring rates are used for all arms.</p>
     </div>
     <div class="section level2">
     <h2 id="enrollment-follow-up-and-trial-calendar">Enrollment, follow-up, and trial calendar<a class="anchor" aria-label="anchor" href="#enrollment-follow-up-and-trial-calendar"></a></h2>

@@ -397,9 +397,13 @@ treatment hazard ratio is 0.6, and there is also 15% random censoring.
 We measure time in months, so we convert the annual event probability
 into a monthly exponential hazard and use
 [`rate_from_prob()`](https://boehringer-ingelheim.github.io/endpoints/reference/rate_from_prob.md)
-to obtain an approximate random censoring rate.
+to obtain approximate arm-specific random censoring rates. A scalar
+`censoring_rate` would apply the same rate to both arms; here we use a
+length-2 vector ordered as control, then treatment.
 
 ``` r
+
+trt_hr_fixed <- 0.6
 
 baseline_rate_fixed <- rate_from_prob(
   target_prob = 0.30,
@@ -407,16 +411,23 @@ baseline_rate_fixed <- rate_from_prob(
   admin_time = 12
 )
 
-censor_rate_fixed <- rate_from_prob(
-  target_prob = 0.85,
-  mode = "simple",
-  event_rate = baseline_rate_fixed
+censor_rate_fixed <- c(
+  rate_from_prob(
+    target_prob = 0.85,
+    mode = "simple",
+    event_rate = baseline_rate_fixed
+  ),
+  rate_from_prob(
+    target_prob = 0.85,
+    mode = "simple",
+    event_rate = baseline_rate_fixed * trt_hr_fixed
+  )
 )
 
 ep_tte_fixed <- list(
   endpoint_type = "tte",
   baseline_rate = baseline_rate_fixed,
-  trt_effect = log(0.6),
+  trt_effect = log(trt_hr_fixed),
   censoring_rate = censor_rate_fixed,
   fatal_event = TRUE
 )
@@ -463,7 +474,7 @@ tte_fixed_summary %>%
 
 | trial_end_time | max_enroll_time | mean_available_followup | observed_events |
 |---------------:|----------------:|------------------------:|----------------:|
-|             30 |           17.85 |                   20.96 |              63 |
+|             30 |           17.85 |                   20.96 |              65 |
 
 Fixed calendar trial end {.table}
 
@@ -492,7 +503,7 @@ dat_tte_fixed %>%
 |   0 | 24.83 |        1 |       0.29 |             29.71 |
 |   0 | 29.70 |        0 |       0.30 |             29.70 |
 |   1 | 29.54 |        0 |       0.46 |             29.54 |
-|   1 | 23.95 |        0 |       0.49 |             29.51 |
+|   1 | 29.51 |        0 |       0.49 |             29.51 |
 
 First six patients enrolled showing demonstrating fixed follow-up time
 {.table}

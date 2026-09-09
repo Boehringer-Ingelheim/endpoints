@@ -160,8 +160,10 @@ Optional fields:
 
 - censoring_rate:
 
-  Numeric scalar (\> 0) giving the independent exponential
-  censoring-rate parameter. If `NULL`, no random censoring is applied.
+  Numeric scalar or vector (\>= 0) giving independent exponential
+  censoring-rate parameters. If a scalar, the same censoring rate is
+  used for all arms. If a vector, it must have length `K`, including the
+  control arm first. If `NULL`, no random censoring is applied.
 
 - fatal_event:
 
@@ -178,8 +180,8 @@ For active-arm parameters:
 - vectors must generally have length `K - 1`, where `K` is the total
   number of arms,
 
-- for continuous `sd`, vectors must have length `K`, since the
-  control-group SD is also included explicitly.
+- for continuous `sd` and TTE `censoring_rate`, vectors must have length
+  `K`, since the control-arm value is also included explicitly.
 
 The number of arms is determined from the supplied endpoint
 specifications. Optionally, users may use `arm_mode` in

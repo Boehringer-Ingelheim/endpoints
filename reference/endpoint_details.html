@@ -17,7 +17,7 @@ itself a named list describing one endpoint."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">endpoints</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -182,8 +182,10 @@ parameter \(\lambda\). The mean event time is therefore
 hazard-ratio scale.</p></dd>
 
 <dt>censoring_rate</dt>
-<dd><p>Numeric scalar (&gt; 0) giving the independent exponential censoring-rate
-parameter. If <code>NULL</code>, no random censoring is applied.</p></dd>
+<dd><p>Numeric scalar or vector (&gt;= 0) giving independent exponential
+censoring-rate parameters. If a scalar, the same censoring rate is used
+for all arms. If a vector, it must have length <code>K</code>, including the
+control arm first. If <code>NULL</code>, no random censoring is applied.</p></dd>
 
 <dt>fatal_event</dt>
 <dd><p>Logical scalar. If <code>TRUE</code>, the endpoint is treated as fatal and
@@ -199,8 +201,9 @@ rules.</p></dd>
 <p>For active-arm parameters:</p><ul><li><p>scalar values should be used for two-arm trials,</p></li>
 <li><p>vectors must generally have length <code>K - 1</code>, where <code>K</code> is
 the total number of arms,</p></li>
-<li><p>for continuous <code>sd</code>, vectors must have length <code>K</code>, since
-the control-group SD is also included explicitly.</p></li>
+<li><p>for continuous <code>sd</code> and TTE <code>censoring_rate</code>, vectors must
+have length <code>K</code>, since the control-arm value is also included
+explicitly.</p></li>
 </ul><p>The number of arms is determined from the supplied endpoint specifications.
 Optionally, users may use <code>arm_mode</code> in <code><a href="makeData.html">makeData</a></code>, but
 this option should be used with care.</p>

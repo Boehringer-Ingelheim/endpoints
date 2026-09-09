@@ -256,7 +256,8 @@ The function also supports:
 
 - multiple treatment arms,
 
-- independent censoring for time-to-event outcomes,
+- independent censoring for time-to-event outcomes, including
+  arm-specific censoring rates,
 
 - fatal and non-fatal time-to-event logic (including semi-competing
   risks),
@@ -282,9 +283,11 @@ functions are applied to the copula uniforms.
 
 The total number of study arms is generally determined from the lengths
 of treatment-specific inputs in `endpoint_details`, for example the
-length of `trt_effect`. When treatment arms are present, the output
-includes a `trt` column coded as `0, 1, 2, ...`. This can also be
-controlled via `arm_mode`.
+length of `trt_effect`. All-arm inputs such as a vector-valued TTE
+`censoring_rate` include the control arm and can also determine the
+number of arms. When treatment arms are present, the output includes a
+`trt` column coded as `0, 1, 2, ...`. This can also be controlled via
+`arm_mode`. Scalar censoring rates are used for all arms.
 
 ## Enrollment, follow-up, and trial calendar
 

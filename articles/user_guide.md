@@ -273,10 +273,11 @@ later in this vignette and in the dedicated `enrollment_guide` vignette.
 
 To extend the above simulations to settings with several treatment
 groups, we can simply replace scalar inputs with vectors. In general, if
-there are \\G\\ total study arms (including control), then
-treatment-specific vectors (e.g., `trt_prob`, `trt_effect`, `sd`) should
-typically have length \\G-1\\, corresponding to the non-control arms in
-order.
+there are \\G\\ total study arms (including control), then active-arm
+vectors such as `trt_prob` and `trt_effect` should typically have length
+\\G-1\\, corresponding to the non-control arms in order. All-arm vectors
+such as continuous-endpoint `sd` and TTE `censoring_rate` should have
+length \\G\\, including control first.
 
 For example, imagine we have a 4-grp study with a binary endpoint:
 
@@ -499,7 +500,9 @@ elements in `endpoint_details` as follows:
 - `trt_effect`: Scalar or vector of treatment effects on the log
   hazard-ratio scale.
 - `censoring_rate = NULL`: Exponential censoring-rate parameter for
-  independent censoring (if `NULL`, no random censoring is applied).
+  independent censoring. A scalar value is used for all arms. A vector
+  must have one entry per arm, including control first. If `NULL`, no
+  random censoring is applied.
 - `fatal_event`: If `TRUE`, the endpoint is treated as fatal and censors
   subsequent non-fatal TTE endpoints. See below for details.
 
@@ -542,6 +545,47 @@ print(paste0("1","/",1/lambda_c))
 ```
 
     ## [1] "1/216"
+
+If each arm should have its own random censoring rate, provide
+`censoring_rate` as a vector ordered by treatment arm: arm 0 first, then
+arm 1, arm 2, and so on. The example below uses the same event rate in
+each arm, but progressively stronger censoring.
+
+``` r
+
+arm_censor_rates <- c(0, lambda_c, 2 * lambda_c)
+
+tte_arm_censor <- list(
+  endpoint_type = "tte",
+  baseline_rate = 1 / 24,
+  censoring_rate = arm_censor_rates,
+  fatal_event = FALSE
+)
+
+sim_arm_censor <- makeData(
+  correlation_matrix = NULL,
+  sample_size_per_group = 1000,
+  SEED = 2024,
+  endpoint_details = list(tte_arm_censor),
+  target_correlation = FALSE
+)
+
+arm_censor_summary <- as.data.frame(sim_arm_censor) %>%
+  group_by(trt) %>%
+  summarize(observed_event_prob = mean(Status_1), .groups = "drop") %>%
+  mutate(
+    input_censoring_rate = arm_censor_rates[trt + 1],
+    expected_event_prob = (1 / 24) / ((1 / 24) + input_censoring_rate)
+  )
+
+knitr::kable(arm_censor_summary, digits = 3)
+```
+
+| trt | observed_event_prob | input_censoring_rate | expected_event_prob |
+|----:|--------------------:|---------------------:|--------------------:|
+|   0 |               1.000 |                0.000 |               1.000 |
+|   1 |               0.920 |                0.005 |               0.900 |
+|   2 |               0.824 |                0.009 |               0.818 |
 
 When there are semi-competing risks, and the TTE endpoints have low
 correlation, the event rate for the secondary, non-fatal TTE endpoint

@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">endpoints</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,7 @@
                         <h4 data-toc-skip class="author">Colin
 Longhurst</h4>
             
-            <h4 data-toc-skip class="date">2026-08-03</h4>
+            <h4 data-toc-skip class="date">2026-09-09</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/Boehringer-Ingelheim/endpoints/blob/main/vignettes/user_guide.Rmd" class="external-link"><code>vignettes/user_guide.Rmd</code></a></small>
       <div class="d-none name"><code>user_guide.Rmd</code></div>
@@ -456,10 +456,12 @@ vignette.</p>
 <p>To extend the above simulations to settings with several treatment
 groups, we can simply replace scalar inputs with vectors. In general, if
 there are <span class="math inline">\(G\)</span> total study arms
-(including control), then treatment-specific vectors (e.g.,
-<code>trt_prob</code>, <code>trt_effect</code>, <code>sd</code>) should
-typically have length <span class="math inline">\(G-1\)</span>,
-corresponding to the non-control arms in order.</p>
+(including control), then active-arm vectors such as
+<code>trt_prob</code> and <code>trt_effect</code> should typically have
+length <span class="math inline">\(G-1\)</span>, corresponding to the
+non-control arms in order. All-arm vectors such as continuous-endpoint
+<code>sd</code> and TTE <code>censoring_rate</code> should have length
+<span class="math inline">\(G\)</span>, including control first.</p>
 <p>For example, imagine we have a 4-grp study with a binary
 endpoint:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -727,8 +729,9 @@ the mean event time is <span class="math inline">\(1/\lambda\)</span>).</li>
 the log hazard-ratio scale.</li>
 <li>
 <code>censoring_rate = NULL</code>: Exponential censoring-rate
-parameter for independent censoring (if <code>NULL</code>, no random
-censoring is applied).</li>
+parameter for independent censoring. A scalar value is used for all
+arms. A vector must have one entry per arm, including control first. If
+<code>NULL</code>, no random censoring is applied.</li>
 <li>
 <code>fatal_event</code>: If <code>TRUE</code>, the endpoint is
 treated as fatal and censors subsequent non-fatal TTE endpoints. See
@@ -764,6 +767,65 @@ by using the helper function <code><a href="../reference/rate_from_prob.html">ra
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"1"</span>,<span class="st">"/"</span>,<span class="fl">1</span><span class="op">/</span><span class="va">lambda_c</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] "1/216"</span></span></code></pre>
+<p>If each arm should have its own random censoring rate, provide
+<code>censoring_rate</code> as a vector ordered by treatment arm: arm 0
+first, then arm 1, arm 2, and so on. The example below uses the same
+event rate in each arm, but progressively stronger censoring.</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">arm_censor_rates</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">lambda_c</span>, <span class="fl">2</span> <span class="op">*</span> <span class="va">lambda_c</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">tte_arm_censor</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  endpoint_type <span class="op">=</span> <span class="st">"tte"</span>,</span>
+<span>  baseline_rate <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fl">24</span>,</span>
+<span>  censoring_rate <span class="op">=</span> <span class="va">arm_censor_rates</span>,</span>
+<span>  fatal_event <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">sim_arm_censor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
+<span>  correlation_matrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sample_size_per_group <span class="op">=</span> <span class="fl">1000</span>,</span>
+<span>  SEED <span class="op">=</span> <span class="fl">2024</span>,</span>
+<span>  endpoint_details <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">tte_arm_censor</span><span class="op">)</span>,</span>
+<span>  target_correlation <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">arm_censor_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">sim_arm_censor</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">trt</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span>observed_event_prob <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">Status_1</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    input_censoring_rate <span class="op">=</span> <span class="va">arm_censor_rates</span><span class="op">[</span><span class="va">trt</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span>,</span>
+<span>    expected_event_prob <span class="op">=</span> <span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">24</span><span class="op">)</span> <span class="op">/</span> <span class="op">(</span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">24</span><span class="op">)</span> <span class="op">+</span> <span class="va">input_censoring_rate</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span></span>
+<span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">arm_censor_summary</span>, digits <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<thead><tr class="header">
+<th align="right">trt</th>
+<th align="right">observed_event_prob</th>
+<th align="right">input_censoring_rate</th>
+<th align="right">expected_event_prob</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">1.000</td>
+<td align="right">0.000</td>
+<td align="right">1.000</td>
+</tr>
+<tr class="even">
+<td align="right">1</td>
+<td align="right">0.920</td>
+<td align="right">0.005</td>
+<td align="right">0.900</td>
+</tr>
+<tr class="odd">
+<td align="right">2</td>
+<td align="right">0.824</td>
+<td align="right">0.009</td>
+<td align="right">0.818</td>
+</tr>
+</tbody>
+</table>
 <p>When there are semi-competing risks, and the TTE endpoints have low
 correlation, the event rate for the secondary, non-fatal TTE endpoint
 can be approximated as <span class="math inline">\(\frac{\lambda_{e2}}{\lambda_{e1}+\lambda_{c1}+\lambda_{e2}+\lambda_{c2}}\)</span>
@@ -773,7 +835,7 @@ approximation as the dependence (induced by the copula) between <span class="mat
 approximation can also be handled by the helper function. In this case,
 the output is the rate of the censoring mechanism for the secondary
 endpoint.</p>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/rate_from_prob.html">rate_from_prob</a></span><span class="op">(</span></span>
 <span>  target_prob <span class="op">=</span> <span class="fl">0.20</span>, <span class="co"># hypothetical example</span></span>
 <span>  mode <span class="op">=</span> <span class="st">"semi-competing"</span>,</span>
@@ -819,7 +881,7 @@ control group. To solve for the needed log hazard ratio, we solve <span class="m
 = 0.778\)</span>. To solve for the censoring rate, we solve <span class="math inline">\(\frac{1/35}{0.45} - \frac{1}{35} = 1/
 28.64\)</span>.</p>
 <p>We assume a correlation of .2 between the endpoints.</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tte_fatal</span> <span class="op">&lt;-</span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>      endpoint_type  <span class="op">=</span> <span class="st">"tte"</span>,</span>
 <span>      baseline_rate  <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">50</span>,        </span>
@@ -835,7 +897,7 @@ control group. To solve for the needed log hazard ratio, we solve <span class="m
 <span>      censoring_rate <span class="op">=</span> <span class="fl">1</span><span class="op">/</span><span class="fl">28.64</span>,        </span>
 <span>      fatal_event    <span class="op">=</span> <span class="cn">FALSE</span> </span>
 <span>    <span class="op">)</span> </span></code></pre></div>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">small_cor</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/corr_make.html">corr_make</a></span><span class="op">(</span></span>
 <span>  num_endpoints <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">2</span>, <span class="fl">0.20</span><span class="op">)</span><span class="op">)</span> <span class="co"># correlation</span></span>
@@ -963,7 +1025,7 @@ arguments. These features allow users to simulate more realistic trials,
 including staggered enrollment/recruitment, calendar-based follow-up
 limits, and event-driven final analyses.</p>
 <p>For a full tutorial, see:</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/vignette.html" class="external-link">vignette</a></span><span class="op">(</span><span class="st">"enrollment_guide"</span>, package <span class="op">=</span> <span class="st">"endpoints"</span><span class="op">)</span></span></code></pre></div>
 <p>Briefly, these arguments support:</p>
 <ul>
@@ -993,7 +1055,7 @@ event-driven stopping rule.</p>
 contribute at most 36 months of follow-up, and the final analysis occurs
 only after the last randomized subject has at least 24 months of
 follow-up.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tte_calendar_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  endpoint_type <span class="op">=</span> <span class="st">"tte"</span>,</span>
 <span>  baseline_rate <span class="op">=</span> <span class="fu"><a href="../reference/rate_from_prob.html">rate_from_prob</a></span><span class="op">(</span></span>
@@ -1067,7 +1129,7 @@ capped at <code>max_followup = 36</code>.</p>
 <p>We now switch to an event-driven design. In this case, enrollment is
 still stochastic, but the trial ends once the chosen TTE endpoint
 reaches a target number of observed events.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sim_event_driven</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/makeData.html">makeData</a></span><span class="op">(</span></span>
 <span>  correlation_matrix <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sample_size_per_group <span class="op">=</span> <span class="fl">120</span>,</span>
