@@ -141,8 +141,10 @@
 #'     hazard-ratio scale.
 #'   }
 #'   \item{censoring_rate}{
-#'     Numeric scalar (> 0) giving the independent exponential censoring-rate
-#'     parameter. If \code{NULL}, no random censoring is applied.
+#'     Numeric scalar or vector (>= 0) giving independent exponential
+#'     censoring-rate parameters. If a scalar, the same censoring rate is used
+#'     for all arms. If a vector, it must have length \code{K}, including the
+#'     control arm first. If \code{NULL}, no random censoring is applied.
 #'   }
 #'   \item{fatal_event}{
 #'     Logical scalar. If \code{TRUE}, the endpoint is treated as fatal and
@@ -157,8 +159,9 @@
 #'   \item scalar values should be used for two-arm trials,
 #'   \item vectors must generally have length \code{K - 1}, where \code{K} is
 #'   the total number of arms,
-#'   \item for continuous \code{sd}, vectors must have length \code{K}, since
-#'   the control-group SD is also included explicitly.
+#'   \item for continuous \code{sd} and TTE \code{censoring_rate}, vectors must
+#'   have length \code{K}, since the control-arm value is also included
+#'   explicitly.
 #' }
 #'
 #' The number of arms is determined from the supplied endpoint specifications.

@@ -360,26 +360,37 @@ To illustrate, consider a two-arm time-to-event trial with 100 subjects per
 arm. Suppose the annual event rate in the control group is 30%, the treatment
 hazard ratio is 0.6, and there is also 15% random censoring. We measure
 time in months, so we convert the annual event probability into a monthly
-exponential hazard and use `rate_from_prob()` to obtain an approximate random
-censoring rate.
+exponential hazard and use `rate_from_prob()` to obtain approximate
+arm-specific random censoring rates. A scalar `censoring_rate` would apply the
+same rate to both arms; here we use a length-2 vector ordered as control, then
+treatment.
 
 ```{r tte-fixed-setup}
+trt_hr_fixed <- 0.6
+
 baseline_rate_fixed <- rate_from_prob(
   target_prob = 0.30,
   mode = "admin",
   admin_time = 12
 )
 
-censor_rate_fixed <- rate_from_prob(
-  target_prob = 0.85,
-  mode = "simple",
-  event_rate = baseline_rate_fixed
+censor_rate_fixed <- c(
+  rate_from_prob(
+    target_prob = 0.85,
+    mode = "simple",
+    event_rate = baseline_rate_fixed
+  ),
+  rate_from_prob(
+    target_prob = 0.85,
+    mode = "simple",
+    event_rate = baseline_rate_fixed * trt_hr_fixed
+  )
 )
 
 ep_tte_fixed <- list(
   endpoint_type = "tte",
   baseline_rate = baseline_rate_fixed,
-  trt_effect = log(0.6),
+  trt_effect = log(trt_hr_fixed),
   censoring_rate = censor_rate_fixed,
   fatal_event = TRUE
 )
@@ -426,10 +437,10 @@ tte_fixed_summary %>%
 Because the trial always ends at calendar time 30, earlier enrollees have more
 potential follow-up than later enrollees. In this design, the resulting
 follow-up is approximately
-\[
+$$
 \mathrm{availableFollowup}_i =
 \min( 30 - T_{E,i}),
-\]
+$$
 truncated at 0 if a subject enrolls after the fixed calendar cutoff.
 
 ```{r tte-fixed-head}
@@ -973,6 +984,5 @@ dat_event_analysis <- dat_event_zero_fu %>%
 
 That is, subjects with `availableFollowup == 0` should typically be filtered
 out before summarizing or analyzing the realized event-driven dataset.
-
 
 
